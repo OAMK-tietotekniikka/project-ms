@@ -35,5 +35,5 @@ EXPOSE 5000
 RUN npm install typescript
 
 # Run the app
-CMD ["npm", "run", "start"]
-#CMD ["npm", "run", "preview"]
+#CMD ["npm", "run", "start"]
+CMD ["npm", "run", "preview"]

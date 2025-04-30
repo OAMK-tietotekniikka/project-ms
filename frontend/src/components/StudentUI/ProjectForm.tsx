@@ -38,7 +38,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit }) => {
     const [selectedTeacher, setSelectedTeacher] = useState<any>({});
     const [validated, setValidated] = useState(false);
     const [showTeacherChange, setShowTeacherChange] = useState(false);
-    
+
     const [formData, setFormData] = useState<ProjectFormData>({
         project_name: proj?.project_name || '',
         project_desc: proj?.project_desc || '',
@@ -84,134 +84,68 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit }) => {
         setValidated(isValid);
     }, [formData]);
 
+    // Update the relevant part of handleSubmit function:
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (selectedTeacher !== null && selectedTeacher.teacher_id && localProj) {
-            const student = students?.find((student) => student.email === localProj.student_email) || null;
-            const selectedTeacherResource = resources.find(res => res.teacher_id === selectedTeacher.teacher_id && res.study_year === currStudyYear);
-            const resourceAdded = {
-                teacher_id: selectedTeacher.teacher_id,
-                total_resources: selectedTeacherResource.total_resources,
-                used_resources: selectedTeacherResource.used_resources + 1,
-                study_year: currStudyYear,
-            };
-            updateTeacherResource(selectedTeacherResource.resource_id, resourceAdded);
-
-            const currentTeacherResource = resources.find(res => res.teacher_id === localProj.teacher_id && res.study_year === currStudyYear);
-            const resourceRemoved = {
-                teacher_id: localProj.teacher_id,
-                total_resources: currentTeacherResource.total_resources,
-                used_resources: currentTeacherResource.used_resources - 1,
-                study_year: currStudyYear,
-            };
-            updateTeacherResource(currentTeacherResource.resource_id, resourceRemoved);
-
-            try {
-                const emailResponse = await sendEmail(
-                    selectedTeacher.email,
-                    student.student_name,
-                    formData.project_name,
-                    localProj.company_name,
-                    formData.start_date.toISOString().split('T')[0],
-                );
-                if (emailResponse) {
-                    console.log('Email sent successfully');
-                } else {
-                    alert(t('emailNotSent'));
-                }
-            } catch (error) {
-                console.error('Failed to send email:', error);
-            }
-        }
-
-        if (selectedTeacher === null && localProj) {
-            const currentTeacherResource = resources.find(res => res.teacher_id === localProj.teacher_id && res.study_year === currStudyYear);
-            const resourceRemoved = {
-                teacher_id: localProj.teacher_id,
-                total_resources: currentTeacherResource.total_resources,
-                used_resources: currentTeacherResource.used_resources - 1,
-                study_year: currentTeacherResource.study_year,
-            };
-            updateTeacherResource(currentTeacherResource.resource_id, resourceRemoved);
-            console.log('Resource removed from current teacher');
-
-        }
-
-        if (localProj && classCode !== localProj.class_code && user === "teacher") {
-            const student = students?.find((student) => student.email === localProj.student_email) || null;
-            try {
-                const modifiedStudent = {
-                    student_name: student.student_name,
-                    email: student.email,
-                    class_code: classCode,
-                };
-                modifyStudent(modifiedStudent, student.student_id);
-            }
-            catch (error) {
-                console.error("Failed to modify student:", error);
-            }
-        }
-
         try {
-            const teacherEmails = teachers.map(teacher => teacher.email);
-            let teacherId = 0;
+            // Get company ID
             const companyId = await getCompanyId(companyName, companies, addCompany);
-            const resource = await selectTeacher(companyName, formData.start_date, resources);
-            resource === null ? teacherId = null : teacherId = resource.teacher_id;
 
-            if (resource === null) {
+            // Get teacher allocation from server
+            const selectedTeacher = await selectTeacher(companyName, formData.start_date);
+
+            // If no teacher was allocated, send notification emails
+            if (!selectedTeacher) {
                 try {
-                    const emailResponse = await noResourcesEmailToTeachers(
+                    const teacherEmails = teachers.map(teacher => teacher.email);
+                    await noResourcesEmailToTeachers(
                         teacherEmails,
                         signedInStudent?.student_name,
                         signedInStudent.class_code,
                         formData.start_date.toISOString().split('T')[0],
                     );
-                    if (emailResponse) {
-                        console.log('Email sent successfully');
-                    } else {
-                        console.log('Email not sent');
-                    }
-                }
-                catch (error) {
-                    console.error("Failed to send email:", error);
+                } catch (emailError) {
+                    console.error("Failed to send email:", emailError);
                 }
             }
-            if (user === "student" && localProj) {
+
+            // Use the teacher ID from the allocated teacher response
+            const teacherId = selectedTeacher ? selectedTeacher.teacher_id : null;
+
+            // For existing project updates
+            if (localProj) {
                 const modifiedFormData = {
                     project_name: formData.project_name,
                     project_desc: formData.project_desc,
-                    teacher_id: localProj.teacher_id,
+                    teacher_id: teacherId,
                     company_id: companyId,
                     project_status: localProj.project_status,
                     project_url: localProj.project_url,
                     start_date: formData.start_date,
                     end_date: formData.end_date,
                 };
-                await modifyProject(modifiedFormData, localProj.project_id);
-                navigate('/student', { replace: true })
 
-            } else if (user === "teacher" && localProj) {
-                const teacherId = selectedTeacher === null ? null : (selectedTeacher.teacher_id ? selectedTeacher.teacher_id : formData.teacher_id);
-                console.log(`Teacher_id from project form after teacher modification: ${teacherId}`)
-                const modifiedFormData = {
+                // Update the project - server will handle resource management
+                await modifyProject(modifiedFormData, localProj.project_id);
+                navigate(user === "teacher" ? "/teacher" : "/student", { replace: true });
+            } else {
+                // Create new project
+                const newProjectData = {
                     project_name: formData.project_name,
                     project_desc: formData.project_desc,
                     teacher_id: teacherId,
-                    company_id: localProj.company_id,
-                    project_status: localProj.project_status,
-                    project_url: localProj.project_url,
+                    company_id: companyId,
+                    project_status: 'pending',
+                    project_url: 'no url',
                     start_date: formData.start_date,
-                    end_date: formData.end_date,
+                    end_date: formData.end_date || new Date(0),
                 };
-                modifyProject(modifiedFormData, localProj.project_id);
-                navigate('/teacher', { replace: true })
-            } else {
-                if (resource !== null) {
-                    updateTeacherResource(resource.resource_id, { ...resource, used_resources: resource.used_resources + 1 });
-                }
-                onSubmit(formData, companyId, teacherId, companyName);
+
+                // Server will handle resource management
+                const response = await onSubmit(newProjectData, companyId, teacherId, companyName);
+                navigate('/student', { replace: true });
             }
         } catch (error) {
             console.error("Failed to submit form:", error);
