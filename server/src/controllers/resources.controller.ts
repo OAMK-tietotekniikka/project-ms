@@ -81,45 +81,86 @@ export const updateResource = async (req: Request, res: Response): Promise<Respo
 
 /**
  * Allocates a teacher for a project based on resources and company preferences
+ * prioritizes assigned teachers for continuity
  */
 export const allocateTeacher = async (req: Request, res: Response): Promise<Response<HttpResponse>> => {
     console.info(`[${new Date().toLocaleDateString()}] Incoming ${req.method}${req.originalUrl} request - Allocate Teacher`);
-    const { companyName, startDate } = req.body;
+    const { companyName, startDate, studentId } = req.body; // Add studentId parameter
     let connection: any;
-
+    
     if (!companyName || !startDate) {
         return res.status(Code.BAD_REQUEST)
             .send(new HttpResponse(Code.BAD_REQUEST, Status.BAD_REQUEST, 'Company name and start date are required'));
     }
-
+    
     try {
         // Get the study year from the start date
         const date = new Date(startDate);
         const studyYear = getStudyYear(date);
-
+        
         connection = await pool.getConnection();
-
+        
+        // 0. If studentId is provided, check if student has previous projects
+        let previousTeacherId = null;
+        if (studentId) {
+            // Find previous projects of this student
+            const [studentProjects] = await connection.query(`
+                SELECT p.teacher_id
+                FROM projects p
+                JOIN student_project sp ON p.project_id = sp.project_id
+                WHERE sp.student_id = ?
+                ORDER BY p.created_at DESC
+            `, [studentId]);
+            
+            if (studentProjects && studentProjects.length > 0) {
+                previousTeacherId = studentProjects[0].teacher_id;
+                
+                // Check if this teacher has resources available for this study year
+                const [teacherResources] = await connection.query(`
+                    SELECT r.*
+                    FROM resources r
+                    WHERE r.teacher_id = ? AND r.study_year = ? AND r.used_resources < r.total_resources
+                `, [previousTeacherId, studyYear]);
+                
+                if (teacherResources && teacherResources.length > 0) {
+                    // Return the previous teacher
+                    const [teacherDetails] = await connection.query(`
+                        SELECT r.*, t.teacher_name, t.email 
+                        FROM resources r
+                        JOIN teachers t ON r.teacher_id = t.teacher_id
+                        WHERE r.teacher_id = ? AND r.study_year = ?
+                    `, [previousTeacherId, studyYear]);
+                    
+                    if (teacherDetails && teacherDetails.length > 0) {
+                        return res.status(Code.OK)
+                            .send(new HttpResponse(Code.OK, Status.OK, 'Previous teacher allocated successfully', teacherDetails[0]));
+                    }
+                }
+                // If previous teacher has no resources, continue with normal allocation
+            }
+        }
+        
         // 1. Get all resources for the study year where used_resources < total_resources
         const [resourcesForYear] = await connection.query(R_QUERY.SELECT_RESOURCES_BY_STUDY_YEAR, [studyYear]);
-
+        
         if (!resourcesForYear || resourcesForYear.length === 0) {
             return res.status(Code.NOT_FOUND)
-                .send(new HttpResponse(Code.NOT_FOUND, Status.NOT_FOUND,
+                .send(new HttpResponse(Code.NOT_FOUND, Status.NOT_FOUND, 
                     `No teacher resources available for the academic year: ${studyYear}`));
         }
-
+        
         // 2. Check if any teachers have this company as a favorite
         const [teachersWithFavorite] = await connection.query(
-            R_QUERY.SELECT_TEACHERS_WITH_COMPANY_FAVORITE,
+            R_QUERY.SELECT_TEACHERS_WITH_COMPANY_FAVORITE, 
             [companyName]
         );
-
+        
         let selectedTeacher = null;
-
+        
         // 3. If there are teachers with this company as favorite, select the one with least used resources
         if (teachersWithFavorite && teachersWithFavorite.length > 0) {
             const favoriteTeacherIds = teachersWithFavorite.map((t: Teacher) => t.teacher_id);
-
+            
             // Find the first teacher who has resources and has the company as favorite
             for (const resource of resourcesForYear) {
                 if (favoriteTeacherIds.includes(resource.teacher_id)) {
@@ -128,23 +169,23 @@ export const allocateTeacher = async (req: Request, res: Response): Promise<Resp
                 }
             }
         }
-
+        
         // 4. If no teachers with this company as favorite, select the teacher with least used resources
         if (!selectedTeacher && resourcesForYear.length > 0) {
             selectedTeacher = resourcesForYear[0];
         }
-
+        
         if (!selectedTeacher) {
             return res.status(Code.NOT_FOUND)
                 .send(new HttpResponse(Code.NOT_FOUND, Status.NOT_FOUND, 'Could not allocate a teacher'));
         }
-
+        
         return res.status(Code.OK)
             .send(new HttpResponse(Code.OK, Status.OK, 'Teacher allocated successfully', selectedTeacher));
     } catch (error) {
         console.error("Error allocating teacher:", error);
         return res.status(Code.INTERNAL_SERVER_ERROR)
-            .send(new HttpResponse(Code.INTERNAL_SERVER_ERROR, Status.INTERNAL_SERVER_ERROR,
+            .send(new HttpResponse(Code.INTERNAL_SERVER_ERROR, Status.INTERNAL_SERVER_ERROR, 
                 'An error occurred while allocating teacher'));
     } finally {
         if (connection) connection.release();

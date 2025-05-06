@@ -17,7 +17,7 @@ import { getStudyYear } from '../GetStudyYear'
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 interface ProjectFormProps {
-    onSubmit: (formData: ProjectFormData, company_id: number, teacher_id: number, companyName: string) => void;
+    onSubmit: (formData: ProjectFormData, company_id: number, teacher_id: number, companyName: string) => Promise<{ statusCode: number } | undefined>;
 }
 
 const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit }) => {
@@ -84,19 +84,21 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit }) => {
         setValidated(isValid);
     }, [formData]);
 
-    // Update the relevant part of handleSubmit function:
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
+    
         try {
             // Get company ID
             const companyId = await getCompanyId(companyName, companies, addCompany);
-
-            // Get teacher allocation from server
-            const selectedTeacher = await selectTeacher(companyName, formData.start_date);
-
-            // If no teacher was allocated, send notification emails
+            
+            // Pass student ID when getting teacher allocation
+            const studentId = signedInStudent?.student_id;
+            const selectedTeacher = await selectTeacher(companyName, formData.start_date, studentId);
+            
+            // Get teacher ID from the allocated teacher response
+            const teacherId = selectedTeacher ? selectedTeacher.teacher_id : null;
+            
+            // If no teacher was allocated, send notification emails to all teachers
             if (!selectedTeacher) {
                 try {
                     const teacherEmails = teachers.map(teacher => teacher.email);
@@ -110,10 +112,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit }) => {
                     console.error("Failed to send email:", emailError);
                 }
             }
-
-            // Use the teacher ID from the allocated teacher response
-            const teacherId = selectedTeacher ? selectedTeacher.teacher_id : null;
-
+            
             // For existing project updates
             if (localProj) {
                 const modifiedFormData = {
@@ -126,7 +125,7 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit }) => {
                     start_date: formData.start_date,
                     end_date: formData.end_date,
                 };
-
+    
                 // Update the project - server will handle resource management
                 await modifyProject(modifiedFormData, localProj.project_id);
                 navigate(user === "teacher" ? "/teacher" : "/student", { replace: true });
@@ -142,9 +141,29 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit }) => {
                     start_date: formData.start_date,
                     end_date: formData.end_date || new Date(0),
                 };
-
-                // Server will handle resource management
+    
+                // Create the project and let server handle resource management
                 const response = await onSubmit(newProjectData, companyId, teacherId, companyName);
+                
+                // If project created and teacher assigned, send notification email to teacher
+                if (response && response.statusCode === 201 && teacherId) {
+                    const teacherInfo = teachers.find(t => t.teacher_id === teacherId);
+                    if (teacherInfo) {
+                        try {
+                            await sendEmail(
+                                teacherInfo.email,
+                                signedInStudent?.student_name,
+                                formData.project_name,
+                                companyName,
+                                formData.start_date.toISOString().split('T')[0]
+                            );
+                        } catch (emailError) {
+                            console.error("Failed to send teacher notification email:", emailError);
+                        }
+                    }
+                }
+                
+                // Navigate to student dashboard
                 navigate('/student', { replace: true });
             }
         } catch (error) {
@@ -296,9 +315,8 @@ const ProjectForm: React.FC<ProjectFormProps> = ({ onSubmit }) => {
                     </Button>
                 </Form>
             </Container>
-
         </>
-    )
-}
+    );
+};
 
 export default ProjectForm;

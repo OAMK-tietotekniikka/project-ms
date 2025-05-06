@@ -4,12 +4,18 @@ import { Resource, NewResource } from '../../interface/resource';
 const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8081';
 
 
-export const allocateTeacher = async (companyName: string, startDate: Date, authHeader: any) => {
+/**
+ * Requests the server to allocate a teacher for a project
+ */
+export const allocateTeacher = async (companyName: string, startDate: Date, studentId?: number, authHeader?: any) => {
     try {
-        const response = await axios.post(`${baseUrl}/resources/allocate-teacher`, {
+        const payload = {
             companyName,
-            startDate
-        }, authHeader);
+            startDate,
+            studentId: studentId || null
+        };
+        
+        const response = await axios.post(`${baseUrl}/resources/allocate-teacher`, payload, authHeader);
         return response.data;
     } catch (error) {
         if (axios.isAxiosError(error)) {

@@ -1,19 +1,19 @@
 import { allocateTeacher } from "../../contexts/apiRequests/resourcesApiRequests";
 import { Resource } from "../../interface/resource";
 
-export const selectTeacher = async (companyName: string, startDate: Date): Promise<Resource | null> => {
+export const selectTeacher = async (companyName: string, startDate: Date, studentId?: number): Promise<Resource | null> => {
     const token = localStorage.getItem('token');
-
+    
     let authHeader: any = {};
     if (token) {
         authHeader = {
             headers: { Authorization: `Bearer ${token}` }
         };
     }
-
+    
     try {
-        const response = await allocateTeacher(companyName, startDate, authHeader);
-
+        const response = await allocateTeacher(companyName, startDate, studentId, authHeader);
+        
         if (response && response.statusCode === 200) {
             return response.data;
         } else {
