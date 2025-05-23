@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { getStudents, updateStudent, getStudent, createStudent } from "./apiRequests/studentsApiRequests";
 import { Student, UpdatedStudent, newStudent } from "../interface/student";
 import { useUserContext } from "./userContext";
+import axios from "axios";
 
 
 interface StudentsContextType {
@@ -79,20 +80,81 @@ const StudentsContextProvider = (props: any) => {
             console.error("Failed to get student by email:", error);
         }
     };
-
-    const addNewStudent = async (student: newStudent) => {
-        try {
-            const response = await createStudent(student, authHeader);
-            setStudents(prevStudents => [...prevStudents, response.data]);
-            setSignedInStudent(response.data);
-            localStorage.setItem('signedInStudent', JSON.stringify(response.data));
-            localStorage.setItem('studentId', JSON.stringify(response.data.student_id));
-            return response.data;
+    // Alternative implementation using Axios
+const addNewStudent = async (studentData: any) => {
+  try {
+    console.log('Adding new student with data:', JSON.stringify(studentData));
+    
+    // Make the API call with precise logging
+    console.log('Making API request to:', `${import.meta.env.VITE_API_URL}/students`);
+    
+    const response = await axios.post(
+      `${import.meta.env.VITE_API_URL}/students`, 
+      studentData,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         }
-        catch (error) {
-            console.error("Failed to add new student:", error);
+      }
+    );
+    
+    console.log('Response status:', response.status);
+    console.log('Response data:', JSON.stringify(response.data));
+    
+    // Our server returns 201 (Created) for new students or 200 (OK) for updated ones
+    if (response.status === 201 || response.status === 200) {
+      // Access the student data based on the actual response structure
+      let newStudent;
+      
+      if (response.data.data && typeof response.data.data === 'object') {
+        newStudent = response.data.data;
+      } else if (response.data.student && typeof response.data.student === 'object') {
+        newStudent = response.data.student;
+      } else {
+        newStudent = response.data;
+      }
+      
+      console.log('Extracted student data:', JSON.stringify(newStudent));
+      
+      // Only update state if we got a valid student object
+      if (newStudent && (newStudent.student_id || response.status === 200)) {
+        // Add to students list if it's a new student
+        if (response.status === 201) {
+          setStudents((prevStudents) => [...prevStudents, newStudent]);
+        } else {
+          // Update existing student in the list
+          setStudents((prevStudents) => 
+            prevStudents.map(s => 
+              s.email === studentData.email ? { ...s, ...newStudent } : s
+            )
+          );
         }
-    };
+        
+        // Return the full response to distinguish between create and update
+        return response.data;
+      } else {
+        console.error('Invalid student data in response:', JSON.stringify(response.data));
+        throw new Error('Invalid student data returned from server');
+      }
+    } else {
+      console.error('Unexpected response status:', response.status);
+      throw new Error(`Unexpected response status: ${response.status}`);
+    }
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('API Error adding student:', error.message);
+      console.error('Error details:', JSON.stringify(error.response?.data || {}));
+      console.error('Error status:', error.response?.status);
+      
+      // Re-throw a more informative error
+      throw new Error(`API Error: ${error.message} - ${JSON.stringify(error.response?.data || {})}`);
+    } else {
+      console.error('Non-Axios error adding student:', error);
+      throw error;
+    }
+  }
+};
 
     const modifyStudent = async (student: UpdatedStudent, studentId: number) => {
         try {

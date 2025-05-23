@@ -570,3 +570,12 @@
   }
 
 }
+
+/* Add near the end of App.css */
+.import-students-container {
+  padding: 15px;
+}
+
+.table-responsive {
+  overflow-y: auto;
+}
