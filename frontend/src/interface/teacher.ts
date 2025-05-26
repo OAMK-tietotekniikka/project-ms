@@ -5,7 +5,7 @@ export interface Teacher {
     created_at: Date;
 }
 
-export interface newTeacher {
+export interface NewTeacher {
     teacher_name: string;
     email: string;
 }

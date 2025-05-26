@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { NewResource } from '../../interface/resource';
-import { newTeacher } from '../../interface/teacher';
+import { NewTeacher } from '../../interface/teacher';
 
 
 const baseUrl = import.meta.env.VITE_API_URL
@@ -37,7 +37,7 @@ export const getTeachersByCompany = async (company_name: string, authHeader: any
     }
 };
 
-export const createTeacher = async (teacher: newTeacher, authHeader: any) => {
+export const createTeacher = async (teacher: NewTeacher, authHeader: any) => {
     try {
         const response = await axios.post(`${baseUrl}/teachers`, teacher, authHeader);
         if (response.data.statusCode === 201) {

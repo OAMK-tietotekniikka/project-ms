@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { getTeachers, createTeacher, getResources, updateResource, createResource, getTeacher } from "./apiRequests/teachersApiRequests";
-import { Teacher, newTeacher } from "../interface/teacher";
+import { Teacher, NewTeacher } from "../interface/teacher";
 import { Resource, NewResource } from "../interface/resource";
 import { useUserContext } from "./userContext";
 
@@ -14,7 +14,7 @@ interface TeachersContextType {
     updateTeacherResource: (id: number, resource: NewResource) => Promise<Resource>;
     addTeacherResource: (resource: NewResource) => Promise<Resource>;
     getTeacherByEmail: (email: string) => Promise<Teacher | null>;
-    addNewTeacher: (teacher: newTeacher) => Promise<Teacher>;
+    addNewTeacher: (teacher: NewTeacher) => Promise<Teacher>;
 }
 
 const TeachersContext = React.createContext<TeachersContextType>({} as TeachersContextType);
@@ -98,7 +98,7 @@ const TeachersContextProvider = (props: any) => {
         }
     };
 
-    const addNewTeacher = async (teacher: newTeacher) => {
+    const addNewTeacher = async (teacher: NewTeacher) => {
         try {
             const response = await createTeacher(teacher, authHeader);
             setTeachers(prevTeachers => [...prevTeachers, response.data]);
