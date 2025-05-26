@@ -1,5 +1,5 @@
 # Use an official Node.js runtime as the base image
-FROM node:18-alpine as BUILD_IMAGE
+FROM node:18-alpine AS BUILD_IMAGE
 
 # Set the working directory in the container to /app
 WORKDIR /app/frontend
@@ -17,7 +17,7 @@ COPY . .
 RUN npm run build
 
 # Use an official lightweight Node.js runtime as the final base image
-FROM node:18-alpine as PRODUCTION_IMAGE
+FROM node:18-alpine AS PRODUCTION_IMAGE
 
 # Set the working directory in the container to /app
 WORKDIR /app/frontend
@@ -35,5 +35,5 @@ EXPOSE 5000
 RUN npm install typescript
 
 # Run the app
-CMD ["npm", "run", "start"]
-#CMD ["npm", "run", "preview"]
+#CMD ["npm", "run", "start"]
+CMD ["npm", "run", "preview"]
