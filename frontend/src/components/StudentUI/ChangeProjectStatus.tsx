@@ -1,11 +1,10 @@
-import react, { useState, useEffect } from 'react';
+import React , { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Container, Row, Col, Form, Button } from 'react-bootstrap';
 import { useProjectsContext } from '../../contexts/projectsContext';
 import { useUserContext } from '../../contexts/userContext';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import React from 'react';
 
 
 interface ChangeProjectStatusProps {
