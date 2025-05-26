@@ -9,6 +9,7 @@ import companiesRouter from "./routes/companies.routes";
 import teachersRouter from "./routes/teachers.routes";
 import resourcesRouter from "./routes/resources.routes";
 import emailRouter from "./routes/email.routes";
+import authRouter from "./routes/auth.routes";
 import createTables from "./createTables";
 
 
@@ -44,6 +45,11 @@ export class App {
         this.app.use('/teachers', teachersRouter);
         this.app.use('/resources', resourcesRouter);
         this.app.use('/email', emailRouter);
+        let current_env = "development";
+        if (current_env === "development") {
+            this.app.use('/auth', authRouter);
+        }
+
         this.app.get('/', (req: Request, res: Response) => res.status(Code.OK).send(new HttpResponse(Code.OK, Status.OK, 'Hello World, I am using OpenShift!!!')));
         this.app.all('*', (req: Request, res: Response) => res.status(Code.NOT_FOUND).send(new HttpResponse(Code.NOT_FOUND, Status.NOT_FOUND, this.ROUTE_NOT_FOUND)));
     }
