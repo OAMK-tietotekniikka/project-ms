@@ -11,6 +11,17 @@ import dotenv from "dotenv";
 
 
 type ResultSet = [RowDataPacket[] | RowDataPacket[][] | OkPacket | OkPacket[] | ResultSetHeader, FieldPacket[]];
+const cleanClassCode = (classCode?: string): string | null => {
+    if (!classCode) return null;
+    const cleaned = classCode.trim().replace(/[^a-zA-Z0-9]/g, '');
+    return cleaned ? cleaned.toUpperCase() : null;
+};
+
+const cleanEmail = (email?: string): string | null => {
+    if (!email) return null;
+    const cleaned = email.trim().replace(/[^a-zA-Z0-9@._+-]/g, '');
+    return cleaned && cleaned.length > 8 ? cleaned.toLowerCase() : null;
+};
 
 export const getStudents = async (req: Request, res: Response): Promise<Response<HttpResponse>> => {
     console.info(`[${new Date().toLocaleDateString()}] Incoming ${req.method}${req.originalUrl} request from ${req.rawHeaders[0]} ${req.rawHeaders[1]}`);
@@ -66,28 +77,16 @@ export const createStudent = async (req: Request, res: Response): Promise<Respon
         connection = await pool.getConnection();
         
         // Make sure we have the required fields
+        student.class_code = cleanClassCode(student.class_code);
+        student.email = cleanEmail(student.email);
+
         if (!student.email) {
             console.error('Missing required fields:', JSON.stringify(student));
             return res.status(Code.BAD_REQUEST)
                 .send(new HttpResponse(Code.BAD_REQUEST, Status.BAD_REQUEST, 'Email is required'));
         }
-        
-        // Split student_name into first_name and last_name if provided as combined field
-        if (student.student_name && !student.first_name && !student.last_name) {
-            const nameParts = student.student_name.split(' ');
-            student.first_name = nameParts[0] || '';
-            student.last_name = nameParts.slice(1).join(' ') || '';
-        }
-        
-        // Ensure we have at least first_name (even if empty)
-        if (!student.first_name) {
-            student.first_name = '';
-        }
-        
-        // Ensure we have at least last_name (even if empty)
-        if (!student.last_name) {
-            student.last_name = '';
-        }
+
+
         
         try {
             // Check if student already exists with this email
@@ -101,17 +100,14 @@ export const createStudent = async (req: Request, res: Response): Promise<Respon
                 // If you want to update instead of insert
                 const existingStudentData = existingStudent[0][0];
                 
-                // Make sure class_code is string
-                const classCode = student.class_code ? student.class_code.toString() : '';
-                
+
                 try {
                     const result = await connection.query(
                         QUERY.UPDATE_STUDENT,
                         [
-                            student.first_name, 
-                            student.last_name,
+                            student.student_name,
                             student.email, 
-                            classCode, 
+                            student.class_code,
                             existingStudentData.student_id
                         ]
                     );
@@ -128,37 +124,21 @@ export const createStudent = async (req: Request, res: Response): Promise<Respon
                     throw updateError;
                 }
             }
-            
-            // Set a default class_code if not provided
-            if (!student.class_code) {
-                student.class_code = '';
-            } else {
-                // Ensure class_code is a string
-                student.class_code = student.class_code.toString();
-            }
-            
-            // Set a default password if not provided
-            if (!student.password) {
-                student.password = '';  // Or generate a random password
-            }
+
             
             console.log('Executing SQL query with parameters:', [
-                student.first_name,
-                student.last_name, 
+                student.student_name,
                 student.email, 
                 student.class_code,
-                student.password
             ]);
             
             // Execute the query with the correct parameters
             const result = await connection.query(
-                'INSERT INTO students (first_name, last_name, email, class_code, password) VALUES (?, ?, ?, ?, ?)', 
+                'INSERT INTO students (student_name, email, class_code) VALUES (?, ?, ?)',
                 [
-                    student.first_name,
-                    student.last_name, 
+                    student.student_name,
                     student.email, 
                     student.class_code,
-                    student.password
                 ]
             );
             
