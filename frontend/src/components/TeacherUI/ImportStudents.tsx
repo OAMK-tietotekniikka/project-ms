@@ -19,7 +19,6 @@ const ImportStudents: React.FC<ImportStudentsProps> = ({ handleClose }) => {
   const { t } = useTranslation();
   const { addNewStudent } = useStudentsContext();
   const [file, setFile] = useState<File | null>(null);
-  const [classCode, setClassCode] = useState<string>('');
   const [parsedData, setParsedData] = useState<ImportedStudent[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [previewMode, setPreviewMode] = useState<boolean>(false);
@@ -33,20 +32,10 @@ const ImportStudents: React.FC<ImportStudentsProps> = ({ handleClose }) => {
     }
   };
 
-  const validateClassCode = (classCode: string) => {
-    // Basic validation: should be at least 3 characters and contain only alphanumeric chars
-    const regex = /^[a-zA-Z0-9]{3,}$/;
-    return regex.test(classCode);
-  };
 
   const parseCSV = () => {
     if (!file) {
       setError(t('pleaseSelectFile'));
-      return;
-    }
-
-    if (!validateClassCode(classCode)) {
-      setError(t('invalidClassCode'));
       return;
     }
 
@@ -90,10 +79,9 @@ const ImportStudents: React.FC<ImportStudentsProps> = ({ handleClose }) => {
                 
                 // Use try/catch for each student to continue even if one fails
                 const response = await addNewStudent({
-                  first_name: firstName,
-                  last_name: lastName,
+                  student_name: student.student_name,
                   email: student.email,
-                  class_code: classCode.toLowerCase() // Ensure lowercase for consistency
+                  class_code: student.class_code
                 });
                 
                 console.log('Server response:', JSON.stringify(response));
@@ -170,7 +158,12 @@ const ImportStudents: React.FC<ImportStudentsProps> = ({ handleClose }) => {
         const hasEmailColumn = columnNames.some(col => 
           col === 'email' || col === 'student_email' || col === 'mail'
         );
-        
+
+        const hasClassCodeColumns = columnNames.some(col =>
+            col === 'group' || col === 'class_code' || col === 'code' || col === 'class'
+        );
+
+
         if (!hasNameColumn || !hasEmailColumn) {
           setError(t('csvMissingColumns'));
           setLoading(false);
@@ -191,11 +184,18 @@ const ImportStudents: React.FC<ImportStudentsProps> = ({ handleClose }) => {
             key.toLowerCase() === 'student_email' || 
             key.toLowerCase() === 'mail'
           ) || '';
+
+          const classCodeKey = Object.keys(row).find(key =>
+              key.toLowerCase() === 'group' ||
+              key.toLowerCase() === 'class_code' ||
+              key.toLowerCase() === 'code' ||
+              key.toLowerCase() === 'class'
+          ) || '';
           
           return {
             student_name: row[nameKey],
             email: row[emailKey],
-            class_code: classCode.toLowerCase()
+            class_code: row[classCodeKey] || null
           };
         }).filter(student => student.student_name && student.email);
 
@@ -252,10 +252,9 @@ const ImportStudents: React.FC<ImportStudentsProps> = ({ handleClose }) => {
           
           // Use try/catch for each student to continue even if one fails
           const response = await addNewStudent({
-            first_name: firstName,
-            last_name: lastName,
+            student_name: student.student_name,
             email: student.email,
-            class_code: classCode.toLowerCase() // Ensure lowercase for consistency
+            class_code: student.class_code
           });
           
           console.log('Server response:', JSON.stringify(response));
@@ -339,18 +338,6 @@ const ImportStudents: React.FC<ImportStudentsProps> = ({ handleClose }) => {
       
       {!previewMode ? (
         <>
-          <Form.Group controlId="classCode" className="mb-3">
-            <Form.Label>{t('classCode')}</Form.Label>
-            <Form.Control
-              type="text"
-              placeholder="DIN21"
-              value={classCode}
-              onChange={(e) => setClassCode(e.target.value.toUpperCase())}
-            />
-            <Form.Text className="text-muted">
-              {t('classCodeHint')}
-            </Form.Text>
-          </Form.Group>
 
           <Form.Group controlId="csvFile" className="mb-3">
             <Form.Label>{t('csvFile')}</Form.Label>
@@ -376,7 +363,7 @@ const ImportStudents: React.FC<ImportStudentsProps> = ({ handleClose }) => {
             <Button 
               variant="primary" 
               onClick={parseCSV}
-              disabled={!file || !classCode || loading}
+              disabled={!file || loading}
             >
               {loading ? (
                 <>
@@ -392,7 +379,6 @@ const ImportStudents: React.FC<ImportStudentsProps> = ({ handleClose }) => {
       ) : (
         <>
           <div className="mb-3">
-            <strong>{t('classCode')}:</strong> {classCode.toUpperCase()}
             <span className="ms-3">
               <strong>{t('totalRecords')}:</strong> {parsedData.length}
             </span>
@@ -405,6 +391,7 @@ const ImportStudents: React.FC<ImportStudentsProps> = ({ handleClose }) => {
                   <th>#</th>
                   <th>{t('studentName')}</th>
                   <th>{t('email')}</th>
+                  <th>{t('classCode')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -413,6 +400,7 @@ const ImportStudents: React.FC<ImportStudentsProps> = ({ handleClose }) => {
                     <td>{index + 1}</td>
                     <td>{student.student_name}</td>
                     <td>{student.email}</td>
+                    <td>{student.class_code}</td>
                   </tr>
                 ))}
               </tbody>
