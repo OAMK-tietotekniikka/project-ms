@@ -12,7 +12,7 @@ interface StudentsContextType {
     modifyStudent: (student: UpdatedStudent, studentId: number) => void;
     getStudentByEmail: (email: string) => Promise<Student>;
     addNewStudent: (student: newStudent) => Promise<{ statusCode: number, data: Student}>;
-};
+}
 
 const StudentsContext = React.createContext<StudentsContextType>({} as StudentsContextType);
 
