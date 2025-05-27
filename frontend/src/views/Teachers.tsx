@@ -19,6 +19,7 @@ const Teachers: React.FC = () => {
                     
                     <div className='d-flex justify-content-between align-items-center mt-4'>
                         <div className='second-heading'>{t('studentManagement')}</div>
+                        !!Will be moved to students
                         <Button 
                             className='addCompany-button'
                             onClick={() => setShowImportModal(true)}
