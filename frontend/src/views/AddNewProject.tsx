@@ -19,7 +19,11 @@ const AddNewProject: React.FC = () => {
     const { addNewProject } = useProjectsContext();
     const { signedInStudent } = useStudentsContext();
     
-    const handleFormSubmit = async (formData: ProjectFormData, companyId: number, teacherId: number, companyName: string) => {
+    const handleFormSubmit = async (
+        formData: ProjectFormData,
+        companyId: number,
+        teacherId: number,
+        companyName: string): Promise<{ statusCode: number } | undefined> => {
         // add company_id and teacher_id to formData
         formData.company_id = companyId;
         formData.teacher_id = teacherId;
