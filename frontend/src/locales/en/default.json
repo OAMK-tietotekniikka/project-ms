@@ -144,5 +144,5 @@
   "totalRecords": "Total Records",
   "studentManagement": "Student Management",
   "allImportsFailed": "Failed to import any students. Please check your data and try again.",
-"partialImportFailed": "{{count}} students failed to import: {{emails}}"
+  "partialImportFailed": "{{count}} students failed to import: {{emails}}"
 }
