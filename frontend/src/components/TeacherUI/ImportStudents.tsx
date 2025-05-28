@@ -232,23 +232,16 @@ const ImportStudents: React.FC<ImportStudentsProps> = ({ handleClose }) => {
     console.log('Starting import of', parsedData.length, 'students');
     
     try {
-      let newCount = 0;
-      let updateCount = 0;
+      let newCount: number = 0;
+      let updateCount: number = 0;
       let errorDetails = [];
+      let errorEmails: Set<string> = new Set();
       
       for (const student of parsedData) {
         try {
           console.log('Importing student:', JSON.stringify(student));
-          
-          // Split the name into first and last name
-          let firstName = '';
-          let lastName = '';
-          
-          if (student.student_name) {
-            const nameParts = student.student_name.split(' ');
-            firstName = nameParts[0] || '';
-            lastName = nameParts.slice(1).join(' ') || '';
-          }
+
+
           
           // Use try/catch for each student to continue even if one fails
           const response = await addNewStudent({
@@ -270,12 +263,18 @@ const ImportStudents: React.FC<ImportStudentsProps> = ({ handleClose }) => {
             }
           } else {
             console.error(`Failed to import student ${student.email}: No response data`);
-            errorDetails.push({email: student.email, error: 'No response data'});
+            errorEmails.add(student.email);
+
+            //errorDetails.push({email: student.email, error: 'No response data'}); will be changed
+
           }
         } catch (err) {
           const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+          errorEmails.add(student.email);
           console.error(`Error adding student ${student.email}:`, errorMsg);
-          errorDetails.push({email: student.email, error: errorMsg});
+
+
+          //errorDetails.push({email: student.email, error: errorMsg}); will be changed
         }
       }
       
@@ -283,10 +282,13 @@ const ImportStudents: React.FC<ImportStudentsProps> = ({ handleClose }) => {
       
       if (newCount > 0 || updateCount > 0) {
         setSuccess(t('importSuccess', { count: newCount, updateCount: updateCount }));
-        if (errorDetails.length > 0) {
-          // Show error details for debugging
+        if (errorEmails.size) {
+
           console.error('Failed imports:', errorDetails);
-          setError(t('partialImportFailed', { count: errorDetails.length }));
+          setError(t('partialImportFailed', {
+            count: errorEmails.size,
+            emails: [...errorEmails].join(', ')
+          }));
         }
         setPreviewMode(false);
         setParsedData([]);
