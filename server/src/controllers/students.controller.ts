@@ -6,18 +6,28 @@ import { Status } from "../enum/status.enum";
 import { HttpResponse } from "../domain/response";
 import { ResultSetHeader, RowDataPacket, FieldPacket, OkPacket } from "mysql2";
 import { QUERY } from "../query/students.query";
-import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
-
+import isEmail from 'validator/lib/isEmail';
+// should be refactored
 
 type ResultSet = [RowDataPacket[] | RowDataPacket[][] | OkPacket | OkPacket[] | ResultSetHeader, FieldPacket[]];
+
+
+function isValidClassCode(code: any) {
+    const format = /^[A-Za-z]+[0-9]+[A-Za-z]+$/;
+    return (typeof code === "string" && format.test(code.trim())) ? code.trim().toLowerCase() : null;
+}
+
+
+function isValidEmail(email : any) {
+    return (typeof email === "string" && isEmail(email)) ? email.toLowerCase() : "";
+}
 
 export const getStudents = async (req: Request, res: Response): Promise<Response<HttpResponse>> => {
     console.info(`[${new Date().toLocaleDateString()}] Incoming ${req.method}${req.originalUrl} request from ${req.rawHeaders[0]} ${req.rawHeaders[1]}`);
     let connection: any;
     try {
         connection = await pool.getConnection();
-        const result: ResultSet = await pool.query(QUERY.SELECT_STUDENTS);
+        const result: ResultSet = await connection.query(QUERY.SELECT_STUDENTS);
         return res.status(Code.OK)
             .send(new HttpResponse(Code.OK, Status.OK, 'Students fetched successfully', result[0]));
     }
@@ -36,7 +46,7 @@ export const getStudent = async (req: Request, res: Response): Promise<Response<
     let connection: any;
     try {
         connection = await pool.getConnection();
-        const result: ResultSet = await pool.query(QUERY.SELECT_STUDENT_BY_EMAIL, [req.params.email]);
+        const result: ResultSet = await connection.query(QUERY.SELECT_STUDENT_BY_EMAIL, [req.params.email]);
         if ((result[0] as Array<ResultSet>).length > 0) {
             console.log(result[0]);
             return res.status(Code.OK)
@@ -64,30 +74,16 @@ export const createStudent = async (req: Request, res: Response): Promise<Respon
     
     try {
         connection = await pool.getConnection();
-        
-        // Make sure we have the required fields
+
+        student.email = isValidEmail(student.email);
+
         if (!student.email) {
             console.error('Missing required fields:', JSON.stringify(student));
             return res.status(Code.BAD_REQUEST)
                 .send(new HttpResponse(Code.BAD_REQUEST, Status.BAD_REQUEST, 'Email is required'));
         }
-        
-        // Split student_name into first_name and last_name if provided as combined field
-        if (student.student_name && !student.first_name && !student.last_name) {
-            const nameParts = student.student_name.split(' ');
-            student.first_name = nameParts[0] || '';
-            student.last_name = nameParts.slice(1).join(' ') || '';
-        }
-        
-        // Ensure we have at least first_name (even if empty)
-        if (!student.first_name) {
-            student.first_name = '';
-        }
-        
-        // Ensure we have at least last_name (even if empty)
-        if (!student.last_name) {
-            student.last_name = '';
-        }
+
+
         
         try {
             // Check if student already exists with this email
@@ -100,18 +96,17 @@ export const createStudent = async (req: Request, res: Response): Promise<Respon
                 console.log('Student with email already exists:', student.email);
                 // If you want to update instead of insert
                 const existingStudentData = existingStudent[0][0];
+                student.class_code = isValidClassCode(student.class_code) || existingStudentData.class_code;
+
                 
-                // Make sure class_code is string
-                const classCode = student.class_code ? student.class_code.toString() : '';
-                
+
                 try {
                     const result = await connection.query(
                         QUERY.UPDATE_STUDENT,
                         [
-                            student.first_name, 
-                            student.last_name,
-                            student.email, 
-                            classCode, 
+                            student.student_name,
+                            student.email,
+                            student.class_code,
                             existingStudentData.student_id
                         ]
                     );
@@ -128,37 +123,21 @@ export const createStudent = async (req: Request, res: Response): Promise<Respon
                     throw updateError;
                 }
             }
-            
-            // Set a default class_code if not provided
-            if (!student.class_code) {
-                student.class_code = '';
-            } else {
-                // Ensure class_code is a string
-                student.class_code = student.class_code.toString();
-            }
-            
-            // Set a default password if not provided
-            if (!student.password) {
-                student.password = '';  // Or generate a random password
-            }
+
             
             console.log('Executing SQL query with parameters:', [
-                student.first_name,
-                student.last_name, 
+                student.student_name,
                 student.email, 
                 student.class_code,
-                student.password
             ]);
             
             // Execute the query with the correct parameters
             const result = await connection.query(
-                'INSERT INTO students (first_name, last_name, email, class_code, password) VALUES (?, ?, ?, ?, ?)', 
+                'INSERT INTO students (student_name, email, class_code) VALUES (?, ?, ?)',
                 [
-                    student.first_name,
-                    student.last_name, 
+                    student.student_name,
                     student.email, 
                     student.class_code,
-                    student.password
                 ]
             );
             
@@ -204,24 +183,48 @@ export const createStudent = async (req: Request, res: Response): Promise<Respon
 
 export const updateStudent = async (req: Request, res: Response): Promise<Response<HttpResponse>> => {
     console.info(`[${new Date().toLocaleDateString()}] Incoming ${req.method}${req.originalUrl} request from ${req.rawHeaders[0]} ${req.rawHeaders[1]}`);
-    let student: Student = { ...req.body };
     let connection: any;
     try {
         connection = await pool.getConnection();
-        const result: ResultSet = await pool.query(QUERY.SELECT_STUDENT, [req.params.student_id]);
-        if ((result[0] as Array<ResultSet>).length > 0) {
-            const result: ResultSet = await pool.query(QUERY.UPDATE_STUDENT, [...Object.values(student), req.params.student_id]);
-            return res.status(Code.OK)
-                .send(new HttpResponse(Code.OK, Status.OK, 'Student updated', { ...student, id: req.params.student_id }));
-        } else {
+
+        const result: ResultSet = await connection.query(QUERY.SELECT_STUDENT, [req.params.student_id]);
+        if ((result[0] as Array<Student>).length === 0) {
             return res.status(Code.NOT_FOUND)
                 .send(new HttpResponse(Code.NOT_FOUND, Status.NOT_FOUND, 'Student not found'));
         }
+
+        const existingStudent = (result[0] as Array<Student>)[0];
+        const incoming : Student = {...req.body};
+
+        const email = isValidEmail(incoming.email) || existingStudent.email;
+        const class_code = isValidClassCode(incoming.class_code) || existingStudent.class_code;
+
+        const student_name = typeof incoming.student_name === 'string' && incoming.student_name.trim() !== ''
+            ? incoming.student_name.trim()
+            : existingStudent.student_name;
+
+        console.log('Updating student_id:', req.params.student_id);
+        console.log('Existing student email:', existingStudent.email);
+        console.log('Incoming email after validation:', email);
+        await connection.query(
+            QUERY.UPDATE_STUDENT,
+            [student_name, email, class_code, req.params.student_id]
+        );
+
+        return res.status(Code.OK)
+            .send(new HttpResponse(Code.OK, Status.OK, 'Student updated', {
+                student_id: req.params.student_id,
+                student_name,
+                email,
+                class_code,
+                created_at: existingStudent.created_at
+            }));
     } catch (error: unknown) {
         console.error(`[${new Date().toLocaleDateString()}] ${error}`);
         return res.status(Code.INTERNAL_SERVER_ERROR)
             .send(new HttpResponse(Code.INTERNAL_SERVER_ERROR, Status.INTERNAL_SERVER_ERROR, 'An error occurred while updating student'));
-
+    } finally {
+        if (connection) connection.release();
     }
 };
 
@@ -231,9 +234,9 @@ export const deleteStudent = async (req: Request, res: Response): Promise<Respon
     let connection: any;
     try {
         connection = await pool.getConnection();
-        const result: ResultSet = await pool.query(QUERY.SELECT_STUDENT, [req.params.student_id]);
+        const result: ResultSet = await connection.query(QUERY.SELECT_STUDENT, [req.params.student_id]);
         if ((result[0] as Array<ResultSet>).length > 0) {
-            const result: ResultSet = await pool.query(QUERY.DELETE_STUDENT, [req.params.student_id]);
+            const result: ResultSet = await connection.query(QUERY.DELETE_STUDENT, [req.params.student_id]);
             return res.status(Code.OK)
                 .send(new HttpResponse(Code.OK, Status.OK, 'Student deleted',));
         } else {

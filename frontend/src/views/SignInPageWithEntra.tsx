@@ -88,7 +88,7 @@ const SignInPageWithEntra: React.FC = () => {
                                 class_code: null,
                             };
                             const response = await addNewStudent(newStudentData);
-                            if (response.student_id) {
+                            if (response.data.student_id) {
                                 navigate("/student", { replace: true });
                             } else {
                                 alert("Failed to add new student, please try again.");

@@ -11,6 +11,7 @@ import SignInPageWithEntra from './views/SignInPageWithEntra';
 import { useUserContext } from './contexts/userContext';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
+import Students from "./views/Students";
 
 function App() {
   const { user } = useUserContext();
@@ -30,6 +31,7 @@ function App() {
               {user === "student" && <Route path="/student" element={<StudentDashboard />} />}
               <Route path="/studentProject/:id" element={<StudentProjectDetails />} />
               {user === "teacher" && <Route path="/teachers" element={<Teachers />} />}
+                {user === "teacher" && <Route path="/students" element={<Students />} />}
             </Routes>
           </div>
         </div>

@@ -11,8 +11,8 @@ interface StudentsContextType {
     setSignedInStudent: (student: Student | null) => void;
     modifyStudent: (student: UpdatedStudent, studentId: number) => void;
     getStudentByEmail: (email: string) => Promise<Student>;
-    addNewStudent: (student: newStudent) => Promise<Student>;
-};
+    addNewStudent: (student: newStudent) => Promise<{ statusCode: number, data: Student}>;
+}
 
 const StudentsContext = React.createContext<StudentsContextType>({} as StudentsContextType);
 
@@ -132,7 +132,11 @@ const addNewStudent = async (studentData: any) => {
         }
         
         // Return the full response to distinguish between create and update
-        return response.data;
+          return {
+              statusCode: response.status,
+              data: newStudent
+          };
+
       } else {
         console.error('Invalid student data in response:', JSON.stringify(response.data));
         throw new Error('Invalid student data returned from server');
