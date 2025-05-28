@@ -59,10 +59,13 @@ const AddNewProject: React.FC = () => {
                 navigate('/student');
             } else {
                 alert(t('projNotCreated'));
+                return response;
+
             }
         } catch (error) {
             console.error("Failed to add project:", error);
             alert(t('projNotCreated'));
+            return undefined;
         }
     };
 
