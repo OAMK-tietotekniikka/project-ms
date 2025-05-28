@@ -6,22 +6,21 @@ import { Status } from "../enum/status.enum";
 import { HttpResponse } from "../domain/response";
 import { ResultSetHeader, RowDataPacket, FieldPacket, OkPacket } from "mysql2";
 import { QUERY } from "../query/students.query";
-import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
-
+import isEmail from 'validator/lib/isEmail';
+// should be refactored
 
 type ResultSet = [RowDataPacket[] | RowDataPacket[][] | OkPacket | OkPacket[] | ResultSetHeader, FieldPacket[]];
-const cleanClassCode = (classCode?: string): string | null => {
-    if (!classCode) return null;
-    const cleaned = classCode.trim().replace(/[^a-zA-Z0-9]/g, '');
-    return cleaned ? cleaned.toUpperCase() : null;
-};
 
-const cleanEmail = (email?: string): string | null => {
-    if (!email) return null;
-    const cleaned = email.trim().replace(/[^a-zA-Z0-9@._+-]/g, '');
-    return cleaned && cleaned.length > 8 ? cleaned.toLowerCase() : null;
-};
+
+function isValidClassCode(code: any) {
+    const format = /^[A-Za-z]+[0-9]+[A-Za-z]+$/;
+    return (typeof code === "string" && format.test(code.trim())) ? code.trim().toLowerCase() : null;
+}
+
+
+function isValidEmail(email : any) {
+    return (typeof email === "string" && isEmail(email)) ? email.toLowerCase() : "";
+}
 
 export const getStudents = async (req: Request, res: Response): Promise<Response<HttpResponse>> => {
     console.info(`[${new Date().toLocaleDateString()}] Incoming ${req.method}${req.originalUrl} request from ${req.rawHeaders[0]} ${req.rawHeaders[1]}`);
@@ -75,10 +74,8 @@ export const createStudent = async (req: Request, res: Response): Promise<Respon
     
     try {
         connection = await pool.getConnection();
-        
-        // Make sure we have the required fields
-        student.class_code = cleanClassCode(student.class_code);
-        student.email = cleanEmail(student.email);
+
+        student.email = isValidEmail(student.email);
 
         if (!student.email) {
             console.error('Missing required fields:', JSON.stringify(student));
@@ -99,6 +96,8 @@ export const createStudent = async (req: Request, res: Response): Promise<Respon
                 console.log('Student with email already exists:', student.email);
                 // If you want to update instead of insert
                 const existingStudentData = existingStudent[0][0];
+                student.class_code = isValidClassCode(student.class_code) || existingStudentData.class_code;
+
                 
 
                 try {
@@ -106,7 +105,7 @@ export const createStudent = async (req: Request, res: Response): Promise<Respon
                         QUERY.UPDATE_STUDENT,
                         [
                             student.student_name,
-                            student.email, 
+                            student.email,
                             student.class_code,
                             existingStudentData.student_id
                         ]
@@ -184,24 +183,48 @@ export const createStudent = async (req: Request, res: Response): Promise<Respon
 
 export const updateStudent = async (req: Request, res: Response): Promise<Response<HttpResponse>> => {
     console.info(`[${new Date().toLocaleDateString()}] Incoming ${req.method}${req.originalUrl} request from ${req.rawHeaders[0]} ${req.rawHeaders[1]}`);
-    let student: Student = { ...req.body };
     let connection: any;
     try {
         connection = await pool.getConnection();
+
         const result: ResultSet = await connection.query(QUERY.SELECT_STUDENT, [req.params.student_id]);
-        if ((result[0] as Array<ResultSet>).length > 0) {
-            const result: ResultSet = await connection.query(QUERY.UPDATE_STUDENT, [...Object.values(student), req.params.student_id]);
-            return res.status(Code.OK)
-                .send(new HttpResponse(Code.OK, Status.OK, 'Student updated', { ...student, id: req.params.student_id }));
-        } else {
+        if ((result[0] as Array<Student>).length === 0) {
             return res.status(Code.NOT_FOUND)
                 .send(new HttpResponse(Code.NOT_FOUND, Status.NOT_FOUND, 'Student not found'));
         }
+
+        const existingStudent = (result[0] as Array<Student>)[0];
+        const incoming : Student = {...req.body};
+
+        const email = isValidEmail(incoming.email) || existingStudent.email;
+        const class_code = isValidClassCode(incoming.class_code) || existingStudent.class_code;
+
+        const student_name = typeof incoming.student_name === 'string' && incoming.student_name.trim() !== ''
+            ? incoming.student_name.trim()
+            : existingStudent.student_name;
+
+        console.log('Updating student_id:', req.params.student_id);
+        console.log('Existing student email:', existingStudent.email);
+        console.log('Incoming email after validation:', email);
+        await connection.query(
+            QUERY.UPDATE_STUDENT,
+            [student_name, email, class_code, req.params.student_id]
+        );
+
+        return res.status(Code.OK)
+            .send(new HttpResponse(Code.OK, Status.OK, 'Student updated', {
+                student_id: req.params.student_id,
+                student_name,
+                email,
+                class_code,
+                created_at: existingStudent.created_at
+            }));
     } catch (error: unknown) {
         console.error(`[${new Date().toLocaleDateString()}] ${error}`);
         return res.status(Code.INTERNAL_SERVER_ERROR)
             .send(new HttpResponse(Code.INTERNAL_SERVER_ERROR, Status.INTERNAL_SERVER_ERROR, 'An error occurred while updating student'));
-
+    } finally {
+        if (connection) connection.release();
     }
 };
 
