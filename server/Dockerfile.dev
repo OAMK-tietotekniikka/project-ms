@@ -1,0 +1,28 @@
+# Development Dockerfile for Server
+FROM node:lts-alpine
+
+# Install git and development tools
+RUN apk add --no-cache git
+
+# Set the working directory
+WORKDIR /app/server
+
+# Copy package files first (for better Docker layer caching)
+COPY package*.json ./
+
+# Install dependencies (including dev dependencies)
+RUN npm install
+
+# Copy the rest of the application code
+COPY . .
+
+# Expose port 8080
+EXPOSE 8080
+
+# Set environment variables
+ENV NODE_ENV=development
+ENV SERVER_PORT=8080
+
+# Use nodemon for development with hot reload
+# Make sure nodemon is installed in your package.json dev dependencies
+CMD ["npm", "run", "start:dev"]

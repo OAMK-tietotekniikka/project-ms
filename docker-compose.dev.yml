@@ -1,0 +1,79 @@
+services:
+  mysqldb:
+    image: mysql:lts
+    container_name: mysql_dev_db
+    command: --default_authentication_plugin=caching_sha2_password
+    restart: unless-stopped
+    volumes:
+      - ./dbinit/init.sql:/docker-entrypoint-initdb.d/0_init.sql
+      - mysql_dev_data:/var/lib/mysql  # Use named volume instead of host path
+    ports:
+      - 3307:3306
+    environment:
+      MYSQL_DATABASE: studentsdb
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: pwd@123
+      MYSQL_ROOT_PASSWORD: pwd@123
+      SERVICE_TAGS: development
+      SERVICE_NAME: mysqldb
+    networks:
+      - internalnet
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 10
+
+  pm_server_dev:
+    container_name: pm_server_dev
+    build:
+      context: ./server
+      dockerfile: Dockerfile.dev  # Use development Dockerfile
+    image: pm_server_dev:dev
+    ports:
+      - 8081:8080
+    depends_on:
+      mysqldb:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysqldb
+      DB_PASSWORD: 'pwd@123'
+      DB_USER: admin
+      DB_NAME: studentsdb
+      DB_PORT: 3306
+      DB_CONNECTION_LIMIT: 10
+      NODE_ENV: development
+      SERVICE_TAGS: development
+      SERVICE_NAME: pm_server_devservice
+    volumes:
+      # Mount source code for hot reload
+      - ./server:/app/server
+      - /app/server/node_modules  # Prevent overwriting node_modules
+    networks:
+      - internalnet
+
+  pm_frontend_dev:
+    container_name: pm_frontend_dev
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev  # Use development Dockerfile
+    image: pm_frontend_dev:dev
+    ports:
+      - 5000:5000
+    depends_on:
+      - pm_server_dev
+    environment:
+      VITE_APP_SERVER_URL: localhost:8081
+      NODE_ENV: development
+    volumes:
+      # Mount source code for hot reload
+      - ./frontend:/app/frontend
+      - /app/frontend/node_modules  # Prevent overwriting node_modules
+    networks:
+      - internalnet
+
+networks:
+  internalnet:
+    driver: bridge
+
+volumes:
+  mysql_dev_data:

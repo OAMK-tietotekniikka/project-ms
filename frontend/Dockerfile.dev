@@ -1,0 +1,26 @@
+# Development Dockerfile for Frontend
+FROM node:lts-alpine
+
+# Set the working directory
+WORKDIR /app/frontend
+
+# Copy package files first (for better Docker layer caching)
+COPY package*.json ./
+
+# Install dependencies (including dev dependencies)
+RUN npm install
+
+# Install TypeScript globally for development
+RUN npm install -g typescript
+
+# Copy the rest of the application code
+COPY . .
+
+# Expose port 5000
+EXPOSE 5000
+
+# Set environment variables
+ENV NODE_ENV=development
+
+# Use Vite dev server for hot reload
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5000"]
