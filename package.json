@@ -1,0 +1,47 @@
+{
+  "name": "projectsms",
+  "version": "1.0.0",
+  "description": "Project management tool",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OAMK-tietotekniikka/ProjectsMS.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/OAMK-tietotekniikka/ProjectsMS/issues"
+  },
+  "workspaces": [
+    "frontend",
+    "server"
+  ],
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "scripts": {
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --apply .",
+    "format": "biome format .",
+    "format:fix": "biome format --write .",
+    "check": "biome check .",
+    "check:fix": "biome check --apply .",
+    "type-check": "npm run type-check --workspaces",
+    "clean": "npm run clean --workspaces && rm -rf node_modules",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,md}": [
+      "biome check --apply"
+    ]
+  },
+  "homepage": "https://github.com/OAMK-tietotekniikka/ProjectsMS#readme",
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.0"
+  }
+}
