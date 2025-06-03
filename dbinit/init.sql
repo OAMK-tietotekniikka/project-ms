@@ -54,7 +54,7 @@ PRIMARY KEY (company_id)
 -- -----------------------------------------------------
 CREATE TABLE resources
 (resource_id  INT UNSIGNED NOT NULL AUTO_INCREMENT,
-teacher_id   INT UNSIGNED DEFAULT NULL,
+teacher_id INT UNSIGNED DEFAULT NULL,
 total_resources INT DEFAULT 0,
 used_resources INT DEFAULT 0,
 study_year   VARCHAR(25) DEFAULT NULL,
@@ -83,11 +83,11 @@ CREATE TABLE company_teacher (
     teacher_id INT UNSIGNED NOT NULL,
     PRIMARY KEY (company_id, teacher_id)
 );
--------------------------------------------------------
+-- -------------------------------------------------------
 -- Table `projects`
 -- -----------------------------------------------------
 
-CREATE TABLE  projects
+CREATE TABLE projects
 (
 project_id      INT UNSIGNED NOT NULL AUTO_INCREMENT,
 project_name    VARCHAR(255) DEFAULT NULL,
@@ -175,7 +175,7 @@ INSERT INTO resources (teacher_id, total_resources, used_resources, study_year)
 VALUES (3, 5, 5, '2023-2024');
 
 INSERT INTO resources (teacher_id, total_resources, used_resources, study_year)
-VALUES (1, 5, 0, '2023-2024'); 
+VALUES (1, 5, 0, '2023-2024');
 
 -- Insert student_project data
 
