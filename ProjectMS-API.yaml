@@ -314,6 +314,7 @@ paths:
                     httpStatus: CREATED
                     message: New project created successfully
                     data:
+                      student_id: 1
                       project_id: 1
                       project_name: My project
                       project_desc: Project description
@@ -1585,12 +1586,15 @@ components:
         id: bm53o54ir6bqv
       type: object
       required:
+        - student_id
         - project_name
         - project_desc
         - company_id
         - project_status
         - start_date
       properties:
+        student_id:
+          type: number
         project_name:
           type: string
         project_desc:
