@@ -29,7 +29,7 @@
 		"prepare": "husky"
 	},
 	"lint-staged": {
-		"*.{js,jsx,ts,tsx,json,md}": ["biome check --write"]
+		"*.{js,jsx,ts,tsx,md}": ["biome check --write"]
 	},
 	"homepage": "https://github.com/OAMK-tietotekniikka/ProjectsMS#readme",
 	"devDependencies": {
