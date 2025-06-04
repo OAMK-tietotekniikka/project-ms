@@ -1,296 +1,477 @@
-import { Request, Response } from 'express';
-import { Project } from '../interface/project';
-import { StudentProject } from '../interface/studentProject';
+import { type Request, type Response, response } from "express";
+import type {
+	FieldPacket,
+	OkPacket,
+	ResultSetHeader,
+	RowDataPacket,
+} from "mysql2";
+import type { PoolConnection } from "mysql2/promise";
 import pool from "../config/mysql.config";
-import { QUERY } from '../query/projects.query';
-import { R_QUERY } from '../query/resources.query';
-import { Code } from '../enum/code.enum';
-import { Status } from '../enum/status.enum';
-import { HttpResponse } from '../domain/response';
-import { FieldPacket, OkPacket, ResultSetHeader, RowDataPacket } from 'mysql2';
-import { getStudyYear, formatDate } from '../utils/dateUtils';
-import exp from 'constants';
-import e from 'cors';
+import { responseHelper } from "../domain/newResponse";
+import type { HttpResponse } from "../domain/response";
+import type { StudentProject } from "../interface/studentProject";
+import { QUERY } from "../query/projects.query";
+import { R_QUERY } from "../query/resources.query";
+import { formatDate, getStudyYear } from "../utils/dateUtils";
+import { logError } from "../utils/logError";
+import { logRequests } from "../utils/logRequests";
+import { allocateTeacher } from "./resources.controller";
 
-type ResultSet = [RowDataPacket[] | RowDataPacket[][] | OkPacket | OkPacket[] | ResultSetHeader, FieldPacket[]];
+type ResultSet = [
+	RowDataPacket[] | RowDataPacket[][] | OkPacket | OkPacket[] | ResultSetHeader,
+	FieldPacket[],
+];
 
-// const formatDate = (date: Date): string => {
-//     const year = date.getFullYear();
-//     const month = String(date.getMonth() + 1).padStart(2, '0');
-//     const day = String(date.getDate()).padStart(2, '0');
-//     return `${year}-${month}-${day}`;
-// };
-
-export const getProjects = async (req: Request, res: Response): Promise<Response<HttpResponse>> => {
-    console.info(`[${new Date().toLocaleDateString()}] Incoming ${req.method}${req.originalUrl} request from ${req.rawHeaders[1]}`);
-    let connection: any;
-    try {
-        connection = await pool.getConnection();
-        const result: ResultSet = await pool.query(QUERY.SELECT_PROJECTS);
-        return res.status(Code.OK)
-            .send(new HttpResponse(Code.OK, Status.OK, 'Projects fetched successfully', result[0]));
-    } catch (error: unknown) {
-        console.error(`[${new Date().toLocaleString()}] ${error}`);
-        return res.status(Code.INTERNAL_SERVER_ERROR)
-            .send(new HttpResponse(Code.INTERNAL_SERVER_ERROR, Status.INTERNAL_SERVER_ERROR, 'An error occurred while fetching projects'));
-    } finally {
-        if (connection) connection.release();
-    }
+export const getProjects = async (
+	req: Request,
+	res: Response,
+): Promise<Response<HttpResponse>> => {
+	logRequests(req);
+	let connection: PoolConnection | null = null;
+	try {
+		connection = await pool.getConnection();
+		const [projects] = await connection.query<RowDataPacket[]>(
+			QUERY.SELECT_PROJECTS,
+		);
+		return responseHelper.ok(res, projects);
+	} catch (error: unknown) {
+		logError("getProjects", error);
+		return responseHelper.internalServerError(res);
+	} finally {
+		if (connection) connection.release();
+	}
 };
 
+export const createProject = async (
+	req: Request,
+	res: Response,
+): Promise<Response> => {
+	logRequests(req);
+	let {
+		student_id,
+		project_name,
+		project_desc,
+		company_id,
+		project_status,
+		project_url,
+		start_date,
+		end_date,
+	} = { ...req.body };
+	let connection: PoolConnection | null = null;
+	start_date = new Date(formatDate(new Date(start_date)));
+	end_date = new Date(formatDate(new Date(end_date)));
 
+	try {
+		connection = await pool.getConnection();
 
-// Update createProject function
+		await connection.beginTransaction();
+		const studyYear = getStudyYear(start_date);
+		const [student] = await pool.query<RowDataPacket[]>(
+			"SELECT student_id FROM students WHERE student_id = ? LIMIT 1",
+			student_id,
+		);
+		if (student.length === 0) {
+			await connection.rollback();
+			return responseHelper.badRequest(res);
+		}
 
-export const createProject = async (req: Request, res: Response): Promise<Response<HttpResponse>> => {
-    console.info(`[${new Date().toLocaleString()}] Incoming ${req.method}${req.originalUrl} Request from ${req.rawHeaders[1]}`);
-    let project: Project = { ...req.body };
-    let connection: any;
-    project.start_date = new Date(formatDate(new Date(project.start_date)));
-    project.end_date = new Date(formatDate(new Date(project.end_date)));
+		let teacher_id: number | null = await allocateTeacher(
+			company_id,
+			studyYear,
+			student_id,
+			connection,
+		);
 
-    try {
-        connection = await pool.getConnection();
+		if (teacher_id === 0) {
+			teacher_id = null;
+		}
 
-        // Create the project
-        const result: ResultSet = await pool.query(QUERY.CREATE_PROJECT, Object.values(project));
-        project = { project_id: (result[0] as ResultSetHeader).insertId, ...req.body };
+		const [project] = await connection.query<ResultSetHeader>(
+			QUERY.CREATE_PROJECT,
+			[
+				project_name,
+				project_desc,
+				teacher_id,
+				company_id,
+				project_status,
+				project_url,
+				start_date,
+				end_date,
+			],
+		);
+		await connection.query(QUERY.CREATE_STUDENT_PROJECT, [
+			student_id,
+			project.insertId,
+			100,
+		]);
+		console.log(teacher_id, project.insertId);
 
-        // If a teacher is assigned, increment their resource usage
-        if (project.teacher_id) {
-            const studyYear = getStudyYear(new Date(project.start_date));
+		// If a teacher is assigned, increment their resource usage
+		if (teacher_id) {
+			// not null
 
-            // Check if the teacher has resources for this year
-            const [resources] = await connection.query(
-                `SELECT * FROM resources
+			// Check if the teacher has resources for this year
+			const [resources] = await connection.query<RowDataPacket[]>(
+				`SELECT * FROM resources
                  WHERE teacher_id = ? AND study_year = ?`,
-                [project.teacher_id, studyYear]
-            );
+				[teacher_id, studyYear],
+			);
 
-            // Only increment if resources exist and haven't reached the limit
-            if (resources && resources.length > 0 &&
-                resources[0].used_resources < resources[0].total_resources) {
-                await connection.query(R_QUERY.INCREMENT_RESOURCE_USAGE,
-                    [project.teacher_id, studyYear]
-                );
-            }
-        }
-
-        return res.status(Code.CREATED)
-            .send(new HttpResponse(Code.CREATED, Status.CREATED, 'Project created successfully', project));
-    } catch (error: unknown) {
-        console.error(`[${new Date().toLocaleString()}] ${error}`);
-        return res.status(Code.INTERNAL_SERVER_ERROR)
-            .send(new HttpResponse(Code.INTERNAL_SERVER_ERROR, Status.INTERNAL_SERVER_ERROR, 'An error occurred while creating project'));
-    } finally {
-        if (connection) connection.release();
-    }
+			// Only increment if resources exist and haven't reached the limit
+			if (
+				resources &&
+				resources.length > 0 &&
+				resources[0].used_resources < resources[0].total_resources
+			) {
+				await connection.query(R_QUERY.INCREMENT_RESOURCE_USAGE, [
+					teacher_id,
+					studyYear,
+				]);
+			}
+		}
+		await connection.commit();
+		return responseHelper.created(res, project);
+	} catch (error: unknown) {
+		if (connection) {
+			try {
+				await connection.rollback();
+			} catch (rollbackError: unknown) {
+				logError("createProject", rollbackError);
+			}
+		}
+		logError("createProject", error);
+		return responseHelper.internalServerError(res);
+	} finally {
+		if (connection) connection.release();
+	}
 };
 
+export const updateProjectTeacher = async (
+	currentTeacherId: number,
+	newTeacherId: number,
+	studyYear: string,
+	connection: PoolConnection | null = null,
+): Promise<boolean> => {
+	if (!connection) {
+		return false;
+	}
+	try {
+		// Check if new teacher has available resources
+		const [resources] = await connection.query<RowDataPacket[]>(
+			`SELECT used_resources, total_resources FROM resources
+             WHERE teacher_id = ? AND study_year = ?`,
+			[newTeacherId, studyYear],
+		);
+
+		const hasAvailableResources =
+			resources &&
+			resources.length > 0 &&
+			resources[0] &&
+			resources[0].used_resources < resources[0].total_resources;
+
+		if (!hasAvailableResources) return false;
+
+		// Update resource counts
+		if (currentTeacherId) {
+			await connection.query<ResultSetHeader>(
+				R_QUERY.DECREMENT_RESOURCE_USAGE,
+				[currentTeacherId, studyYear],
+			);
+		}
+		await connection.query<ResultSetHeader>(R_QUERY.INCREMENT_RESOURCE_USAGE, [
+			newTeacherId,
+			studyYear,
+		]);
+
+		return true;
+	} catch (error) {
+		logError("updateProjectTeacher", error);
+		return false;
+	}
+};
 
 // Update updateProject function to handle teacher changes
-export const updateProject = async (req: Request, res: Response): Promise<Response<HttpResponse>> => {
-    console.info(`[${new Date().toLocaleString()}] Incoming ${req.method}${req.originalUrl} Request from ${req.rawHeaders[1]}`);
-    let project: Project = { ...req.body };
-    project.start_date = new Date(formatDate(new Date(project.start_date)));
-    project.end_date = new Date(formatDate(new Date(project.end_date)));
-    let connection: any;
+export const updateProject = async (
+	req: Request,
+	res: Response,
+): Promise<Response<HttpResponse>> => {
+	logRequests(req);
 
-    try {
-        connection = await pool.getConnection();
+	const {
+		project_id,
+		project_name,
+		project_desc,
+		teacher_id,
+		company_id,
+		project_status,
+		project_url,
+		start_date: rawStartDate,
+		end_date: rawEndDate,
+	} = req.body;
 
-        // Get the original project to check for teacher ID changes
-        const [originalProject] = await connection.query(QUERY.SELECT_PROJECT, [req.params.project_id]);
+	const start_date = new Date(formatDate(new Date(rawStartDate)));
+	const end_date = new Date(formatDate(new Date(rawEndDate)));
 
-        if (!originalProject || originalProject.length === 0) {
-            return res.status(Code.NOT_FOUND)
-                .send(new HttpResponse(Code.NOT_FOUND, Status.NOT_FOUND, 'Project not found'));
-        }
+	let connection: PoolConnection | null = null;
 
-        const originalTeacherId = originalProject[0].teacher_id;
-        const newTeacherId = project.teacher_id;
+	try {
+		connection = await pool.getConnection();
+		await connection.beginTransaction();
 
-        // Update the project
-        await connection.query(QUERY.UPDATE_PROJECT, [...Object.values(project), req.params.project_id]);
+		// Get current project data
+		const [originalProject] = await connection.query<RowDataPacket[]>(
+			QUERY.SELECT_PROJECT,
+			[project_id],
+		);
 
-        // If teacher has changed, update resources
-        if (originalTeacherId !== newTeacherId) {
-            const studyYear = getStudyYear(new Date(project.start_date));
+		if (!originalProject?.length) {
+			await connection.rollback();
+			return responseHelper.notFound(res);
+		}
 
-            // Decrement previous teacher's resources
-            if (originalTeacherId) {
-                await connection.query(R_QUERY.DECREMENT_RESOURCE_USAGE, [originalTeacherId, studyYear]);
-            }
+		const currentTeacherId = originalProject[0].teacher_id;
+		let finalTeacherId = currentTeacherId;
 
-            // Increment new teacher's resources
-            if (newTeacherId) {
-                // Check if the teacher has resources for this year
-                const [resources] = await connection.query(
-                    `SELECT * FROM resources 
-                     WHERE teacher_id = ? AND study_year = ?`,
-                    [newTeacherId, studyYear]
-                );
+		// Handle teacher change if needed
+		if (currentTeacherId !== teacher_id && teacher_id) {
+			const studyYear = getStudyYear(new Date(start_date));
+			const teacherChanged = await updateProjectTeacher(
+				currentTeacherId,
+				teacher_id,
+				studyYear,
+				connection,
+			);
 
-                // Only increment if resources exist and haven't reached the limit
-                if (resources && resources.length > 0 &&
-                    resources[0].used_resources < resources[0].total_resources) {
-                    await connection.query(R_QUERY.INCREMENT_RESOURCE_USAGE, [newTeacherId, studyYear]);
-                }
-            }
-        }
+			if (teacherChanged) {
+				finalTeacherId = teacher_id;
+			}
+		}
 
-        project = { project_id: parseInt(req.params.project_id), ...req.body };
-        return res.status(Code.OK)
-            .send(new HttpResponse(Code.OK, Status.OK, 'Project updated successfully', project));
-    } catch (error: unknown) {
-        console.error(`[${new Date().toLocaleString()}] ${error}`);
-        return res.status(Code.INTERNAL_SERVER_ERROR)
-            .send(new HttpResponse(Code.INTERNAL_SERVER_ERROR, Status.INTERNAL_SERVER_ERROR, 'An error occurred while updating project'));
-    } finally {
-        if (connection) connection.release();
-    }
+		// Update project
+		await connection.query(QUERY.UPDATE_PROJECT, [
+			project_name,
+			project_desc,
+			finalTeacherId,
+			company_id,
+			project_status,
+			project_url,
+			start_date,
+			end_date,
+			project_id,
+		]);
+
+		await connection.commit();
+
+		return responseHelper.ok(res, {
+			project_id,
+			project_name,
+			project_desc,
+			teacher_id: finalTeacherId,
+			company_id,
+			project_status,
+			project_url,
+			start_date,
+			end_date,
+		});
+	} catch (error) {
+		if (connection) {
+			try {
+				await connection.rollback();
+			} catch (rollbackError) {
+				logError("updateProject rollback", rollbackError);
+			}
+		}
+		logError("updateProject", error);
+		return responseHelper.internalServerError(res);
+	} finally {
+		connection?.release();
+	}
 };
 
 // Update  deleteProject function to decrement resources
-export const deleteProject = async (req: Request, res: Response): Promise<Response<HttpResponse>> => {
-    console.info(`[${new Date().toLocaleString()}] Incoming ${req.method}${req.originalUrl} Request from ${req.rawHeaders[1]}`);
-    let connection: any;
-    try {
-        connection = await pool.getConnection();
+export const deleteProject = async (
+	req: Request,
+	res: Response,
+): Promise<Response<HttpResponse>> => {
+	logRequests(req);
+	let connection: PoolConnection | null = null;
+	try {
+		connection = await pool.getConnection();
 
-        // Get the project details before deletion to find the teacher
-        const [project] = await connection.query(QUERY.SELECT_PROJECT, [req.params.project_id]);
+		// Get the project details before deletion to find the teacher
+		const [project] = await connection.query<RowDataPacket[]>(
+			QUERY.SELECT_PROJECT,
+			[req.params.project_id],
+		);
 
-        if (!project || project.length === 0) {
-            return res.status(Code.NOT_FOUND)
-                .send(new HttpResponse(Code.NOT_FOUND, Status.NOT_FOUND, 'Project not found'));
-        }
+		if (!project || project.length === 0) {
+			return responseHelper.notFound(res);
+		}
 
-        // Extract teacher ID and start date before deleting
-        const teacherId = project[0].teacher_id;
-        const startDate = new Date(project[0].start_date);
+		// Extract teacher ID and start date before deleting
+		const teacherId = project[0].teacher_id;
+		const startDate = new Date(project[0].start_date);
 
-        // Delete the project and related data
-        const result: ResultSet = await pool.query(QUERY.DELETE_PROJECT_BY_ID, [req.params.project_id]);
-        const result2: ResultSet = await pool.query(QUERY.DELETE_STUDENT_PROJECT_BY_PROJECT_ID, [req.params.project_id]);
-        const result3: ResultSet = await pool.query(QUERY.DELETE_PROJECT_NOTES_BY_PROJECT_ID, [req.params.project_id]);
+		// Delete the project and related data
+		const result: ResultSet = await connection.query(
+			QUERY.DELETE_PROJECT_BY_ID,
+			[req.params.project_id],
+		);
+		const result2: ResultSet = await connection.query(
+			QUERY.DELETE_STUDENT_PROJECT_BY_PROJECT_ID,
+			[req.params.project_id],
+		);
+		const result3: ResultSet = await connection.query(
+			QUERY.DELETE_PROJECT_NOTES_BY_PROJECT_ID,
+			[req.params.project_id],
+		);
 
-        // Decrement teacher resources if applicable
-        if (teacherId) {
-            const studyYear = getStudyYear(startDate);
-            await connection.query(R_QUERY.DECREMENT_RESOURCE_USAGE, [teacherId, studyYear]);
-        }
+		// Decrement teacher resources if applicable
+		if (teacherId) {
+			const studyYear = getStudyYear(startDate);
+			await connection.query(R_QUERY.DECREMENT_RESOURCE_USAGE, [
+				teacherId,
+				studyYear,
+			]);
+		}
 
-        return res.status(Code.OK)
-            .send(new HttpResponse(Code.OK, Status.OK, 'Project deleted successfully'));
-    } catch (error: unknown) {
-        console.error(`[${new Date().toLocaleString()}] ${error}`);
-        return res.status(Code.INTERNAL_SERVER_ERROR)
-            .send(new HttpResponse(Code.INTERNAL_SERVER_ERROR, Status.INTERNAL_SERVER_ERROR, 'An error occurred while deleting project'));
-    } finally {
-        if (connection) connection.release();
-    }
+		return responseHelper.noContent(res);
+	} catch (error: unknown) {
+		logError("deleteProject", error);
+		return responseHelper.internalServerError(res);
+	} finally {
+		if (connection) connection.release();
+	}
 };
 
-export const getStudentProjects = async (req: Request, res: Response): Promise<Response<HttpResponse>> => {
-    console.info(`[${new Date().toLocaleString()}] Incoming ${req.method}${req.originalUrl} Request from ${req.rawHeaders[1]}`);
-    let connection: any;
-    try {
-        connection = await pool.getConnection();
-        const result: ResultSet = await pool.query(QUERY.SELECT_STUDENT_PROJECTS);
-        if ((result[0] as Array<ResultSet>).length === 0) {
-            return res.status(Code.NOT_FOUND)
-                .send(new HttpResponse(Code.NOT_FOUND, Status.NOT_FOUND, 'No student_projects found'));
-        } else
-            return res.status(Code.OK)
-                .send(new HttpResponse(Code.OK, Status.OK, 'Student projects fetched successfully', result[0]));
-    } catch (error: unknown) {
-        console.error(`[${new Date().toLocaleString()}] ${error}`);
-        return res.status(Code.INTERNAL_SERVER_ERROR)
-            .send(new HttpResponse(Code.INTERNAL_SERVER_ERROR, Status.INTERNAL_SERVER_ERROR, 'An error occurred while fetching student projects'));
-    } finally {
-        if (connection) connection.release();
-    }
+export const getStudentProjects = async (
+	req: Request,
+	res: Response,
+): Promise<Response> => {
+	logRequests(req);
+	const id = req.params.student_id;
+	let connection: PoolConnection | null = null;
+	try {
+		connection = await pool.getConnection();
+		const [projects] = await pool.query<RowDataPacket[]>(
+			QUERY.SELECT_STUDENT_PROJECTS_BY_STUDENT_ID,
+			id,
+		); // critical, should be SELECT_STUDENT_PROJECTS_BY_STUDENT_ID
+		if (projects.length === 0) {
+			return responseHelper.notFound(res);
+		}
+		return responseHelper.ok(res, projects);
+	} catch (error: unknown) {
+		logError("getStudentProjects", error);
+		return responseHelper.internalServerError(res);
+	} finally {
+		if (connection) connection.release();
+	}
 };
 
-export const createStudentProject = async (req: Request, res: Response): Promise<Response<HttpResponse>> => {
-    console.info(`[${new Date().toLocaleString()}] Incoming ${req.method}${req.originalUrl} Request from ${req.rawHeaders[1]}`);
-    let studentProject: StudentProject = { ...req.body };
-    let projectNumber: number;
-    let connection: any;
-    try {
-        connection = await pool.getConnection();
-        const previousProjects: ResultSet = await pool.query(QUERY.SELECT_STUDENT_PROJECTS_BY_STUDENT_ID, [studentProject.student_id]);
-        if ((previousProjects[0] as Array<ResultSet>).length === 0) {
-            projectNumber = 1;
-        } else {
-            projectNumber = (previousProjects[0] as Array<ResultSet>).length + 1;
-        }
-        studentProject.project_number = projectNumber;
-        const result: ResultSet = await pool.query(QUERY.CREATE_STUDENT_PROJECT, Object.values(studentProject));
-        return res.status(Code.CREATED)
-            .send(new HttpResponse(Code.CREATED, Status.CREATED, 'Student project created successfully', studentProject));
-    } catch (error: unknown) {
-        console.error(`[${new Date().toLocaleString()}] ${error}`);
-        return res.status(Code.INTERNAL_SERVER_ERROR)
-            .send(new HttpResponse(Code.INTERNAL_SERVER_ERROR, Status.INTERNAL_SERVER_ERROR, 'An error occurred while creating student project'));
-    } finally {
-        if (connection) connection.release();
-    }
+export const createStudentProject = async (
+	req: Request,
+	res: Response,
+): Promise<Response<HttpResponse>> => {
+	logRequests(req);
+	const studentProject: StudentProject = { ...req.body };
+	let projectNumber: number;
+	// TBD validation
+	let connection: PoolConnection | null = null;
+	try {
+		connection = await pool.getConnection();
+		const [previousProjects] = await connection.query<RowDataPacket[]>(
+			QUERY.SELECT_STUDENT_PROJECTS_BY_STUDENT_ID,
+			[studentProject.student_id],
+		);
+		if (previousProjects.length === 0) {
+			projectNumber = 1;
+		} else {
+			projectNumber = previousProjects.length + 1;
+		}
+		//studentProject.project_number = projectNumber;
+		const result: ResultSet = await connection.query(
+			QUERY.CREATE_STUDENT_PROJECT,
+			Object.values(studentProject),
+		);
+		return responseHelper.created(res, studentProject);
+	} catch (error: unknown) {
+		logError("createStudentProject", error);
+		return responseHelper.internalServerError(res);
+	} finally {
+		if (connection) connection.release();
+	}
 };
 
-export const addProjectNote = async (req: Request, res: Response): Promise<Response<HttpResponse>> => {
-    console.info(`[${new Date().toLocaleString()}] Incoming ${req.method}${req.originalUrl} Request from ${req.rawHeaders[1]}`);
-    let connection: any;
-    try {
-        connection = await pool.getConnection();
-        const result: ResultSet = await pool.query(QUERY.INSERT_PROJECT_NOTE, [req.params.project_id, req.body.note, req.body.document_path, req.body.created_by]);
-        return res.status(Code.CREATED)
-            .send(new HttpResponse(Code.CREATED, Status.CREATED, 'Project note added successfully', req.body));
-    } catch (error: unknown) {
-        console.error(`[${new Date().toLocaleString()}] ${error}`);
-        return res.status(Code.INTERNAL_SERVER_ERROR)
-            .send(new HttpResponse(Code.INTERNAL_SERVER_ERROR, Status.INTERNAL_SERVER_ERROR, 'An error occurred while adding project note'));
-    } finally {
-        if (connection) connection.release();
-    }
+export const addProjectNote = async (
+	req: Request,
+	res: Response,
+): Promise<Response<HttpResponse>> => {
+	logRequests(req);
+	let connection: PoolConnection | null = null;
+	try {
+		connection = await pool.getConnection();
+		const note_params = [
+			req.params.project_id,
+			req.body.note,
+			req.body.document_path,
+			req.body.created_by,
+		];
+		const result: ResultSet = await connection.query<ResultSetHeader>(
+			QUERY.INSERT_PROJECT_NOTE,
+			note_params,
+		);
+		return responseHelper.created(res, req.body); // TBD note parsing
+	} catch (error: unknown) {
+		logError("addProjectNote", error);
+		return responseHelper.internalServerError(res);
+	} finally {
+		if (connection) connection.release();
+	}
 };
 
-export const getProjectNotes = async (req: Request, res: Response): Promise<Response<HttpResponse>> => {
-    console.info(`[${new Date().toLocaleString()}] Incoming ${req.method}${req.originalUrl} Request from ${req.rawHeaders[1]}`);
-    let connection: any;
-    try {
-        connection = await pool.getConnection();
-        const result: ResultSet = await pool.query(QUERY.SELECT_PROJECT_NOTES, [req.params.project_id]);
-        if ((result[0] as Array<ResultSet>).length === 0) {
-            return res.status(Code.NOT_FOUND)
-                .send(new HttpResponse(Code.NOT_FOUND, Status.NOT_FOUND, 'No notes found'));
-        } else
-            return res.status(Code.OK)
-                .send(new HttpResponse(Code.OK, Status.OK, 'Notes fetched successfully', result[0]));
-    } catch (error: unknown) {
-        console.error(`[${new Date().toLocaleString()}] ${error}`);
-        return res.status(Code.INTERNAL_SERVER_ERROR)
-            .send(new HttpResponse(Code.INTERNAL_SERVER_ERROR, Status.INTERNAL_SERVER_ERROR, 'An error occurred while fetching notes'));
-    } finally {
-        if (connection) connection.release();
-    }
+export const getProjectNotes = async (
+	req: Request,
+	res: Response,
+): Promise<Response<HttpResponse>> => {
+	logRequests(req);
+	let connection: PoolConnection | null = null;
+	try {
+		connection = await pool.getConnection();
+		const [notes] = await connection.query<RowDataPacket[]>(
+			QUERY.SELECT_PROJECT_NOTES,
+			[req.params.project_id],
+		);
+		if (notes.length === 0) {
+			return responseHelper.notFound(res);
+		}
+		return responseHelper.ok(res, notes);
+	} catch (error: unknown) {
+		logError("getProjectNotes", error);
+		return responseHelper.internalServerError(res);
+	} finally {
+		if (connection) connection.release();
+	}
 };
 
-export const deleteProjectNote = async (req: Request, res: Response): Promise<Response<HttpResponse>> => {
-    console.info(`[${new Date().toLocaleString()}] Incoming ${req.method}${req.originalUrl} Request from ${req.rawHeaders[1]}`);
-    let connection: any;
-    const { note_id, project_id } = req.params;
-    try {
-        connection = await pool.getConnection();
-        const result: ResultSet = await pool.query(QUERY.DELETE_PROJECT_NOTE, [note_id, project_id]);
-        return res.status(Code.OK)
-            .send(new HttpResponse(Code.OK, Status.OK, 'Note deleted successfully'));
-    } catch (error: unknown) {
-        console.error(`[${new Date().toLocaleString()}] ${error}`);
-        return res.status(Code.INTERNAL_SERVER_ERROR)
-            .send(new HttpResponse(Code.INTERNAL_SERVER_ERROR, Status.INTERNAL_SERVER_ERROR, 'An error occurred while deleting note'));
-    } finally {
-        if (connection) connection.release();
-    }
-}
+export const deleteProjectNote = async (
+	req: Request,
+	res: Response,
+): Promise<Response<HttpResponse>> => {
+	logRequests(req);
+	let connection: PoolConnection | null = null;
+	const { note_id, project_id } = req.params;
+	try {
+		connection = await pool.getConnection();
+		await connection.query<ResultSetHeader>(QUERY.DELETE_PROJECT_NOTE, [
+			note_id,
+			project_id,
+		]);
+		return responseHelper.noContent(res);
+	} catch (error: unknown) {
+		logError("deleteProjectNote", error);
+		return responseHelper.internalServerError(res);
+	} finally {
+		if (connection) connection.release();
+	}
+};
