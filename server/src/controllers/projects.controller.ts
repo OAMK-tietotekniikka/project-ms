@@ -132,13 +132,6 @@ export const createProject = async (
 		await connection.commit();
 		return responseHelper.created(res, project);
 	} catch (error: unknown) {
-		if (connection) {
-			try {
-				await connection.rollback();
-			} catch (rollbackError: unknown) {
-				logError("createProject", rollbackError);
-			}
-		}
 		logError("createProject", error);
 		return responseHelper.internalServerError(res);
 	} finally {
