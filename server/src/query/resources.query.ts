@@ -4,7 +4,7 @@ export const R_QUERY = {
     CREATE_RESOURCE: 'INSERT INTO resources (teacher_id, total_resources, used_resources, study_year) VALUES (?, ?, ?, ?)',
     UPDATE_RESOURCE: 'UPDATE resources SET teacher_id = ?, total_resources = ?, used_resources = ?, study_year = ? WHERE resource_id = ?',
     DELETE_RESOURCE: 'DELETE FROM resources WHERE resource_id = ?',
-    //add new queries here
+
     SELECT_RESOURCES_BY_STUDY_YEAR: `
         SELECT r.*, t.teacher_name, t.email 
         FROM resources r
@@ -24,12 +24,12 @@ export const R_QUERY = {
     INCREMENT_RESOURCE_USAGE: `
         UPDATE resources 
         SET used_resources = used_resources + 1 
-        WHERE teacher_id = ? AND study_year = ?
+        WHERE teacher_id = ? AND study_year = ? AND used_resources < total_resources
     `,
 
     DECREMENT_RESOURCE_USAGE: `
         UPDATE resources 
         SET used_resources = used_resources - 1 
         WHERE teacher_id = ? AND study_year = ? AND used_resources > 0
-    `
+    `,
 };
