@@ -1,21 +1,20 @@
-import { Router } from "express";   
-import { getTeachers, createTeacher, getTeacher, updateTeacher, getTeachersByCompany } from "../controllers/teachers.controller";
-import { verifyToken } from "../entraTokenValidation";
-
+import { Router } from "express";
+import {
+	createTeacher,
+	getTeacher,
+	getTeachers,
+	getTeachersByCompany,
+	updateTeacher,
+} from "../controllers/teachers.controller";
 
 const teachersRouter = Router();
 
-teachersRouter.route('/')
-    .get(getTeachers)
-    .post(createTeacher);
+teachersRouter.route("/").get(getTeachers).post(createTeacher);
 
-teachersRouter.route('/:teacher_id')
-    .put(updateTeacher)
+teachersRouter.route("/:teacher_id").put(updateTeacher);
 
-teachersRouter.route('/:email')
-    .get(getTeacher);
+teachersRouter.route("/:email").get(getTeacher);
 
-teachersRouter.route('/company/:company_name')
-    .get(getTeachersByCompany);
+teachersRouter.route("/company/:company_name").get(getTeachersByCompany);
 
 export default teachersRouter;
