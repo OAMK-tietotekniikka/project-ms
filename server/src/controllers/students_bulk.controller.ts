@@ -24,14 +24,15 @@ const studentArraySchema = z.object({
 export const createMultipleStudents = async (
 	req: Request,
 	res: Response,
-): Promise<Response> => {
+): Promise<void> => {
 	logRequests(req);
 	let connection: PoolConnection | null = null;
 	const validatedStudents = studentArraySchema.safeParse(req.body);
 
 	if (!validatedStudents.success) {
 		const errors = validatedStudents.error.format();
-		return responseHelper.badRequest(res); // to bad req
+		responseHelper.badRequest(res); // to bad req
+		return;
 	}
 
 	const students = validatedStudents.data.students;
@@ -107,10 +108,11 @@ export const createMultipleStudents = async (
 		}
 
 		await connection.commit();
-		return responseHelper.ok(res, {
+		responseHelper.ok(res, {
 			created,
 			updated,
 		});
+		return;
 	} catch (error: unknown) {
 		if (connection) {
 			try {
@@ -120,7 +122,8 @@ export const createMultipleStudents = async (
 			}
 		}
 		logError("createMultipleStudents", error);
-		return responseHelper.internalServerError(res);
+		responseHelper.internalServerError(res);
+		return;
 	} finally {
 		if (connection) connection.release();
 	}

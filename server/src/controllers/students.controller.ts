@@ -54,7 +54,7 @@ function getChangedFields(
 export const getStudents = async (
 	req: Request,
 	res: Response,
-): Promise<Response<HttpResponse>> => {
+): Promise<void> => {
 	logRequests(req);
 	let connection: PoolConnection | null = null;
 	try {
@@ -63,10 +63,12 @@ export const getStudents = async (
 			RowDataPacket[],
 			FieldPacket[],
 		];
-		return responseHelper.ok(res, students);
+		responseHelper.ok(res, students);
+		return;
 	} catch (error: unknown) {
 		logError("getStudents", error);
-		return responseHelper.internalServerError(res);
+		responseHelper.internalServerError(res);
+		return;
 	} finally {
 		if (connection) connection.release();
 	}
@@ -75,12 +77,13 @@ export const getStudents = async (
 export const getStudent = async (
 	req: Request,
 	res: Response,
-): Promise<Response> => {
+): Promise<void> => {
 	logRequests(req);
 
 	const parseEmail = emailValidation.safeParse(req.params);
 	if (!parseEmail.success) {
-		return responseHelper.badRequest(res);
+		responseHelper.badRequest(res);
+		return;
 	}
 	const { email } = parseEmail.data;
 
@@ -92,9 +95,11 @@ export const getStudent = async (
 			[email],
 		);
 		if (student.length > 0) {
-			return responseHelper.ok(res, student);
+			responseHelper.ok(res, student);
+			return;
 		}
-		return responseHelper.notFound(res);
+		responseHelper.notFound(res);
+		return;
 	} catch (error: unknown) {
 		logError("getStudent", error);
 		throw error;
@@ -106,13 +111,14 @@ export const getStudent = async (
 export const createStudent = async (
 	req: Request,
 	res: Response,
-): Promise<Response<HttpResponse>> => {
+): Promise<void> => {
 	logRequests(req);
 	let studentRaw = createStudentSchema.safeParse(req.body);
 	let connection: PoolConnection | null = null;
 
 	if (!studentRaw.success) {
-		return responseHelper.badRequest(res);
+		responseHelper.badRequest(res);
+		return;
 	}
 
 	const { student_name, email, class_code } = studentRaw.data;
@@ -124,7 +130,8 @@ export const createStudent = async (
 			[email],
 		);
 		if (existingStudent.length > 0) {
-			return responseHelper.ok(res, existingStudent);
+			responseHelper.ok(res, existingStudent);
+			return;
 		}
 
 		const [q] = await connection.query<ResultSetHeader>(QUERY.CREATE_STUDENT, [
@@ -138,10 +145,12 @@ export const createStudent = async (
 			id,
 		);
 
-		return responseHelper.created(res, new_student);
+		responseHelper.created(res, new_student);
+		return;
 	} catch (error: unknown) {
 		logError("createStudent", error);
-		return responseHelper.internalServerError(res);
+		responseHelper.internalServerError(res);
+		return;
 	} finally {
 		if (connection) connection.release();
 	}
@@ -150,7 +159,7 @@ export const createStudent = async (
 export const updateStudent = async (
 	req: Request,
 	res: Response,
-): Promise<Response> => {
+): Promise<void> => {
 	logRequests(req);
 	let connection: PoolConnection | null = null;
 	try {
@@ -161,20 +170,23 @@ export const updateStudent = async (
 			[req.params.student_id],
 		);
 		if (student.length === 0) {
-			return responseHelper.notFound(res);
+			responseHelper.notFound(res);
+			return;
 		}
 
 		const existingStudent = student[0]; // the object itself
 		const incomingRaw = updateStudentSchema.safeParse(req.body);
 
 		if (!incomingRaw.success) {
-			return responseHelper.badRequest(res);
+			responseHelper.badRequest(res);
+			return;
 		}
 
 		const incomingParsed = incomingRaw.data;
 		const fieldsToUpdate = getChangedFields(existingStudent, incomingParsed);
 		if (fieldsToUpdate.length === 0) {
-			return responseHelper.ok(res);
+			responseHelper.ok(res);
+			return;
 		}
 
 		const setClauses = fieldsToUpdate
@@ -187,11 +199,13 @@ export const updateStudent = async (
 
 		const updateQuery = `UPDATE students SET ${setClauses} WHERE student_id = ?`;
 		await connection.query(updateQuery, queryValues);
-		return responseHelper.ok(res); // can add message with student id so teachers will be notified
+		responseHelper.ok(res); // can add message with student id so teachers will be notified
+		return;
 
     } catch (error: unknown) {
 		logError("updateStudent", error);
-		return responseHelper.internalServerError(res);
+		responseHelper.internalServerError(res);
+		return;
 	} finally {
 		if (connection) connection.release();
 	}
@@ -201,7 +215,7 @@ export const updateStudent = async (
 export const deleteStudent = async (
 	req: Request,
 	res: Response,
-): Promise<Response<HttpResponse>> => {
+): Promise<void> => {
 	logRequests(req);
 	let connection: PoolConnection | null = null;
 	try {
@@ -211,13 +225,16 @@ export const deleteStudent = async (
 			[req.params.student_id],
 		);
 		if (student.length === 0) {
-			return responseHelper.notFound(res);
+			responseHelper.notFound(res);
+			return;
 		}
 		await connection.query(QUERY.DELETE_STUDENT, [req.params.student_id]);
-		return responseHelper.ok(res);
+		responseHelper.ok(res);
+		return;
 	} catch (error: unknown) {
 		logError("deleteStudent", error);
-		return responseHelper.internalServerError(res);
+		responseHelper.internalServerError(res);
+		return;
 	} finally {
 		if (connection) connection.release();
 	}

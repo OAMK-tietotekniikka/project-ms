@@ -3,7 +3,6 @@ import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import type { PoolConnection } from "mysql2/promise";
 import pool from "../config/mysql.config";
 import { responseHelper } from "../domain/newResponse";
-import type { HttpResponse } from "../domain/response";
 import { QUERY } from "../query/companies.query";
 import { logError } from "../utils/logError";
 import { logRequests } from "../utils/logRequests";
@@ -11,7 +10,7 @@ import { logRequests } from "../utils/logRequests";
 export const getCompanies = async (
 	req: Request,
 	res: Response,
-): Promise<Response<HttpResponse>> => {
+): Promise<void> => {
 	logRequests(req);
 	let connection: PoolConnection | null = null;
 	try {
@@ -19,10 +18,12 @@ export const getCompanies = async (
 		const [result] = await connection.query<RowDataPacket[]>(
 			QUERY.SELECT_COMPANIES,
 		);
-		return responseHelper.ok(res, result);
+		responseHelper.ok(res, result);
+		return;
 	} catch (error: unknown) {
 		logError("getCompanies", error);
-		return responseHelper.internalServerError(res);
+		responseHelper.internalServerError(res);
+		return;
 	} finally {
 		if (connection) connection.release();
 	}
@@ -31,7 +32,7 @@ export const getCompanies = async (
 export const createCompany = async (
 	req: Request,
 	res: Response,
-): Promise<Response<HttpResponse>> => {
+): Promise<void> => {
 	logRequests(req);
 	let company: { company_name: string } = {
 		company_name: req.body.company_name,
@@ -44,10 +45,12 @@ export const createCompany = async (
 			[req.body.company_name],
 		);
 		company = { company_id: result.insertId, ...req.body };
-		return responseHelper.created(res, company);
+		responseHelper.created(res, company);
+		return;
 	} catch (error: unknown) {
 		logError("createCompany", error);
-		return responseHelper.internalServerError(res);
+		responseHelper.internalServerError(res);
+		return;
 	} finally {
 		if (connection) connection.release();
 	}
@@ -56,7 +59,7 @@ export const createCompany = async (
 export const getFavoCompanies = async (
 	req: Request,
 	res: Response,
-): Promise<Response<HttpResponse>> => {
+): Promise<void> => {
 	logRequests(req);
 	let connection: PoolConnection | null = null;
 	try {
@@ -66,12 +69,14 @@ export const getFavoCompanies = async (
 			[req.params.teacher_id],
 		);
 		if (companies.length > 0) {
-			return responseHelper.ok(res, companies);
+			responseHelper.ok(res, companies);
+			return;
 		}
-		return responseHelper.notFound(res);
+		responseHelper.notFound(res);
 	} catch (error: unknown) {
 		logError("getFavoCompanies", error);
-		return responseHelper.internalServerError(res);
+		responseHelper.internalServerError(res);
+		return;
 	} finally {
 		if (connection) connection.release();
 	}
@@ -80,7 +85,7 @@ export const getFavoCompanies = async (
 export const addFavoCompany = async (
 	req: Request,
 	res: Response,
-): Promise<Response<HttpResponse>> => {
+): Promise<void> => {
 	logRequests(req);
 	const { company_id, teacher_id } = req.body;
 	let connection: PoolConnection | null = null;
@@ -90,10 +95,12 @@ export const addFavoCompany = async (
 			company_id,
 			teacher_id,
 		]);
-		return responseHelper.created(res, { company_id, teacher_id });
+		responseHelper.created(res, { company_id, teacher_id });
+		return;
 	} catch (error: unknown) {
 		logError("addFavoCompany", error);
-		return responseHelper.internalServerError(res);
+		responseHelper.internalServerError(res);
+		return;
 	} finally {
 		if (connection) connection.release();
 	}
@@ -102,7 +109,7 @@ export const addFavoCompany = async (
 export const deleteFavoCompany = async (
 	req: Request,
 	res: Response,
-): Promise<Response<HttpResponse>> => {
+): Promise<void> => {
 	logRequests(req);
 	let connection: PoolConnection | null = null;
 	try {
@@ -110,10 +117,12 @@ export const deleteFavoCompany = async (
 		await connection.query<ResultSetHeader>(QUERY.DELETE_FAVO_COMPANY, [
 			req.params.teacher_id,
 		]);
-		return responseHelper.ok(res);
+		responseHelper.ok(res);
+		return;
 	} catch (error: unknown) {
 		logError("deleteFavoCompany", error);
-		return responseHelper.internalServerError(res);
+		responseHelper.internalServerError(res);
+		return;
 	} finally {
 		if (connection) connection.release();
 	}

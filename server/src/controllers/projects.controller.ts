@@ -25,7 +25,7 @@ type ResultSet = [
 export const getProjects = async (
 	req: Request,
 	res: Response,
-): Promise<Response<HttpResponse>> => {
+): Promise<void> => {
 	logRequests(req);
 	let connection: PoolConnection | null = null;
 	try {
@@ -33,10 +33,12 @@ export const getProjects = async (
 		const [projects] = await connection.query<RowDataPacket[]>(
 			QUERY.SELECT_PROJECTS,
 		);
-		return responseHelper.ok(res, projects);
+		responseHelper.ok(res, projects);
+		return;
 	} catch (error: unknown) {
 		logError("getProjects", error);
-		return responseHelper.internalServerError(res);
+		responseHelper.internalServerError(res);
+		return;
 	} finally {
 		if (connection) connection.release();
 	}
@@ -45,7 +47,7 @@ export const getProjects = async (
 export const createProject = async (
 	req: Request,
 	res: Response,
-): Promise<Response> => {
+): Promise<void> => {
 	logRequests(req);
 	let {
 		student_id,
@@ -72,7 +74,8 @@ export const createProject = async (
 		);
 		if (student.length === 0) {
 			await connection.rollback();
-			return responseHelper.badRequest(res);
+			responseHelper.badRequest(res);
+			return;
 		}
 
 		let teacher_id: number | null = await allocateTeacher(
@@ -130,10 +133,12 @@ export const createProject = async (
 			}
 		}
 		await connection.commit();
-		return responseHelper.created(res, project);
+		responseHelper.created(res, project);
+		return;
 	} catch (error: unknown) {
 		logError("createProject", error);
-		return responseHelper.internalServerError(res);
+		responseHelper.internalServerError(res);
+		return;
 	} finally {
 		if (connection) connection.release();
 	}
@@ -187,7 +192,7 @@ export const updateProjectTeacher = async (
 export const updateProject = async (
 	req: Request,
 	res: Response,
-): Promise<Response<HttpResponse>> => {
+): Promise<void> => {
 	logRequests(req);
 
 	const {
@@ -219,7 +224,8 @@ export const updateProject = async (
 
 		if (!originalProject?.length) {
 			await connection.rollback();
-			return responseHelper.notFound(res);
+			responseHelper.notFound(res);
+			return;
 		}
 
 		const currentTeacherId = originalProject[0].teacher_id;
@@ -255,7 +261,7 @@ export const updateProject = async (
 
 		await connection.commit();
 
-		return responseHelper.ok(res, {
+		responseHelper.ok(res, {
 			project_id,
 			project_name,
 			project_desc,
@@ -266,6 +272,7 @@ export const updateProject = async (
 			start_date,
 			end_date,
 		});
+		return;
 	} catch (error) {
 		if (connection) {
 			try {
@@ -275,7 +282,8 @@ export const updateProject = async (
 			}
 		}
 		logError("updateProject", error);
-		return responseHelper.internalServerError(res);
+		responseHelper.internalServerError(res);
+		return;
 	} finally {
 		connection?.release();
 	}
@@ -285,7 +293,7 @@ export const updateProject = async (
 export const deleteProject = async (
 	req: Request,
 	res: Response,
-): Promise<Response<HttpResponse>> => {
+): Promise<void> => {
 	logRequests(req);
 	let connection: PoolConnection | null = null;
 	try {
@@ -298,7 +306,8 @@ export const deleteProject = async (
 		);
 
 		if (!project || project.length === 0) {
-			return responseHelper.notFound(res);
+			responseHelper.notFound(res);
+			return;
 		}
 
 		// Extract teacher ID and start date before deleting
@@ -328,10 +337,12 @@ export const deleteProject = async (
 			]);
 		}
 
-		return responseHelper.noContent(res);
+		responseHelper.noContent(res);
+		return;
 	} catch (error: unknown) {
 		logError("deleteProject", error);
-		return responseHelper.internalServerError(res);
+		responseHelper.internalServerError(res);
+		return;
 	} finally {
 		if (connection) connection.release();
 	}
@@ -340,7 +351,7 @@ export const deleteProject = async (
 export const getStudentProjects = async (
 	req: Request,
 	res: Response,
-): Promise<Response> => {
+): Promise<void> => {
 	logRequests(req);
 	const id = req.params.student_id;
 	let connection: PoolConnection | null = null;
@@ -351,12 +362,15 @@ export const getStudentProjects = async (
 			id,
 		); // critical, should be SELECT_STUDENT_PROJECTS_BY_STUDENT_ID
 		if (projects.length === 0) {
-			return responseHelper.notFound(res);
+			responseHelper.notFound(res);
+			return;
 		}
-		return responseHelper.ok(res, projects);
+		responseHelper.ok(res, projects);
+		return;
 	} catch (error: unknown) {
 		logError("getStudentProjects", error);
-		return responseHelper.internalServerError(res);
+		responseHelper.internalServerError(res);
+		return;
 	} finally {
 		if (connection) connection.release();
 	}
@@ -365,7 +379,7 @@ export const getStudentProjects = async (
 export const createStudentProject = async (
 	req: Request,
 	res: Response,
-): Promise<Response<HttpResponse>> => {
+): Promise<void> => {
 	logRequests(req);
 	const studentProject: StudentProject = { ...req.body };
 	let projectNumber: number;
@@ -387,10 +401,12 @@ export const createStudentProject = async (
 			QUERY.CREATE_STUDENT_PROJECT,
 			Object.values(studentProject),
 		);
-		return responseHelper.created(res, studentProject);
+		responseHelper.created(res, studentProject);
+		return;
 	} catch (error: unknown) {
 		logError("createStudentProject", error);
-		return responseHelper.internalServerError(res);
+		responseHelper.internalServerError(res);
+		return;
 	} finally {
 		if (connection) connection.release();
 	}
@@ -399,7 +415,7 @@ export const createStudentProject = async (
 export const addProjectNote = async (
 	req: Request,
 	res: Response,
-): Promise<Response<HttpResponse>> => {
+): Promise<void> => {
 	logRequests(req);
 	let connection: PoolConnection | null = null;
 	try {
@@ -414,10 +430,12 @@ export const addProjectNote = async (
 			QUERY.INSERT_PROJECT_NOTE,
 			note_params,
 		);
-		return responseHelper.created(res, req.body); // TBD note parsing
+		responseHelper.created(res, req.body); // TBD note parsing
+		return;
 	} catch (error: unknown) {
 		logError("addProjectNote", error);
-		return responseHelper.internalServerError(res);
+		responseHelper.internalServerError(res);
+		return;
 	} finally {
 		if (connection) connection.release();
 	}
@@ -426,7 +444,7 @@ export const addProjectNote = async (
 export const getProjectNotes = async (
 	req: Request,
 	res: Response,
-): Promise<Response<HttpResponse>> => {
+): Promise<void> => {
 	logRequests(req);
 	let connection: PoolConnection | null = null;
 	try {
@@ -436,12 +454,15 @@ export const getProjectNotes = async (
 			[req.params.project_id],
 		);
 		if (notes.length === 0) {
-			return responseHelper.notFound(res);
+			responseHelper.notFound(res);
+			return;
 		}
-		return responseHelper.ok(res, notes);
+		responseHelper.ok(res, notes);
+		return;
 	} catch (error: unknown) {
 		logError("getProjectNotes", error);
-		return responseHelper.internalServerError(res);
+		responseHelper.internalServerError(res);
+		return;
 	} finally {
 		if (connection) connection.release();
 	}
@@ -450,7 +471,7 @@ export const getProjectNotes = async (
 export const deleteProjectNote = async (
 	req: Request,
 	res: Response,
-): Promise<Response<HttpResponse>> => {
+): Promise<void> => {
 	logRequests(req);
 	let connection: PoolConnection | null = null;
 	const { note_id, project_id } = req.params;
@@ -460,10 +481,12 @@ export const deleteProjectNote = async (
 			note_id,
 			project_id,
 		]);
-		return responseHelper.noContent(res);
+		responseHelper.noContent(res);
+		return;
 	} catch (error: unknown) {
 		logError("deleteProjectNote", error);
-		return responseHelper.internalServerError(res);
+		responseHelper.internalServerError(res);
+		return;
 	} finally {
 		if (connection) connection.release();
 	}

@@ -23,7 +23,7 @@ type ResultSet = [
 export const getResources = async (
 	req: Request,
 	res: Response,
-): Promise<Response<HttpResponse>> => {
+): Promise<void> => {
 	logRequests(req);
 	let connection: PoolConnection | null = null;
 	try {
@@ -31,10 +31,12 @@ export const getResources = async (
 		const [resources] = await connection.query<RowDataPacket[]>(
 			R_QUERY.SELECT_RESOURCES,
 		);
-		return responseHelper.ok(res, resources);
+		responseHelper.ok(res, resources);
+		return;
 	} catch (error: unknown) {
 		logError("getResources", error);
-		return responseHelper.internalServerError(res);
+		responseHelper.internalServerError(res);
+		return;
 	} finally {
 		if (connection) connection.release();
 	}
@@ -43,7 +45,7 @@ export const getResources = async (
 export const createResource = async (
 	req: Request,
 	res: Response,
-): Promise<Response> => {
+): Promise<void> => {
 	logRequests(req);
 	let resource: Resource = { ...req.body };
 	let connection: PoolConnection | null = null;
@@ -54,10 +56,12 @@ export const createResource = async (
 			Object.values(resource),
 		);
 		resource = { resource_id: result.insertId, ...req.body };
-		return responseHelper.created(res, resource);
+		responseHelper.created(res, resource);
+		return;
 	} catch (error: unknown) {
 		logError("createResource", error);
-		return responseHelper.internalServerError(res);
+		responseHelper.internalServerError(res);
+		return;
 	} finally {
 		if (connection) connection.release();
 	}
@@ -66,7 +70,7 @@ export const createResource = async (
 export const updateResource = async (
 	req: Request,
 	res: Response,
-): Promise<Response<HttpResponse>> => {
+): Promise<void> => {
 	logRequests(req);
 	const resource: Resource = { ...req.body };
 	let connection: PoolConnection | null = null;
@@ -77,7 +81,8 @@ export const updateResource = async (
 			[req.params.resource_id],
 		);
 		if (findResource.length === 0) {
-			return responseHelper.notFound(res);
+			responseHelper.notFound(res);
+			return;
 		}
 
 		const result: ResultSet = await connection.query(R_QUERY.UPDATE_RESOURCE, [
@@ -87,10 +92,12 @@ export const updateResource = async (
 			resource.study_year,
 			req.params.resource_id,
 		]);
-		return responseHelper.ok(res, result);
+		responseHelper.ok(res, result);
+		return;
 	} catch (error: unknown) {
 		logError("updateResource", error);
-		return responseHelper.internalServerError(res);
+		responseHelper.internalServerError(res);
+		return;
 	} finally {
 		if (connection) connection.release();
 	}
@@ -183,13 +190,14 @@ export const incrementResourceUsage = async (
 export const decrementResourceUsage = async (
 	req: Request,
 	res: Response,
-): Promise<Response<HttpResponse>> => {
+): Promise<void> => {
 	logRequests(req);
 	const { teacherId, studyYear } = req.body;
 	let connection: PoolConnection | null = null;
 
 	if (!teacherId || !studyYear) {
-		return responseHelper.badRequest(res);
+		responseHelper.badRequest(res);
+		return;
 	}
 
 	try {
@@ -201,15 +209,18 @@ export const decrementResourceUsage = async (
 		);
 
 		if (result.affectedRows === 0) {
-			return responseHelper.notFound(res);
+			responseHelper.notFound(res);
+			return;
 		}
 
-		return responseHelper.ok(res, {
+		responseHelper.ok(res, {
 			message: "Resource usage decremented successfully",
 		});
+		return;
 	} catch (error: unknown) {
 		logError("decrementResourceUsage", error);
-		return responseHelper.internalServerError(res);
+		responseHelper.internalServerError(res);
+		return;
 	} finally {
 		if (connection) connection.release();
 	}
