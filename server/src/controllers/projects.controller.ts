@@ -1,4 +1,4 @@
-import { type Request, type Response, response } from "express";
+import { type Response, response } from "express";
 import type {
 	FieldPacket,
 	OkPacket,
@@ -8,8 +8,8 @@ import type {
 import type { PoolConnection } from "mysql2/promise";
 import pool from "../config/mysql.config";
 import { responseHelper } from "../domain/newResponse";
-import type { HttpResponse } from "../domain/response";
 import type { StudentProject } from "../interface/studentProject";
+import type { AuthenticatedRequest } from "../middleware/auth";
 import { QUERY } from "../query/projects.query";
 import { R_QUERY } from "../query/resources.query";
 import { formatDate, getStudyYear } from "../utils/dateUtils";
@@ -23,7 +23,7 @@ type ResultSet = [
 ];
 
 export const getProjects = async (
-	req: Request,
+	req: AuthenticatedRequest,
 	res: Response,
 ): Promise<void> => {
 	logRequests(req);
@@ -45,7 +45,7 @@ export const getProjects = async (
 };
 
 export const createProject = async (
-	req: Request,
+	req: AuthenticatedRequest,
 	res: Response,
 ): Promise<void> => {
 	logRequests(req);
@@ -190,7 +190,7 @@ export const updateProjectTeacher = async (
 
 // Update updateProject function to handle teacher changes
 export const updateProject = async (
-	req: Request,
+	req: AuthenticatedRequest,
 	res: Response,
 ): Promise<void> => {
 	logRequests(req);
@@ -291,7 +291,7 @@ export const updateProject = async (
 
 // Update  deleteProject function to decrement resources
 export const deleteProject = async (
-	req: Request,
+	req: AuthenticatedRequest,
 	res: Response,
 ): Promise<void> => {
 	logRequests(req);
@@ -349,7 +349,7 @@ export const deleteProject = async (
 };
 
 export const getStudentProjects = async (
-	req: Request,
+	req: AuthenticatedRequest,
 	res: Response,
 ): Promise<void> => {
 	logRequests(req);
@@ -377,7 +377,7 @@ export const getStudentProjects = async (
 };
 
 export const createStudentProject = async (
-	req: Request,
+	req: AuthenticatedRequest,
 	res: Response,
 ): Promise<void> => {
 	logRequests(req);
@@ -413,7 +413,7 @@ export const createStudentProject = async (
 };
 
 export const addProjectNote = async (
-	req: Request,
+	req: AuthenticatedRequest,
 	res: Response,
 ): Promise<void> => {
 	logRequests(req);
@@ -442,7 +442,7 @@ export const addProjectNote = async (
 };
 
 export const getProjectNotes = async (
-	req: Request,
+	req: AuthenticatedRequest,
 	res: Response,
 ): Promise<void> => {
 	logRequests(req);
@@ -469,7 +469,7 @@ export const getProjectNotes = async (
 };
 
 export const deleteProjectNote = async (
-	req: Request,
+	req: AuthenticatedRequest,
 	res: Response,
 ): Promise<void> => {
 	logRequests(req);
