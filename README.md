@@ -14,6 +14,12 @@ Clone the repository to your local computer, and navigate to the relevant folder
 git clone https://github.com/OAMK-tietotekniikka/ProjectsMS.git
 cd ProjectsMS
 ```
+### General modules
+- Install general dev dependencies:
+```bash
+npm install
+```
+
 ### Frontend setup
 - Change directory to *frontend* folder
 - Install dependencies for the frontend client:
@@ -27,7 +33,17 @@ npm install
 npm install
 ```
 ### Start the application
-- To run the application locally, navigate to the ProjectMS root folder, and execute the following command:
+- Navigate to the ProjectMS root folder, and execute the following command:
+
+
+**On windows**
 ```bash
-docker-compose up --build
+docker-compose -f docker-compose.dev.yml up --build - dev environment with Docker
+docker-compose up --build - production environment with Docker
+```
+**On unix**
+```bash
+make - get list of make commands
+make dev-docker    - Start development environment with Docker (hot reload)
+make prod-docker   - Start production environment with Docker
 ```

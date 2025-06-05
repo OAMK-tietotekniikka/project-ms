@@ -1,6 +1,6 @@
 services:
   mysqldb:
-    image: mysql:lts
+    image: mysql:8.0
     container_name: mysql_dev_db
     command: --default_authentication_plugin=caching_sha2_password
     restart: unless-stopped
