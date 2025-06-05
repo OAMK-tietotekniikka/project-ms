@@ -15,7 +15,7 @@ import {
 export const getTeachers = async (
 	req: Request,
 	res: Response,
-): Promise<Response> => {
+): Promise<void> => {
 	logRequests(req);
 	let connection: PoolConnection | null = null;
 	try {
@@ -23,10 +23,12 @@ export const getTeachers = async (
 		const [teachers] = await connection.query<RowDataPacket[]>(
 			QUERY.SELECT_TEACHERS,
 		);
-		return responseHelper.ok(res, teachers);
+		responseHelper.ok(res, teachers);
+		return;
 	} catch (error: unknown) {
 		logError("getTeachers", error);
-		return responseHelper.internalServerError(res);
+		responseHelper.internalServerError(res);
+		return;
 	} finally {
 		if (connection) connection.release();
 	}
@@ -35,7 +37,7 @@ export const getTeachers = async (
 export const getTeacher = async (
 	req: Request,
 	res: Response,
-): Promise<Response> => {
+): Promise<void> => {
 	logRequests(req);
 	let connection: PoolConnection | null = null;
 	try {
@@ -45,12 +47,15 @@ export const getTeacher = async (
 			[req.params.email],
 		);
 		if (rows.length > 0) {
-			return responseHelper.ok(res, rows);
+			responseHelper.ok(res, rows);
+			return;
 		}
-		return responseHelper.notFound(res);
+		responseHelper.notFound(res);
+		return;
 	} catch (error: unknown) {
 		logError("getTeacher", error);
-		return responseHelper.internalServerError(res);
+		responseHelper.internalServerError(res);
+		return;
 	} finally {
 		if (connection) connection.release();
 	}
@@ -59,11 +64,12 @@ export const getTeacher = async (
 export const createTeacher = async (
 	req: Request,
 	res: Response,
-): Promise<Response> => {
+): Promise<void> => {
 	logRequests(req);
 	const teacherRaw = TeacherSchema.safeParse(req.body);
 	if (!teacherRaw.success) {
-		return responseHelper.badRequest(res);
+		responseHelper.badRequest(res);
+		return;
 	}
 
 	const teacher: Teacher = teacherRaw.data;
@@ -73,10 +79,12 @@ export const createTeacher = async (
 	try {
 		connection = await pool.getConnection();
 		await connection.query<ResultSetHeader>(QUERY.CREATE_TEACHER, values);
-		return responseHelper.created(res);
+		responseHelper.created(res);
+		return;
 	} catch (error: unknown) {
 		logError("createTeacher", error);
-		return responseHelper.internalServerError(res);
+		responseHelper.internalServerError(res);
+		return;
 	} finally {
 		if (connection) connection.release();
 	}
@@ -85,7 +93,7 @@ export const createTeacher = async (
 export const getTeachersByCompany = async (
 	req: Request,
 	res: Response,
-): Promise<Response> => {
+): Promise<void> => {
 	logRequests(req);
 	let connection: PoolConnection | null = null;
 	try {
@@ -95,12 +103,15 @@ export const getTeachersByCompany = async (
 			[req.params.company_name],
 		);
 		if (rows.length > 0) {
-			return responseHelper.ok(res, rows);
+			responseHelper.ok(res, rows);
+			return;
 		}
-		return responseHelper.notFound(res);
+		responseHelper.notFound(res);
+		return;
 	} catch (error: unknown) {
 		logError("getTeachersByCompany", error);
-		return responseHelper.internalServerError(res);
+		responseHelper.internalServerError(res);
+		return;
 	} finally {
 		if (connection) connection.release();
 	}
@@ -109,13 +120,14 @@ export const getTeachersByCompany = async (
 export const updateTeacher = async (
 	req: Request,
 	res: Response,
-): Promise<Response> => {
+): Promise<void> => {
 	logRequests(req);
 	const teacherRaw = { ...TeacherNameSchema.safeParse(req.body) };
 	let connection: PoolConnection | null = null;
 
 	if (!teacherRaw.success) {
-		return responseHelper.badRequest(res);
+		responseHelper.badRequest(res);
+		return;
 	}
 
 	const name: string = teacherRaw.data?.teacher_name;
@@ -126,9 +138,11 @@ export const updateTeacher = async (
 			name,
 			req.params.teacher_id,
 		]);
-		return responseHelper.ok(res);
+		responseHelper.ok(res);
+		return;
 	} catch (error: unknown) {
 		logError("updateTeacher", error);
-		return responseHelper.internalServerError(res);
+		responseHelper.internalServerError(res);
+		return;
 	}
 };

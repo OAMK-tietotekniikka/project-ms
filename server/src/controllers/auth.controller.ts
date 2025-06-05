@@ -5,14 +5,15 @@ import { HttpResponse } from '../domain/response';
 import pool from '../config/mysql.config';
 import jwt from 'jsonwebtoken';
 
-export const login = async (req: Request, res: Response): Promise<Response<HttpResponse>> => {
+export const login = async (req: Request, res: Response): Promise<void> => {
     console.info(`[${new Date().toLocaleString()}] Incoming ${req.method}${req.originalUrl} Request - DB Login`);
 
     const { email, password, role } = req.body;
 
     if (!email || !role) {
-        return res.status(Code.BAD_REQUEST)
+        res.status(Code.BAD_REQUEST)
             .send(new HttpResponse(Code.BAD_REQUEST, Status.BAD_REQUEST, 'Email and role are required'));
+        return;
     }
 
     let connection: any;
@@ -31,7 +32,8 @@ export const login = async (req: Request, res: Response): Promise<Response<HttpR
             table = 'students';
             idField = 'student_id';
         } else {
-            return res.status(Code.BAD_REQUEST)
+            return;
+            res.status(Code.BAD_REQUEST)
                 .send(new HttpResponse(Code.BAD_REQUEST, Status.BAD_REQUEST, 'Invalid role'));
         }
 
@@ -40,8 +42,9 @@ export const login = async (req: Request, res: Response): Promise<Response<HttpR
 
         if (!users || users.length === 0) {
             console.log(`No ${role} found with email: ${email}`);
-            return res.status(Code.UNAUTHORIZED)
+            res.status(Code.UNAUTHORIZED)
                 .send(new HttpResponse(Code.UNAUTHORIZED, Status.UNAUTHORIZED, 'Invalid credentials'));
+            return;
         }
 
         const user = users[0];
@@ -51,8 +54,10 @@ export const login = async (req: Request, res: Response): Promise<Response<HttpR
 
         // Check password
         if (password !== dbPassword) {
-            return res.status(Code.UNAUTHORIZED)
+
+            res.status(Code.UNAUTHORIZED)
                 .send(new HttpResponse(Code.UNAUTHORIZED, Status.UNAUTHORIZED, 'Invalid credentials'));
+            return;
         }
 
         // Generate JWT token
@@ -66,13 +71,15 @@ export const login = async (req: Request, res: Response): Promise<Response<HttpR
             { expiresIn: '24h' }
         );
 
-        return res.status(Code.OK)
+        res.status(Code.OK)
             .send(new HttpResponse(Code.OK, Status.OK, 'Login successful', { token }));
+        return;
 
     } catch (error) {
         console.error(`[${new Date().toLocaleString()}] Login error:`, error);
-        return res.status(Code.INTERNAL_SERVER_ERROR)
+        res.status(Code.INTERNAL_SERVER_ERROR)
             .send(new HttpResponse(Code.INTERNAL_SERVER_ERROR, Status.INTERNAL_SERVER_ERROR, 'An error occurred during login'));
+        return;
     } finally {
         if (connection) connection.release();
     }

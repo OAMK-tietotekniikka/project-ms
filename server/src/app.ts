@@ -32,6 +32,7 @@ export class App {
 		this.middlewares();
 		this.routes();
 	}
+
 	listen(): void {
 		this.app.listen(this.port, () => {
 			console.info(`${this.APPLICATION_RUNNING} port: ${this.port}`);
@@ -55,7 +56,7 @@ export class App {
 			this.app.use("/auth", authRouter);
 		}
 
-		this.app.get("/", (req: Request, res: Response) =>
+		this.app.get("/", (req: Request, res: Response) => {
 			res
 				.status(Code.OK)
 				.send(
@@ -64,9 +65,9 @@ export class App {
 						Status.OK,
 						"Hello World, I am using OpenShift!!!",
 					),
-				),
-		);
-		this.app.all("*", (req: Request, res: Response) =>
+				);
+		});
+		this.app.all("*", (req: Request, res: Response) => {
 			res
 				.status(Code.NOT_FOUND)
 				.send(
@@ -75,7 +76,7 @@ export class App {
 						Status.NOT_FOUND,
 						this.ROUTE_NOT_FOUND,
 					),
-				),
-		);
+				);
+		});
 	}
 }
