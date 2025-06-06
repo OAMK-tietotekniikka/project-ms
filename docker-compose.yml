@@ -8,6 +8,7 @@ services:
     volumes:
       - ./dbinit/init.sql:/docker-entrypoint-initdb.d/0_init.sql
       - $HOME/database:/var/lib/mysql
+
     ports:
       - 3307:3306
     environment:
@@ -17,6 +18,12 @@ services:
       MYSQL_ROOT_PASSWORD: pwd@123
       SERVICE_TAGS: prod
       SERVICE_NAME: mysqldb
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
+      interval: 2s
+      retries: 10
+      start_period: 20s # How long after startup to begin checks
+      timeout: 2s
     networks:
       - internalnet 
 
@@ -27,7 +34,8 @@ services:
     ports:
       - 8081:8080
     depends_on:
-      - mysqldb
+      mysqldb:
+        condition: service_healthy
     environment:
       DB_HOST: mysqldb
       DB_PASSWORD: 'pwd@123'
@@ -36,7 +44,13 @@ services:
       DB_PORT: 3306
       DB_CONNECTION_LIMIT: 10 
       SERVICE_TAGS: prod
-      SERVICE_NAME: pmappserverservice  
+      SERVICE_NAME: pmappserverservice
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8080 || exit 1
+      interval: 2s
+      timeout: 2s
+      retries: 10
+      start_period: 2s  
     networks:
       - internalnet
 
@@ -48,7 +62,8 @@ services:
     ports:
       - 5000:5000
     depends_on:
-      - pmappserver
+      pmappserver:
+        condition: service_healthy
     environment:
       VITE_APP_SERVER_URL: localhost:8081
     networks:

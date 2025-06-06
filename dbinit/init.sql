@@ -83,7 +83,7 @@ CREATE TABLE company_teacher (
     teacher_id INT UNSIGNED NOT NULL,
     PRIMARY KEY (company_id, teacher_id)
 );
--------------------------------------------------------
+-- -----------------------------------------------------
 -- Table `projects`
 -- -----------------------------------------------------
 
