@@ -81,6 +81,7 @@ export const decodeTokenTest = (token: string): Promise<DecodedToken> => {
 			}
 
 			resolve({
+				name: decoded.name,
 				email: decoded.email,
 				role: assignRole(decoded.groups?.[0]),
 			});
@@ -117,7 +118,7 @@ export const authenticate = async (
 		}
 
 		const token = authHeader.substring(7);
-		//req.user = await validateToken(token); !! TBD PRODUCTION
+		//req.user = await validateToken(token); !! TODO PRODUCTION
 		req.user = await decodeTokenTest(token);
 		next();
 	} catch (error) {
