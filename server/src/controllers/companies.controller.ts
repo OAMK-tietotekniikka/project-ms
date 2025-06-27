@@ -6,6 +6,8 @@ import { responseHelper } from "../domain/newResponse";
 import { QUERY } from "../query/companies.query";
 import { logError } from "../utils/logError";
 import { logRequests } from "../utils/logRequests";
+import { getTeacherIdByEmail } from "../utils/getUsersByEmail";
+import { AuthenticatedRequest } from "../middleware/auth";
 
 export const getCompanies = async (
 	req: Request,
@@ -30,7 +32,7 @@ export const getCompanies = async (
 };
 
 export const createCompany = async (
-	req: Request,
+	req: AuthenticatedRequest,
 	res: Response,
 ): Promise<void> => {
 	logRequests(req);
@@ -40,6 +42,14 @@ export const createCompany = async (
 	let connection: PoolConnection | null = null;
 	try {
 		connection = await pool.getConnection();
+		const [existing_company] = await connection.query<RowDataPacket[]>(
+			QUERY.SELECT_BY_NAME,
+			[req.body.company_name],
+		);
+		if (existing_company && existing_company.length > 0) {
+			responseHelper.conflict(res); // add {company_id: existing_company[0].company_id}
+			return;
+		}
 		const [result] = await connection.query<ResultSetHeader>(
 			QUERY.CREATE_COMPANY,
 			[req.body.company_name],
@@ -56,23 +66,101 @@ export const createCompany = async (
 	}
 };
 
+export const deleteCompany = async (
+	req: AuthenticatedRequest,
+	res: Response,
+): Promise<void> => {
+	logRequests(req);
+	const { company_id } = req.params;
+	let connection: PoolConnection | null = null;
+
+	try {
+		connection = await pool.getConnection();
+		await connection.beginTransaction();
+
+		// Check if company exists
+		const [existing_company] = await connection.query<RowDataPacket[]>(
+			QUERY.SELECT_COMPANY,
+			[company_id],
+		);
+
+		if (!existing_company || existing_company.length === 0) {
+			await connection.rollback();
+			responseHelper.notFound(res); // Company not found
+			return;
+		}
+
+		// Update projects to remove company reference (nullify company_id)
+		await connection.query<ResultSetHeader>(QUERY.DELETE_COMPANY_IN_PROJECTS, [
+			company_id,
+		]);
+
+		// Delete company-teacher relationships
+		await connection.query<ResultSetHeader>(
+			QUERY.DELETE_COMPANY_IN_COMPANY_TEACHERS,
+			[company_id],
+		);
+
+		// Delete the company
+		const [deleteResult] = await connection.query<ResultSetHeader>(
+			QUERY.DELETE_COMPANY_IN_COMPANIES,
+			[company_id],
+		);
+
+		if (deleteResult.affectedRows === 0) {
+			await connection.rollback();
+			responseHelper.notFound(res);
+			return;
+		}
+
+		await connection.commit();
+		responseHelper.ok(res, { message: "Company deleted successfully" });
+		return;
+	} catch (error: unknown) {
+		if (connection) {
+			try {
+				await connection.rollback();
+			} catch (rollbackError) {
+				logError("rollback error in delete company", rollbackError);
+			}
+		}
+		logError("delete company", error);
+		responseHelper.internalServerError(res);
+		return;
+	} finally {
+		if (connection) {
+			connection.release();
+		}
+	}
+};
+
 export const getFavoCompanies = async (
-	req: Request,
+	req: AuthenticatedRequest,
 	res: Response,
 ): Promise<void> => {
 	logRequests(req);
 	let connection: PoolConnection | null = null;
 	try {
 		connection = await pool.getConnection();
+		const teacher_id = await getTeacherIdByEmail(
+			connection,
+			req.user?.email || "",
+		);
+
+		if (!teacher_id) {
+			responseHelper.notFound(res);
+			return;
+		}
+
 		const [companies] = await connection.query<RowDataPacket[]>(
 			QUERY.SELECT_FAVO_COMPANIES,
-			[req.params.teacher_id],
+			[teacher_id],
 		);
 		if (companies.length > 0) {
 			responseHelper.ok(res, companies);
 			return;
 		}
-		responseHelper.notFound(res);
+		responseHelper.ok(res, []);
 	} catch (error: unknown) {
 		logError("getFavoCompanies", error);
 		responseHelper.internalServerError(res);
@@ -83,14 +171,25 @@ export const getFavoCompanies = async (
 };
 
 export const addFavoCompany = async (
-	req: Request,
+	req: AuthenticatedRequest,
 	res: Response,
 ): Promise<void> => {
 	logRequests(req);
-	const { company_id, teacher_id } = req.body;
+	const { company_id } = req.body;
 	let connection: PoolConnection | null = null;
 	try {
 		connection = await pool.getConnection();
+
+		const teacher_id = await getTeacherIdByEmail(
+			connection,
+			req.user?.email || "",
+		);
+
+		if (!teacher_id) {
+			responseHelper.notFound(res);
+			return;
+		}
+
 		await connection.query<ResultSetHeader>(QUERY.ADD_FAVO_COMPANY, [
 			company_id,
 			teacher_id,
@@ -107,15 +206,29 @@ export const addFavoCompany = async (
 };
 
 export const deleteFavoCompany = async (
-	req: Request,
+	req: AuthenticatedRequest,
 	res: Response,
 ): Promise<void> => {
 	logRequests(req);
 	let connection: PoolConnection | null = null;
+
 	try {
 		connection = await pool.getConnection();
+
+		const { company_id } = req.body;
+		const teacher_id = await getTeacherIdByEmail(
+			connection,
+			req.user?.email || "",
+		);
+
+		if (!teacher_id || !company_id) {
+			responseHelper.notFound(res);
+			return;
+		}
+
 		await connection.query<ResultSetHeader>(QUERY.DELETE_FAVO_COMPANY, [
-			req.params.teacher_id,
+			teacher_id,
+			company_id,
 		]);
 		responseHelper.ok(res);
 		return;
