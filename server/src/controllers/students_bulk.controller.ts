@@ -10,6 +10,7 @@ import { z } from "zod";
 import { responseHelper } from "../domain/newResponse";
 import { logError } from "../utils/logError";
 import { logRequests } from "../utils/logRequests";
+import { AuthenticatedRequest } from "../middleware/auth";
 
 const studentSchema = z.object({
 	email: z.string().email().min(8).max(100),
@@ -22,7 +23,7 @@ const studentArraySchema = z.object({
 });
 
 export const createMultipleStudents = async (
-	req: Request,
+	req: AuthenticatedRequest,
 	res: Response,
 ): Promise<void> => {
 	logRequests(req);
@@ -31,6 +32,7 @@ export const createMultipleStudents = async (
 
 	if (!validatedStudents.success) {
 		const errors = validatedStudents.error.format();
+		console.log(errors);
 		responseHelper.badRequest(res); // to bad req
 		return;
 	}
@@ -57,9 +59,9 @@ export const createMultipleStudents = async (
 		// Insert new students (bulk)
 		if (newStudents.length > 0) {
 			const insertNew = newStudents.map((s) => [
-				s.student_name,
-				s.email,
-				s.class_code || null,
+				s.student_name?.toLowerCase(),
+				s.email.toLowerCase(),
+				s.class_code?.toLowerCase() || null,
 			]);
 
 			const [insertResult] = await connection.query<ResultSetHeader>(
