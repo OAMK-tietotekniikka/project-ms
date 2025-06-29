@@ -1,3 +1,12 @@
+/**
+ * Companies controller.
+ * Manages retrieving and deleting companies and their related data.
+ *
+ * @version 2.0.0
+ * @since 29.06.2025
+ * @module
+ */
+
 import type { Request, Response } from "express";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import type { PoolConnection } from "mysql2/promise";
@@ -9,6 +18,12 @@ import { logRequests } from "../utils/logRequests";
 import { getTeacherIdByEmail } from "../utils/getUsersByEmail";
 import { AuthenticatedRequest } from "../middleware/auth";
 
+/**
+ * Retrieves companies.
+ *
+ * Fetches a list of all companies accessible by the authenticated user.
+ * Returns a list of companies.
+ */
 export const getCompanies = async (
 	req: Request,
 	res: Response,
@@ -30,6 +45,12 @@ export const getCompanies = async (
 		if (connection) connection.release();
 	}
 };
+
+/**
+ * Creates a new company.
+ *
+ * Adds a new company to the database and returns the created or existing record with ID and name.
+ */
 
 export const createCompany = async (
 	req: AuthenticatedRequest,
@@ -66,6 +87,13 @@ export const createCompany = async (
 	}
 };
 
+/**
+ * Deletes a company.
+ *
+ * Removes a company reference from all projects, deletes company-teacher relations,
+ * and deletes the company itself, if the authenticated user is a teacher.
+ * Returns a success / error response.
+ */
 export const deleteCompany = async (
 	req: AuthenticatedRequest,
 	res: Response,
@@ -134,6 +162,12 @@ export const deleteCompany = async (
 	}
 };
 
+/**
+ * Retrieves favorite companies for a teacher.
+ *
+ * Fetches all companies marked as favorite by the authenticated teacher.
+ * Returns a list of favorite companies.
+ */
 export const getFavoCompanies = async (
 	req: AuthenticatedRequest,
 	res: Response,
@@ -170,6 +204,12 @@ export const getFavoCompanies = async (
 	}
 };
 
+/**
+ * Adds a favorite company for a teacher.
+ *
+ * Adds a company to the authenticated teacher’s list of favorite companies.
+ * Returns a success (company_id, teacher_id) / error response.
+ */
 export const addFavoCompany = async (
 	req: AuthenticatedRequest,
 	res: Response,
@@ -205,6 +245,12 @@ export const addFavoCompany = async (
 	}
 };
 
+/**
+ * Deletes a favorite company for a teacher.
+ *
+ * Removes a company from the authenticated teacher’s list of favorite companies.
+ * Returns a success / error response.
+ */
 export const deleteFavoCompany = async (
 	req: AuthenticatedRequest,
 	res: Response,

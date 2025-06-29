@@ -1,3 +1,12 @@
+/**
+ * Project notes controller.
+ * Manages retrieving, adding, deleting notes in/to projects.
+ *
+ * @version 2.0.0
+ * @since 29.06.2025
+ * @module
+ */
+
 import type { AuthenticatedRequest } from "../middleware/auth";
 import type { Response } from "express";
 import { logRequests } from "../utils/logRequests";
@@ -8,6 +17,12 @@ import { QUERY } from "../query/projects.query";
 import { responseHelper } from "../domain/newResponse";
 import { logError } from "../utils/logError";
 
+/**
+ * Adds a new project note.
+ *
+ * Creates and attaches a new note to the specified project by the authenticated user.
+ * Returns the newly created note (req.body if success).
+ */
 export const addProjectNote = async (
 	req: AuthenticatedRequest,
 	res: Response,
@@ -37,6 +52,12 @@ export const addProjectNote = async (
 	}
 };
 
+/**
+ * Retrieves project notes.
+ *
+ * Fetches all notes related to a specific project, accessible by the authenticated user.
+ * Returns a list of project notes.
+ */
 export const getProjectNotes = async (
 	req: AuthenticatedRequest,
 	res: Response,
@@ -64,6 +85,12 @@ export const getProjectNotes = async (
 	}
 };
 
+/**
+ * Deletes a project note.
+ *
+ * Removes a specific note from a project, if the authenticated user has permission.
+ * Returns a success / error response.
+ */
 export const deleteProjectNote = async (
 	req: AuthenticatedRequest,
 	res: Response,
