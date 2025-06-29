@@ -2,7 +2,6 @@ import { Router } from "express";
 import {
 	createStudent,
 	deleteStudent,
-	getStudent,
 	getStudentUpdated,
 	getStudents,
 	updateStudent,
@@ -27,7 +26,5 @@ studentsRouter
 	.delete(authenticate, deleteStudent);
 
 studentsRouter.route("/me").get(authenticate, getStudentUpdated);
-
-studentsRouter.route("/:email").get(getStudent);
 
 export default studentsRouter;

@@ -1,10 +1,8 @@
 import { Router } from "express";
 import {
 	createResource,
-	decrementResourceUsage,
 	getAnyTeacherResources,
 	getIndividualResources,
-	getResources,
 	updateResource,
 } from "../controllers/resources.controller";
 import { authenticate, requireRole } from "../middleware/auth";
@@ -13,12 +11,7 @@ const resourcesRouter = Router();
 
 resourcesRouter
 	.route("/me")
-	.get(
-		authenticate,
-		requireRole(["teacher"]),
-		getIndividualResources,
-		//getResources)
-	)
+	.get(authenticate, requireRole(["teacher"]), getIndividualResources)
 	.post(authenticate, requireRole(["teacher"]), createResource);
 
 resourcesRouter
