@@ -1,4 +1,14 @@
-import type { Request, Response } from "express";
+/**
+ * Students bulk controller.
+ *
+ * Manages creating and updating student records in bulk.
+ *
+ * @version 2.0.0
+ * @since 29.06.2025
+ * @module
+ */
+
+import type { Response } from "express";
 import pool from "../config/mysql.config";
 
 import type {
@@ -22,6 +32,12 @@ const studentArraySchema = z.object({
 	students: z.array(studentSchema).min(1),
 });
 
+/**
+ * Creates or updates multiple students in bulk.
+ *
+ * Inserts new student records or updates existing ones based on email.
+ * @remarks Uses transactions to keep data consistent.
+ */
 export const createMultipleStudents = async (
 	req: AuthenticatedRequest,
 	res: Response,

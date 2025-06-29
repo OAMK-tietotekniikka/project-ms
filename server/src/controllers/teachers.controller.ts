@@ -1,3 +1,12 @@
+/**
+ * Teachers controller.
+ * Manages creating, reading, and updating teacher records.
+ *
+ * @version 2.0.0
+ * @since 29.06.2025
+ * @module
+ */
+
 import type { Request, Response } from "express";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import type { PoolConnection } from "mysql2/promise";
@@ -16,6 +25,11 @@ import { getTeacherIdByEmail } from "../utils/getUsersByEmail";
 import { getStudyYear } from "../utils/dateUtils";
 import { string } from "zod";
 
+/**
+ * Retrieves all teacher records.
+ *
+ * Fetches and returns a list of all teachers from the database.
+ */
 export const getTeachers = async (
 	req: Request,
 	res: Response,
@@ -41,6 +55,13 @@ export const getTeachers = async (
 	}
 };
 
+/**
+ * Retrieves available teachers.
+ *
+ * Fetches a list of teachers who are currently available for allocation,
+ * where used_resources is less than total_resources in the provided study year.
+ * Returns the filtered list of available teachers.
+ */
 export const getAvailableTeachers = async (
 	req: AuthenticatedRequest,
 	res: Response,
@@ -66,6 +87,11 @@ export const getAvailableTeachers = async (
 	}
 };
 
+/**
+ * Retrieves the currently authenticated teacher.
+ *
+ * Fetches and returns the teacher profile associated with the authenticated user.
+ */
 export const getCurrentTeacher = async (
 	req: AuthenticatedRequest,
 	res: Response,
@@ -98,6 +124,11 @@ export const getCurrentTeacher = async (
 	}
 };
 
+/**
+ * Creates a new teacher record.
+ *
+ * Adds a new teacher to the database and returns a success / error response..
+ */
 export const createTeacher = async (
 	req: Request,
 	res: Response,
@@ -166,6 +197,12 @@ export const getTeachersByCompany = async (
 	}
 };
 
+/**
+ * Updates an existing teacher record.
+ *
+ * Modifies teacher data using the provided teacher_name.
+ * Returns a success / error response.
+ */
 export const updateTeacher = async (
 	req: AuthenticatedRequest,
 	res: Response,
