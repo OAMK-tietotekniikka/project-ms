@@ -1,6 +1,6 @@
 {
-	"name": "projectsms",
-	"version": "1.0.0",
+	"name": "projects-ms",
+	"version": "1.0.1",
 	"description": "Project management tool",
 	"main": "index.js",
 	"repository": {
@@ -12,7 +12,10 @@
 	"bugs": {
 		"url": "https://github.com/OAMK-tietotekniikka/ProjectsMS/issues"
 	},
-	"workspaces": ["frontend", "server"],
+	"workspaces": [
+		"frontend",
+		"server"
+	],
 	"engines": {
 		"node": ">=18.0.0",
 		"npm": ">=8.0.0"
@@ -26,10 +29,13 @@
 		"check:fix": "biome check --write .",
 		"type-check": "npm run type-check --workspaces",
 		"clean": "npm run clean --workspaces && rm -rf node_modules",
-		"prepare": "husky"
+		"prepare": "husky",
+		"docs": "typedoc"
 	},
 	"lint-staged": {
-		"*.{js,jsx,ts,tsx}": ["biome check --write"]
+		"*.{js,jsx,ts,tsx}": [
+			"biome format --write"
+		]
 	},
 	"homepage": "https://github.com/OAMK-tietotekniikka/ProjectsMS#readme",
 	"devDependencies": {
@@ -37,6 +43,11 @@
 		"@commitlint/cli": "^19.8.1",
 		"@commitlint/config-conventional": "^19.8.1",
 		"husky": "^9.1.7",
-		"lint-staged": "^16.1.0"
+		"lint-staged": "^16.1.0",
+		"typedoc": "^0.28.6",
+		"typedoc-plugin-markdown": "^4.7.0"
+	},
+	"dependencies": {
+		"typedoc-material-theme": "^1.4.0"
 	}
 }
