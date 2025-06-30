@@ -11,7 +11,6 @@ import {
 	getProjectDetails,
 	getProjectMembers,
 	getProjects,
-	getProjectsByCompanyAndYear,
 	getStudentProjects,
 	getTeacherProjects,
 	updateProject,
@@ -30,10 +29,6 @@ projectsRouter
 projectsRouter.route("/student/me").get(authenticate, getStudentProjects); // GET /projects/me - get current user's projects
 
 projectsRouter.route("/teacher/me").get(authenticate, getTeacherProjects);
-
-projectsRouter
-	.route("/summary_by_company_semester")
-	.get(authenticate, requireRole(["student"]), getProjectsByCompanyAndYear);
 
 projectsRouter
 	.route("/:project_id")
