@@ -68,7 +68,7 @@ const ImportStudents: React.FC<ImportStudentsProps> = ({ handleClose }) => {
 		if (!file) return;
 
 		setLoading(true);
-		Papa.parse(file, {
+		Papa.parse<string[]>(file, {
 			delimiter: ";",
 			skipEmptyLines: true,
 			complete: (results) => {
