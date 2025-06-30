@@ -120,10 +120,13 @@ CREATE TABLE project_note (
 
 -- Insert student data
 INSERT INTO students (student_name, email, class_code)
-VALUES ('John Doe', 'johndoe@email.com', 'din21sp');
+VALUES ('Student one', 'student1@mail.com', '');
 
 INSERT INTO students (student_name, email, class_code)
-VALUES ('Jane Doe', 'janedoe@email.com', 'din20sp');
+VALUES ('Student two', 'student2@mail.com', 'din23sp');
+
+INSERT INTO students (student_name, email, class_code)
+VALUES ('Student three', 'student3@mail.com', '');
 
 
 
@@ -158,24 +161,28 @@ VALUES (1,2);
 INSERT INTO company_teacher (company_id, teacher_id)
 VALUES (3,1);
 
--- Insert resources data
-INSERT INTO resources (teacher_id, total_resources, used_resources, study_year)
-VALUES (1, 5, 2, '2021-2022');
 
-INSERT INTO resources (teacher_id, total_resources, used_resources, study_year)
-VALUES (2, 20, 0, '2023-2024');
-
-INSERT INTO resources (teacher_id, total_resources, used_resources, study_year)
-VALUES (1, 7, 0, '2023-2024');
-
-INSERT INTO resources (teacher_id, total_resources, used_resources, study_year)
-VALUES (1, 5, 2, '2020-2021');
 
 INSERT INTO resources (teacher_id, total_resources, used_resources, study_year)
 VALUES (3, 5, 5, '2023-2024');
 
 INSERT INTO resources (teacher_id, total_resources, used_resources, study_year)
+VALUES (2, 20, 0, '2023-2024');
+
+INSERT INTO resources (teacher_id, total_resources, used_resources, study_year)
+VALUES (1, 5, 2, '2020-2021');
+
+INSERT INTO resources (teacher_id, total_resources, used_resources, study_year)
+VALUES (1, 5, 2, '2021-2022');
+
+INSERT INTO resources (teacher_id, total_resources, used_resources, study_year)
 VALUES (1, 5, 0, '2023-2024');
+
+INSERT INTO resources (teacher_id, total_resources, used_resources, study_year)
+VALUES (1, 10, 0, '2024-2025');
+
+INSERT INTO resources (teacher_id, total_resources, used_resources, study_year)
+VALUES (1, 15, 0, '2025-2026');
 
 -- Insert student_project data
 
