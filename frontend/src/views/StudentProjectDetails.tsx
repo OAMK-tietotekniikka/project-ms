@@ -1,159 +1,98 @@
-import React, { useState } from "react";
-import { Container, Row, Col, Button, Form } from "react-bootstrap";
+import React from "react";
 import { useTranslation } from "react-i18next";
-import { useLocation, useParams, useNavigate } from 'react-router-dom';
-import DocumentsListing from "../components/StudentUI/DocumentsListing";
-import NotesListing from "../components/StudentUI/NotesListing";
-import ChangeProjectStatus from "../components/StudentUI/ChangeProjectStatus";
-import { useProjectsContext } from "../contexts/projectsContext";
-//import { deleteProjectById } from "../contexts/apiRequests/projectsApiRequests";
-//import { deleteProjectNoteById } from "../contexts/apiRequests/projectsApiRequests";
-
+import { useLocation, useParams, useNavigate } from "react-router-dom";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Info, FileText } from "lucide-react";
+import {
+	useAddProjectMember,
+	useGetProjectDetails,
+	useGetProjectMembers,
+} from "@/hooks/useProjects";
+import ProjectHeader from "@/components/StudentUI/ProjectDetailsHeader";
+import ProjectOverview from "@/components/StudentUI/ProjectDetailsOverview";
+import NotesListing from "@/components/StudentUI/NotesListing";
+import { toast } from "sonner";
 
 const StudentProjectDetails = () => {
-    const { t } = useTranslation();
-    const location = useLocation();
-    const { proj } = location.state || {};
-    const { id } = useParams<{ id: string }>();
-    const projectId = parseInt(id);
-    const [studentName, setStudentName] = useState<string>("");
-    const navigate = useNavigate();
-    const { deleteProject, projects, setProjects } = useProjectsContext();
-    const user = localStorage.getItem("user")
+	const { t } = useTranslation();
+	const location = useLocation();
+	const { id } = useParams<{ id: string }>();
+	const projectId = parseInt(id || "0");
+	const navigate = useNavigate();
 
-    const handleChange = (value: string) => {
-        if (value !== '') {
-            setStudentName(value);
-        }
-    };
+	const {
+		data: members,
+		isLoading: isMembersLoading,
+		error: membersError,
+	} = useGetProjectMembers(projectId);
 
-    const handleAddStudent = () => {
-        console.log(studentName);
-        console.log(proj.company_id);
-        // Functionality to add student to project will be added here
-    };
+	const {
+		data: projectData,
+		isLoading: isProjectLoading,
+		error: projectError,
+	} = useGetProjectDetails(projectId);
 
-    const handleDeleteProject = () => {
-        const isConfirmed = window.confirm("Are you sure you want to delete this project?");
-        if (isConfirmed) {
-            const authHeader = { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } };
-            deleteProject(projectId, authHeader); 
-            setProjects(projects.filter(project => project.project_id !== projectId));
-            navigate('/teacher');
-        }
-    }
+	const addMemberMutation = useAddProjectMember();
 
-    return (
-        <Container className="student-main-container">
-            <Row className="student-main-row">
-                <Col xs="12" lg="7">
-                    <h4>{t('projectNo')} {proj.project_number}</h4>
-                    <h6>{proj.project_name}</h6>
-                    <div style={{ margin: "20px 0" }}>
-                        <div style={{ fontWeight: "bold" }}>{t('projDesc')} :</div>
-                        <div>{proj.project_desc}</div>
-                    </div>
-                    <Row>
-                        <Col className="grey-text">{t('status')}</Col>
-                        <Col>{t(proj.project_status)}</Col>
-                    </Row>
-                    <Row>
-                        <Col className="grey-text">{t('company')}</Col>
-                        <Col>{proj.company_name}</Col>
-                    </Row>
-                    <Row>
-                        <Col className="grey-text">{t('startDate')}</Col>
-                        <Col>{String(proj.start_date).split('T')[0]}</Col>
-                    </Row>
-                    <Row>
-                        <Col className="grey-text">{t('dueDate')}</Col>
-                        <Col>{String(proj.end_date).split('-')[0] === "1970" ? t('dateNotSet') : String(proj.end_date).split('T')[0]}</Col>
-                    </Row>
-                    <Row>
-                        <Col className="grey-text">{t('url')}</Col>
-                        <Col>{proj.project_url ? proj.project_url : t('noUrl')}</Col>
-                    </Row>
-                    <Row>
-                        <Col className="grey-text">{t('supervisor')}</Col>
-                        <Col>{proj.teacher_name === "no teacher" ? t('noTeacher') : proj.teacher_name}</Col>
-                    </Row>
-                    <Row>
-                        <Col className="grey-text">{t('studInvolved')}</Col>
-                        <Col style={{ display: "flex", flexDirection: "column" }}>
-                            {proj.studentsInvolved.map((student: any, index: number) => (
-                                <Col key={index}>{student}</Col>
-                            ))}
-                        </Col>
+	const handleAddStudent = async (data: {
+		project_id: number;
+		data: { email: string };
+	}) => {
+		try {
+			await addMemberMutation.mutateAsync(data);
+			toast.success(t("toast_success"));
+		} catch (error) {
+			toast.error(t("toast_error"));
+			console.error("Failed to add student:", error);
+		}
+	};
+	console.log("state proj", location.state?.proj);
+	const proj = projectData?.[0] || location.state?.proj; // TODO improve perfomance
+	console.log("state proj", proj);
+	if (!proj) {
+		navigate("/student");
+	}
 
-                    </Row>
-                    <Button
-                        className="student-view-button margin-right"
-                        onClick={() => navigate('/form', { state: { proj } })}
-                    >
-                        {t('modifyData')}
-                    </Button>
-                    {user === "teacher" ?
-                        <Button
-                            className="student-view-button"
-                            onClick={() => handleDeleteProject()}
-                        >
-                            {t('deleteProj')}
-                        </Button>
-                        : null}
+	return (
+		<div className="max-w-4xl mx-auto p-6">
+			<ProjectHeader proj={proj} />
 
-                </Col>
-                <Col xs="12" lg="5" style={{ marginTop: "15%" }}>
-                    <div style={{ fontWeight: "bold", marginBottom: "10px" }}>{t('changeStatus')}:</div>
-                    <ChangeProjectStatus projectData={proj} />
-                </Col>
+			<Tabs defaultValue="overview" className="w-full">
+				<TabsList className="grid w-full grid-cols-2">
+					<TabsTrigger
+						value="overview"
+						className="space-x-2 dark:data-[state=active]:bg-card"
+					>
+						<Info className="h-4 w-4" />
+						<span>{t("overview", { defaultValue: "Overview" })}</span>
+					</TabsTrigger>
+					<TabsTrigger
+						value="docs-notes"
+						className="space-x-2 dark:data-[state=active]:bg-card"
+					>
+						<FileText className="h-4 w-4" />
+						<span>{t("notes", { defaultValue: "Notes" })}</span>
+					</TabsTrigger>
+				</TabsList>
 
-                <hr className="hr-style" />
+				<TabsContent value="overview">
+					<ProjectOverview
+						proj={proj}
+						projectId={projectId}
+						members={members || []}
+						isMembersLoading={isMembersLoading}
+						membersError={membersError}
+						onAddStudent={handleAddStudent}
+						addMemberLoading={addMemberMutation.isPending}
+					/>
+				</TabsContent>
 
-                <div style={{ fontWeight: "bold" }}>{t('projNotes')}</div>
-                <NotesListing projectId={projectId} />
-
-                <hr className="hr-style" />
-
-                <div style={{ fontWeight: "bold" }}>{t('projDocs')}</div>
-                <DocumentsListing projectId={projectId} />
-
-                <hr className="hr-style" />
-
-                {user === "student" &&
-                    <>
-                        <div style={{ fontWeight: "bold" }}>{t('studInvolved')}</div>
-                        <Row className="notes-listing">
-                            <Col>
-                                <div style={{ fontWeight: "bold" }}>{t('studInProj')}:</div>
-                                {proj.studentsInvolved?.map((student: any, index: number) => (
-                                    <div key={index}>{student}</div>
-                                ))}
-                            </Col>
-                            <Col >
-                                <Form>
-                                    <Form.Label style={{ fontWeight: "bold" }}>{t('addNewStudent')}</Form.Label>
-                                    <Form.Control
-                                        type="text"
-                                        placeholder={t('enterName')}
-                                        style={{ width: "300px", fontSize: "13px" }}
-                                        onChange={(e) => handleChange(e.target.value)}
-                                        value={studentName}
-                                    />
-                                </Form>
-                                <Button
-                                    className="student-view-button"
-                                    type='button'
-                                    onClick={() => handleAddStudent()}
-                                >
-                                    {t('addStudent')}
-                                </Button>
-                            </Col>
-                        </Row>
-                    </>
-                }
-            </Row>
-        </Container>
-    );
+				<TabsContent value="docs-notes">
+					<NotesListing projectId={projectId} />
+				</TabsContent>
+			</Tabs>
+		</div>
+	);
 };
 
 export default StudentProjectDetails;

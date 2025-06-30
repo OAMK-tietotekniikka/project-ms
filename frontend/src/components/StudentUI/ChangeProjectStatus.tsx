@@ -1,95 +1,100 @@
-import React , { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { Container, Row, Col, Form, Button } from 'react-bootstrap';
-import { useProjectsContext } from '../../contexts/projectsContext';
-import { useUserContext } from '../../contexts/userContext';
-import 'bootstrap/dist/css/bootstrap.min.css';
-
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import {
+	useAddProjectMember,
+	useUpdateProjectStatus,
+} from "@/hooks/useProjects";
 
 interface ChangeProjectStatusProps {
-    projectData: any;
+	projectData: any;
+	role: string;
 }
 
-const ChangeProjectStatus: React.FC<ChangeProjectStatusProps> = ({ projectData }) => {
-    const { t } = useTranslation();
-    const navigate = useNavigate();
-    const { modifyProject, fetchProjects } = useProjectsContext();
-    const [projectStatus, setProjectStatus] = useState<string>(projectData?.project_status || '');
-    const [initialStatus, setInitialStatus] = useState<string>(projectData?.project_status || '');
-    const currentDate = new Date();
-    const { user } = useUserContext();
+const ChangeProjectStatus: React.FC<ChangeProjectStatusProps> = ({
+	projectData,
+	role,
+}) => {
+	const { t } = useTranslation();
+	const [projectStatus, setProjectStatus] = useState<string>(
+		projectData?.project_status || "",
+	);
+	const [initialStatus, setInitialStatus] = useState<string>(
+		projectData?.project_status || "",
+	);
+	const projectStatusMutation = useUpdateProjectStatus();
+	const isStatusChanged = projectStatus !== initialStatus;
 
-    useEffect(() => {
-        fetchProjects();
-    }, [fetchProjects]);
+	useEffect(() => {
+		if (projectData?.project_status) {
+			setProjectStatus(projectData.project_status);
+			setInitialStatus(projectData.project_status);
+		}
+	}, [projectData?.project_status]);
 
-    const handleStatusChange = (status: string) => {
-        setProjectStatus(status);
-    };
+	return (
+		<div className="space-y-4">
+			<RadioGroup
+				value={projectStatus}
+				onValueChange={setProjectStatus}
+				className="space-y-3"
+			>
+				<div className="flex items-center space-x-3">
+					<RadioGroupItem value="pending" id="pending" />
+					<Label htmlFor="pending" className="cursor-pointer flex flex-col">
+						<div className="flex flex-col">
+							<div className="font-medium">{t("pending")}</div>
+							<div className="text-sm text-muted-foreground">
+								{t("pendingRadio")}
+							</div>
+						</div>
+					</Label>
+				</div>
 
-    const handleSave = () => {
+				<div className="flex items-center space-x-3">
+					<RadioGroupItem value="ongoing" id="ongoing" />
+					<Label htmlFor="ongoing" className="cursor-pointer">
+						<div className="flex flex-col">
+							<div className="font-medium">{t("ongoing")}</div>
+							<div className="text-sm text-muted-foreground">
+								{t("ongoingRadio")}
+							</div>
+						</div>
+					</Label>
+				</div>
 
-        const updatedProject = {
-            project_name: projectData?.project_name,
-            project_desc: projectData?.project_desc,
-            teacher_id: projectData?.teacher_id,
-            company_id: projectData?.company_id,
-            project_status: projectStatus,
-            project_url: projectData?.project_url,
-            start_date: projectData?.start_date,
-            end_date: projectStatus === "completed" ? currentDate : projectData?.end_date,
-        };
-        modifyProject(updatedProject, projectData.project_id);
-        user === "teacher" ? navigate('/teacher') : navigate('/student');
-    };
+				{role === "teacher" && (
+					<div className="flex items-center space-x-3">
+						<RadioGroupItem value="completed" id="completed" />
+						<Label htmlFor="completed" className="cursor-pointer">
+							<div className="flex flex-col">
+								<div className="font-medium">{t("completed")}</div>
+								<div className="text-sm text-muted-foreground">
+									{t("completedRadio")}
+								</div>
+							</div>
+						</Label>
+					</div>
+				)}
+			</RadioGroup>
 
-    const isStatusChanged = projectStatus !== initialStatus;
-
-    return (
-        <Container>
-            <Row>
-                <Col className='radio-column'>
-                    <Form>
-                        <div >
-                            <Form.Check
-                                className='form-check'
-                                type='radio'
-                                label={<span><strong>{t('pending')}</strong> <span className='radio-span'> ({t('pendingRadio')}) </span></span>}
-                                checked={projectStatus === 'pending'}
-                                onChange={() => handleStatusChange('pending')}
-                            />
-                            <Form.Check
-                                className='form-check'
-                                type='radio'
-                                label={<span><strong>{t('ongoing')}</strong> <span className='radio-span'> ({t('ongoingRadio')})</span></span>}
-                                checked={projectStatus === 'ongoing'}
-                                onChange={() => handleStatusChange('ongoing')}
-                            />
-                            {user === "teacher" &&
-                                <Form.Check
-                                    className='form-check'
-                                    type='radio'
-                                    label={<span><strong>{t('completed')}</strong> <span className='radio-span'> ({t('completedRadio')})</span></span>}
-                                    checked={projectStatus === 'completed'}
-                                    onChange={() => handleStatusChange('completed')}
-                                />
-                            }
-                        </div>
-                    </Form>
-                    <Button
-                        className="student-view-button"
-                        type='button'
-                        style={{ width: "100px", marginTop: "5px", alignSelf: "end" }}
-                        onClick={() => handleSave()}
-                        disabled={!isStatusChanged}
-                    >
-                        {t('save')}
-                    </Button>
-                </Col>
-            </Row>
-        </Container>
-    )
+			<Button
+				onClick={() => {
+					projectStatusMutation.mutateAsync({
+						project_id: projectData?.project_id,
+						data: { project_status: projectStatus },
+					});
+				}}
+				disabled={!isStatusChanged}
+				className="w-full flex items-center text-secondary hover:cursor-pointer"
+			>
+				{t("save")}
+			</Button>
+		</div>
+	);
 };
 
 export default ChangeProjectStatus;

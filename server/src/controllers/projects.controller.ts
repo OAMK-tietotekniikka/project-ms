@@ -1,4 +1,4 @@
-import { type Request, type Response, response } from "express";
+import { type Response, response } from "express";
 import type {
 	FieldPacket,
 	OkPacket,
@@ -8,14 +8,17 @@ import type {
 import type { PoolConnection } from "mysql2/promise";
 import pool from "../config/mysql.config";
 import { responseHelper } from "../domain/newResponse";
-import type { HttpResponse } from "../domain/response";
-import type { StudentProject } from "../interface/studentProject";
+import type { AuthenticatedRequest } from "../middleware/auth";
 import { QUERY } from "../query/projects.query";
 import { R_QUERY } from "../query/resources.query";
 import { formatDate, getStudyYear } from "../utils/dateUtils";
 import { logError } from "../utils/logError";
 import { logRequests } from "../utils/logRequests";
 import { allocateTeacher } from "./resources.controller";
+import {
+	getStudentIdByEmail,
+	getTeacherIdByEmail,
+} from "../utils/getUsersByEmail";
 
 type ResultSet = [
 	RowDataPacket[] | RowDataPacket[][] | OkPacket | OkPacket[] | ResultSetHeader,
@@ -23,7 +26,7 @@ type ResultSet = [
 ];
 
 export const getProjects = async (
-	req: Request,
+	req: AuthenticatedRequest,
 	res: Response,
 ): Promise<void> => {
 	logRequests(req);
@@ -34,23 +37,20 @@ export const getProjects = async (
 			QUERY.SELECT_PROJECTS,
 		);
 		responseHelper.ok(res, projects);
-		return;
 	} catch (error: unknown) {
 		logError("getProjects", error);
 		responseHelper.internalServerError(res);
-		return;
 	} finally {
 		if (connection) connection.release();
 	}
 };
 
 export const createProject = async (
-	req: Request,
+	req: AuthenticatedRequest,
 	res: Response,
 ): Promise<void> => {
 	logRequests(req);
 	let {
-		student_id,
 		project_name,
 		project_desc,
 		company_id,
@@ -58,17 +58,27 @@ export const createProject = async (
 		project_url,
 		start_date,
 		end_date,
-	} = { ...req.body };
+	} = req.body;
 	let connection: PoolConnection | null = null;
+
 	start_date = new Date(formatDate(new Date(start_date)));
 	end_date = new Date(formatDate(new Date(end_date)));
 
 	try {
 		connection = await pool.getConnection();
-
 		await connection.beginTransaction();
+
+		const student_id = await getStudentIdByEmail(
+			connection,
+			req.user?.email || "",
+		);
+		if (!student_id) {
+			responseHelper.notFound(res);
+			return;
+		}
+
 		const studyYear = getStudyYear(start_date);
-		const [student] = await pool.query<RowDataPacket[]>(
+		const [student] = await connection.query<RowDataPacket[]>(
 			"SELECT student_id FROM students WHERE student_id = ? LIMIT 1",
 			student_id,
 		);
@@ -84,10 +94,7 @@ export const createProject = async (
 			student_id,
 			connection,
 		);
-
-		if (teacher_id === 0) {
-			teacher_id = null;
-		}
+		if (teacher_id === 0) teacher_id = null;
 
 		const [project] = await connection.query<ResultSetHeader>(
 			QUERY.CREATE_PROJECT,
@@ -111,19 +118,13 @@ export const createProject = async (
 
 		// If a teacher is assigned, increment their resource usage
 		if (teacher_id) {
-			// not null
-
-			// Check if the teacher has resources for this year
 			const [resources] = await connection.query<RowDataPacket[]>(
-				`SELECT * FROM resources
-                 WHERE teacher_id = ? AND study_year = ?`,
+				`SELECT * FROM resources WHERE teacher_id = ? AND study_year = ?`,
 				[teacher_id, studyYear],
 			);
-
 			// Only increment if resources exist and haven't reached the limit
 			if (
-				resources &&
-				resources.length > 0 &&
+				resources?.length > 0 &&
 				resources[0].used_resources < resources[0].total_resources
 			) {
 				await connection.query(R_QUERY.INCREMENT_RESOURCE_USAGE, [
@@ -134,72 +135,119 @@ export const createProject = async (
 		}
 		await connection.commit();
 		responseHelper.created(res, project);
-		return;
 	} catch (error: unknown) {
 		logError("createProject", error);
 		responseHelper.internalServerError(res);
-		return;
 	} finally {
 		if (connection) connection.release();
 	}
 };
 
 export const updateProjectTeacher = async (
-	currentTeacherId: number,
-	newTeacherId: number,
-	studyYear: string,
-	connection: PoolConnection | null = null,
-): Promise<boolean> => {
-	if (!connection) {
-		return false;
-	}
+	req: AuthenticatedRequest,
+	res: Response,
+): Promise<void> => {
+	let connection: PoolConnection | null = null;
+
 	try {
-		// Check if new teacher has available resources
+		connection = await pool.getConnection();
+		await connection.beginTransaction();
+
+		const { project_id } = req.params;
+		const { new_teacher_id } = req.body;
+
+		// Validate input
+		if (!project_id || !new_teacher_id) {
+			await connection.rollback();
+			responseHelper.badRequest(res);
+			return;
+		}
+
+		const [projects] = await connection.query<RowDataPacket[]>(
+			QUERY.SELECT_PROJECT,
+			[project_id],
+		);
+		if (!projects?.length) {
+			await connection.rollback();
+			responseHelper.notFound(res);
+			return;
+		}
+
+		const project = projects[0];
+		// Check if same teacher
+		if (project.teacher_id == new_teacher_id) {
+			await connection.rollback();
+			console.log("Same teacher assigned");
+			responseHelper.conflict(res);
+			return;
+		}
+
+		// Check resources for new teacher
+		const studyYear = getStudyYear(project.start_date);
 		const [resources] = await connection.query<RowDataPacket[]>(
-			`SELECT used_resources, total_resources FROM resources
-             WHERE teacher_id = ? AND study_year = ?`,
-			[newTeacherId, studyYear],
+			`SELECT used_resources, total_resources FROM resources WHERE teacher_id = ? AND study_year = ?`,
+			[new_teacher_id, studyYear],
 		);
 
 		const hasAvailableResources =
-			resources &&
-			resources.length > 0 &&
-			resources[0] &&
-			resources[0].used_resources < resources[0].total_resources;
+			resources?.length > 0 &&
+			resources[0]?.used_resources < resources[0]?.total_resources;
+		if (!hasAvailableResources && project.teacher_id) {
+			console.log("No available resources", resources);
+			await connection.rollback();
+			responseHelper.conflict(res);
+			return;
+		}
 
-		if (!hasAvailableResources) return false;
-
-		// Update resource counts
-		if (currentTeacherId) {
+		// Update resource counts - decrement old teacher's usage
+		if (project.teacher_id) {
 			await connection.query<ResultSetHeader>(
 				R_QUERY.DECREMENT_RESOURCE_USAGE,
-				[currentTeacherId, studyYear],
+				[project.teacher_id, studyYear],
 			);
 		}
+
+		// Increment new teacher's usage
 		await connection.query<ResultSetHeader>(R_QUERY.INCREMENT_RESOURCE_USAGE, [
-			newTeacherId,
+			new_teacher_id,
 			studyYear,
 		]);
 
-		return true;
+		// Update project
+		await connection.query<ResultSetHeader>(
+			`UPDATE projects SET teacher_id = ? WHERE project_id = ?`,
+			[new_teacher_id, project_id],
+		);
+
+		// Commit transaction
+		await connection.commit();
+		responseHelper.ok(res, { message: "Teacher updated successfully" });
 	} catch (error) {
+		// Rollback on error
+		if (connection) {
+			try {
+				await connection.rollback();
+			} catch (rollbackError) {
+				logError("updateProjectTeacher - rollback failed", rollbackError);
+			}
+		}
 		logError("updateProjectTeacher", error);
-		return false;
+		responseHelper.internalServerError(res);
+	} finally {
+		if (connection) connection.release();
 	}
 };
 
-// Update updateProject function to handle teacher changes
 export const updateProject = async (
-	req: Request,
+	req: AuthenticatedRequest,
 	res: Response,
 ): Promise<void> => {
 	logRequests(req);
 
+	const { project_id } = req.params;
 	const {
-		project_id,
 		project_name,
 		project_desc,
-		teacher_id,
 		company_id,
 		project_status,
 		project_url,
@@ -222,35 +270,17 @@ export const updateProject = async (
 			[project_id],
 		);
 
+		console.log(originalProject);
 		if (!originalProject?.length) {
 			await connection.rollback();
 			responseHelper.notFound(res);
 			return;
 		}
 
-		const currentTeacherId = originalProject[0].teacher_id;
-		let finalTeacherId = currentTeacherId;
-
-		// Handle teacher change if needed
-		if (currentTeacherId !== teacher_id && teacher_id) {
-			const studyYear = getStudyYear(new Date(start_date));
-			const teacherChanged = await updateProjectTeacher(
-				currentTeacherId,
-				teacher_id,
-				studyYear,
-				connection,
-			);
-
-			if (teacherChanged) {
-				finalTeacherId = teacher_id;
-			}
-		}
-
 		// Update project
 		await connection.query(QUERY.UPDATE_PROJECT, [
 			project_name,
 			project_desc,
-			finalTeacherId,
 			company_id,
 			project_status,
 			project_url,
@@ -260,13 +290,17 @@ export const updateProject = async (
 		]);
 
 		await connection.commit();
+		const [new_company_name] = await connection.query<RowDataPacket[]>(
+			`SELECT company_name FROM companies WHERE company_id = ? LIMIT 1`,
+			[company_id],
+		); // TODO optimize
 
 		responseHelper.ok(res, {
 			project_id,
 			project_name,
 			project_desc,
-			teacher_id: finalTeacherId,
 			company_id,
+			company_name: new_company_name[0].company_name || "*",
 			project_status,
 			project_url,
 			start_date,
@@ -291,7 +325,7 @@ export const updateProject = async (
 
 // Update  deleteProject function to decrement resources
 export const deleteProject = async (
-	req: Request,
+	req: AuthenticatedRequest,
 	res: Response,
 ): Promise<void> => {
 	logRequests(req);
@@ -349,20 +383,26 @@ export const deleteProject = async (
 };
 
 export const getStudentProjects = async (
-	req: Request,
+	req: AuthenticatedRequest,
 	res: Response,
 ): Promise<void> => {
 	logRequests(req);
-	const id = req.params.student_id;
 	let connection: PoolConnection | null = null;
 	try {
 		connection = await pool.getConnection();
-		const [projects] = await pool.query<RowDataPacket[]>(
-			QUERY.SELECT_STUDENT_PROJECTS_BY_STUDENT_ID,
-			id,
-		); // critical, should be SELECT_STUDENT_PROJECTS_BY_STUDENT_ID
-		if (projects.length === 0) {
+		const id = await getStudentIdByEmail(connection, req.user?.email || "");
+
+		if (!id) {
 			responseHelper.notFound(res);
+			return;
+		}
+
+		const [projects] = await connection.query<RowDataPacket[]>(
+			QUERY.SELECT_STUDENT_PROJECTS_BY_STUDENT_ID,
+			[id],
+		);
+		if (projects.length === 0) {
+			responseHelper.ok(res, []);
 			return;
 		}
 		responseHelper.ok(res, projects);
@@ -376,91 +416,33 @@ export const getStudentProjects = async (
 	}
 };
 
-export const createStudentProject = async (
-	req: Request,
+export const getTeacherProjects = async (
+	req: AuthenticatedRequest,
 	res: Response,
 ): Promise<void> => {
 	logRequests(req);
-	const studentProject: StudentProject = { ...req.body };
-	let projectNumber: number;
-	// TBD validation
 	let connection: PoolConnection | null = null;
 	try {
 		connection = await pool.getConnection();
-		const [previousProjects] = await connection.query<RowDataPacket[]>(
-			QUERY.SELECT_STUDENT_PROJECTS_BY_STUDENT_ID,
-			[studentProject.student_id],
-		);
-		if (previousProjects.length === 0) {
-			projectNumber = 1;
-		} else {
-			projectNumber = previousProjects.length + 1;
-		}
-		//studentProject.project_number = projectNumber;
-		const result: ResultSet = await connection.query(
-			QUERY.CREATE_STUDENT_PROJECT,
-			Object.values(studentProject),
-		);
-		responseHelper.created(res, studentProject);
-		return;
-	} catch (error: unknown) {
-		logError("createStudentProject", error);
-		responseHelper.internalServerError(res);
-		return;
-	} finally {
-		if (connection) connection.release();
-	}
-};
+		const id = await getTeacherIdByEmail(connection, req.user?.email || "");
 
-export const addProjectNote = async (
-	req: Request,
-	res: Response,
-): Promise<void> => {
-	logRequests(req);
-	let connection: PoolConnection | null = null;
-	try {
-		connection = await pool.getConnection();
-		const note_params = [
-			req.params.project_id,
-			req.body.note,
-			req.body.document_path,
-			req.body.created_by,
-		];
-		const result: ResultSet = await connection.query<ResultSetHeader>(
-			QUERY.INSERT_PROJECT_NOTE,
-			note_params,
-		);
-		responseHelper.created(res, req.body); // TBD note parsing
-		return;
-	} catch (error: unknown) {
-		logError("addProjectNote", error);
-		responseHelper.internalServerError(res);
-		return;
-	} finally {
-		if (connection) connection.release();
-	}
-};
-
-export const getProjectNotes = async (
-	req: Request,
-	res: Response,
-): Promise<void> => {
-	logRequests(req);
-	let connection: PoolConnection | null = null;
-	try {
-		connection = await pool.getConnection();
-		const [notes] = await connection.query<RowDataPacket[]>(
-			QUERY.SELECT_PROJECT_NOTES,
-			[req.params.project_id],
-		);
-		if (notes.length === 0) {
+		if (!id) {
 			responseHelper.notFound(res);
 			return;
 		}
-		responseHelper.ok(res, notes);
+
+		const [projects] = await connection.query<RowDataPacket[]>(
+			QUERY.SELECT_STUDENT_PROJECTS_BY_TEACHER_ID,
+			[id],
+		);
+		if (projects.length === 0) {
+			responseHelper.ok(res, []);
+			return;
+		}
+		responseHelper.ok(res, projects);
 		return;
 	} catch (error: unknown) {
-		logError("getProjectNotes", error);
+		logError("getStudentProjectsByTeacherId", error);
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
@@ -468,26 +450,150 @@ export const getProjectNotes = async (
 	}
 };
 
-export const deleteProjectNote = async (
-	req: Request,
+export const addStudentToProject = async (
+	req: AuthenticatedRequest,
+	res: Response,
+): Promise<void> => {
+	logRequests(req);
+	const { email } = req.body;
+	const { project_id } = req.params;
+	let connection: PoolConnection | null = null;
+	try {
+		connection = await pool.getConnection();
+		const id = await getStudentIdByEmail(connection, email || "");
+		if (!id) {
+			responseHelper.notFound(res);
+			return;
+		}
+		await connection.query<ResultSetHeader>(QUERY.CREATE_STUDENT_PROJECT, [
+			id,
+			project_id,
+			0,
+		]);
+		responseHelper.created(res);
+	} catch (error: unknown) {
+		logError("addStudentToProject", error);
+		responseHelper.internalServerError(res);
+	} finally {
+		if (connection) connection.release();
+	}
+};
+
+export const getProjectMembers = async (
+	req: AuthenticatedRequest,
+	res: Response,
+): Promise<void> => {
+	logRequests(req);
+	const { project_id } = req.params;
+	let connection: PoolConnection | null = null;
+	try {
+		connection = await pool.getConnection();
+		const id =
+			(await getStudentIdByEmail(connection, req.user?.email || "")) ||
+			(await getTeacherIdByEmail(connection, req.user?.email || ""));
+		if (!id) {
+			responseHelper.notFound(res);
+			return;
+		}
+		const [result] = await connection.query<RowDataPacket[]>(
+			QUERY.GET_PROJECT_MEMBERS,
+			[project_id],
+		);
+		responseHelper.ok(res, result);
+	} catch (error: unknown) {
+		logError("getProjectMembers", error);
+		responseHelper.internalServerError(res);
+	} finally {
+		if (connection) connection.release();
+	}
+};
+
+export const updateProjectStatus = async (
+	req: AuthenticatedRequest,
+	res: Response,
+): Promise<void> => {
+	logRequests(req);
+	const { project_id } = req.params;
+	const { project_status } = req.body;
+	let connection: PoolConnection | null = null;
+	try {
+		connection = await pool.getConnection(); // TODO add check if student is in the current project
+		const [result] = await connection.query<ResultSetHeader>(
+			QUERY.UPDATE_PROJECT_STATUS,
+			[project_status, project_id],
+		);
+		responseHelper.ok(res, result);
+	} catch (error: unknown) {
+		logError("getProjectMembers", error);
+		responseHelper.internalServerError(res);
+	} finally {
+		if (connection) connection.release();
+	}
+};
+
+export const getProjectDetails = async (
+	req: AuthenticatedRequest,
 	res: Response,
 ): Promise<void> => {
 	logRequests(req);
 	let connection: PoolConnection | null = null;
-	const { note_id, project_id } = req.params;
 	try {
 		connection = await pool.getConnection();
-		await connection.query<ResultSetHeader>(QUERY.DELETE_PROJECT_NOTE, [
-			note_id,
-			project_id,
-		]);
-		responseHelper.noContent(res);
+		const { project_id } = req.params;
+
+		if (req.user?.role == "teacher") {
+			console.log("teacher");
+			const [project] = await connection.query<RowDataPacket[]>(
+				QUERY.SELECT_STUDENT_PROJECT_BY_PROJECT_ID,
+				[project_id],
+			);
+			console.log(project);
+			responseHelper.ok(res, project);
+		} else if (req.user?.role == "student") {
+			const student_id = await getStudentIdByEmail(
+				connection,
+				req.user?.email || "",
+			);
+			if (!student_id) {
+				responseHelper.unauthorized(res);
+				return;
+			}
+			const [project] = await connection.query<RowDataPacket[]>(
+				QUERY.SELECT_STUDENT_PROJECT_BY_STUDENT_AND_PROJECT_ID,
+				[project_id, student_id],
+			);
+			responseHelper.ok(res, project);
+		} else {
+			responseHelper.unauthorized(res);
+		}
+	} catch (error: unknown) {
+		logError("getProjects", error);
+		responseHelper.internalServerError(res);
+	} finally {
+		if (connection) connection.release();
+	}
+};
+
+/*export const getProjectsByCompanyAndYear = async (
+	req: AuthenticatedRequest,
+	res: Response,
+): Promise<void> => {
+	logRequests(req);
+
+
+	let connection: PoolConnection | null = null;
+	try {
+		connection = await pool.getConnection();
+		const [result] = await connection.query<RowDataPacket[]>(
+			QUERY.SELECT_PROJECTS_BY_COMPANY_AND_YEAR,
+		);
+		responseHelper.ok(res, result);
 		return;
 	} catch (error: unknown) {
-		logError("deleteProjectNote", error);
+		logError("getProjectMembers", error);
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
 		if (connection) connection.release();
 	}
-};
+};*/

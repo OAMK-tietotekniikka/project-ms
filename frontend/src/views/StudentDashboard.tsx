@@ -1,96 +1,157 @@
-import React, { useEffect } from 'react';
-import { Container, Row, Col, Button } from 'react-bootstrap';
-import { useTranslation } from 'react-i18next';
-import { useStudentsContext } from '../contexts/studentsContext';
-import { useProjectsContext } from '../contexts/projectsContext';
-import { useTeachersContext } from '../contexts/teachersContext';
-import { useCompaniesContext } from '../contexts/companiesContext';
-import { useNavigate } from 'react-router-dom';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import '../App.css'
+import React from "react";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import dayjs from "dayjs";
+import { Calendar, User, Plus, FolderOpen, ChartLine } from "lucide-react";
+import { useStudentProfile, useStudentProjects } from "@/hooks/useStudents";
 
+const StudentDashboard = () => {
+	const { t } = useTranslation();
+	const navigate = useNavigate();
 
-const StudentDashboard: React.FC = () => {
-    const { t } = useTranslation();
-    const { students, signedInStudent } = useStudentsContext();
-    const { projects, studentProjects, fetchProjects } = useProjectsContext();
-    const { teachers } = useTeachersContext();
-    const { companies } = useCompaniesContext();
-    const navigate = useNavigate();
+	const {
+		data: profile,
+		isLoading: isProfileLoading,
+		error: profileError,
+	} = useStudentProfile();
 
-    useEffect(() => {
-        fetchProjects();
-    }, [fetchProjects]);
-    
-    const studentId = signedInStudent?.student_id || 0;
-    
-    const studentProjectsList = studentProjects?.filter(project => project.student_id === studentId) || [];
-    const studentProjectsWithData = studentProjectsList?.map(project => {
-        const projectData = projects?.find(proj => proj.project_id === project.project_id);
-        const foundTeacher = teachers?.find(teacher => teacher.teacher_id === projectData?.teacher_id);
-        return {
-            ...project,
-            project_name: projectData?.project_name || "No project name",
-            project_desc: projectData?.project_desc || "No project description",
-            project_status: projectData?.project_status || "No project status",
-            teacher_name: foundTeacher ? `${foundTeacher.teacher_name}` : "no teacher",
-            teacher_id: projectData?.teacher_id || null,
-            company_id: projectData?.company_id || null,
-            company_name: companies?.find(company => company.company_id === projectData?.company_id)?.company_name || "No company name",
-            start_date: projectData?.start_date || "No start date",
-            end_date: projectData?.end_date || "No end date",
-            project_url: projectData?.project_url || "No project url",
-            studentsInvolved: studentProjects?.filter(proj => proj.project_id === project.project_id).map(student => students.find(stud => stud.student_id === student.student_id)?.student_name) || "No students involved"
-        }
-    });
+	const {
+		data: projects,
+		isLoading: isProjectsLoading,
+		error: projectsError,
+	} = useStudentProjects();
+	console.log(profile);
+	if (isProfileLoading || isProjectsLoading) {
+		return <p>Loading...</p>;
+	}
 
-    return (
-        <Container className='student-main-container'>
-            <Col xs="12" lg="9">
-                <Row >
-                    {signedInStudent ?
-                        <div>
-                            <h4>{signedInStudent.student_name}</h4>
-                            <div style={{ fontSize: "small" }}>{signedInStudent.email}</div>
-                            <div style={{ fontSize: "small" }}>{signedInStudent.class_code ? signedInStudent.class_code.toUpperCase() : "no code"}</div>
-                        </div>
-                        : "No student data"}
+	if (profileError || projectsError) {
+		return <p>Error loading student data.</p>;
+	}
 
-                    {studentProjectsList.length > 0 ?
-                        <>
-                            <div style={{ margin: "4% 0%" }}>{t('projListBelow')}</div>
-                            <hr style={{margin: "0"}}/>
-                            <Row>
-                                <Col className="heading-row"></Col>
-                                <Col className="heading-row">{t('company')}</Col>
-                                <Col className="heading-row">{t('startDate')}</Col>
-                                <Col className="heading-row">{t('dueDate')}</Col>
-                            </Row>
+	if (!profile) {
+		return <p>No student profile found.</p>;
+	}
 
-                            {studentProjectsWithData.map(proj => (
-                                <Row
-                                    className="data-row"
-                                    key={proj.project_id}
-                                    onClick={() => navigate(`/studentProject/${proj.project_id}`, { state: { proj } })}
-                                >
-                                    <Col className="data-item" style={{ color: "#5e5e5e", fontWeight: "bold" }}>{t('projectNo')} {proj.project_number}</Col>
-                                    <Col className="data-item">{proj.company_name}</Col>
-                                    <Col className="data-item">{String(proj.start_date).split('T')[0]}</Col>
-                                    <Col className="data-item">{String(proj.end_date).split('-')[0] === "1970" ? "not set" : String(proj.end_date).split('T')[0]}</Col>
-                                </Row>
-                            ))}
-                        </>
-                        : <div className="second-heading" >{t('noProjects')}</div>}
-                    <hr style={{ marginTop: "10px", marginBottom: "0px" }}/>
-                </Row>
-                <Row>
-                    <Button href="/form" className='student-view-button'>{t('createProj')}</Button>
-                </Row>
-            </Col>
-        </Container>
-    );
+	const formatDate = (dateString) => {
+		if (!dateString) return "Not set";
+
+		const date = dayjs(dateString);
+		if (!date.isValid() || date.year() === 1970) {
+			return "Not set";
+		}
+
+		return date.format("DD.MM.YYYY");
+	};
+
+	return (
+		<div className="max-w-4xl mx-auto space-y-6 p-6">
+			{/* Student Info Card */}
+			<Card>
+				<CardContent>
+					<div className="flex items-center space-x-4">
+						<div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
+							<User className="w-6 h-6" />
+						</div>
+						<div>
+							<h2 className="text-xl font-semibold">
+								{profile[0].student_name}
+							</h2>
+							<p className="text-sm text-muted-foreground">
+								{profile[0].email}
+							</p>
+							{profile[0].class_code ? (
+								<Badge variant="outline" className="mt-1">
+									profile[0].class_code.toUpperCase()
+								</Badge>
+							) : null}
+						</div>
+					</div>
+				</CardContent>
+			</Card>
+
+			{/* Projects Section */}
+			<Card className="border-0 shadow-sm">
+				<CardHeader className="pb-4">
+					<div className="flex items-center justify-between">
+						<CardTitle className="text-lg font-semibold flex items-center space-x-2">
+							<FolderOpen className="w-5 h-5" />
+							<span>My Projects</span>
+						</CardTitle>
+						<Button
+							className="bg-primary/75 hover:cursor-pointer"
+							onClick={() => navigate("/form")}
+						>
+							<Plus className="w-4 h-4 mr-2" />
+							{t("createProj")}
+						</Button>
+					</div>
+				</CardHeader>
+				<CardContent>
+					{projects.length > 0 ? (
+						<div className="space-y-1">
+							<p className="text-sm text-muted-foreground mb-4">
+								{t("projListBelow")}
+							</p>
+
+							{/* Table Header */}
+							<div className="grid grid-cols-4 gap-4 py-3 px-4 bg-card rounded-lg text-sm font-medium">
+								<div>Project</div>
+
+								<div className="flex items-center space-x-1">
+									<Calendar className="w-4 h-4" />
+									<span>{t("startDate")}</span>
+								</div>
+								<div className="flex items-center space-x-1">
+									<Calendar className="w-4 h-4" />
+									<span>{t("dueDate")}</span>
+								</div>
+								<div className="flex items-center space-x-1">
+									<ChartLine className="w-4 h-4" />
+									<span>{t("status")}</span>
+								</div>
+							</div>
+
+							{/* Project Rows */}
+							<div className="space-y-2">
+								{projects.map((proj, index) => (
+									<div
+										key={proj.project_id}
+										onClick={() =>
+											navigate(`/studentProject/${proj.project_id}`, {
+												state: { proj },
+											})
+										}
+										className="grid grid-cols-4 gap-4 py-4 px-4 rounded-lg hover:bg-accent cursor-pointer transition-colors border"
+									>
+										<div>
+											<span className="text-sm font-medium">
+												{t("projectNo")} {index + 1}
+											</span>
+										</div>
+										<div className="text-sm">{formatDate(proj.start_date)}</div>
+										<div className="text-sm">{formatDate(proj.end_date)}</div>
+										<div className="text-sm">{proj.project_status}</div>
+									</div>
+								))}
+							</div>
+						</div>
+					) : (
+						<div className="text-center py-12">
+							<FolderOpen className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
+							<h3 className="text-lg font-medium mb-2">{t("noProjects")}</h3>
+							<p className="text-gray-500 mb-6">
+								Start by creating your first project
+							</p>
+						</div>
+					)}
+				</CardContent>
+			</Card>
+		</div>
+	);
 };
 
 export default StudentDashboard;
-
-

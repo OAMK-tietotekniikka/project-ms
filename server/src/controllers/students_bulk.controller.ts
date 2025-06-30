@@ -1,4 +1,14 @@
-import type { Request, Response } from "express";
+/**
+ * Students bulk controller.
+ *
+ * Manages creating and updating student records in bulk.
+ *
+ * @version 2.0.0
+ * @since 29.06.2025
+ * @module
+ */
+
+import type { Response } from "express";
 import pool from "../config/mysql.config";
 
 import type {
@@ -10,6 +20,7 @@ import { z } from "zod";
 import { responseHelper } from "../domain/newResponse";
 import { logError } from "../utils/logError";
 import { logRequests } from "../utils/logRequests";
+import { AuthenticatedRequest } from "../middleware/auth";
 
 const studentSchema = z.object({
 	email: z.string().email().min(8).max(100),
@@ -21,8 +32,14 @@ const studentArraySchema = z.object({
 	students: z.array(studentSchema).min(1),
 });
 
+/**
+ * Creates or updates multiple students in bulk.
+ *
+ * Inserts new student records or updates existing ones based on email.
+ * @remarks Uses transactions to keep data consistent.
+ */
 export const createMultipleStudents = async (
-	req: Request,
+	req: AuthenticatedRequest,
 	res: Response,
 ): Promise<void> => {
 	logRequests(req);
@@ -31,6 +48,7 @@ export const createMultipleStudents = async (
 
 	if (!validatedStudents.success) {
 		const errors = validatedStudents.error.format();
+		console.log(errors);
 		responseHelper.badRequest(res); // to bad req
 		return;
 	}
@@ -57,9 +75,9 @@ export const createMultipleStudents = async (
 		// Insert new students (bulk)
 		if (newStudents.length > 0) {
 			const insertNew = newStudents.map((s) => [
-				s.student_name,
-				s.email,
-				s.class_code || null,
+				s.student_name?.toLowerCase(),
+				s.email.toLowerCase(),
+				s.class_code?.toLowerCase() || null,
 			]);
 
 			const [insertResult] = await connection.query<ResultSetHeader>(

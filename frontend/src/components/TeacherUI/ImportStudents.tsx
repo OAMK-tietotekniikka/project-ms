@@ -1,442 +1,324 @@
-import React, { useState, useEffect } from 'react';
-import { Form, Button, Alert, Spinner, Table } from 'react-bootstrap';
-import { useTranslation } from 'react-i18next';
-import { useStudentsContext } from '../../contexts/studentsContext';
-import Papa from 'papaparse';
+import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { FixedSizeList as List } from "react-window";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Upload, Eye, ArrowLeft, User, Mail } from "lucide-react";
+import Papa from "papaparse";
+import { useBatchStudents } from "@/hooks/useStudents";
+import { toast } from "sonner";
 
 interface ImportStudentsProps {
-  handleClose: () => void;
-}
-
-// Define a student structure that matches what we're importing
-interface ImportedStudent {
-  student_name: string;
-  email: string;
-  class_code: string;
+	handleClose: () => void;
 }
 
 const ImportStudents: React.FC<ImportStudentsProps> = ({ handleClose }) => {
-  const { t } = useTranslation();
-  const { addNewStudent } = useStudentsContext();
-  const [file, setFile] = useState<File | null>(null);
-  const [parsedData, setParsedData] = useState<ImportedStudent[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [previewMode, setPreviewMode] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+	const { t } = useTranslation();
+	const batchStudentsMutation = useBatchStudents();
+	const predefined_classes = new Set([
+		"DIN21SP",
+		"DIN22SP",
+		"DIN23SP",
+		"DIN24SP",
+		"DIN25SP",
+		"DIN26SP",
+		"DIN27SP",
+		"DIN28SP",
+		"DIN29SP",
+		"DIN30SP",
+		"TVT21SPO",
+		"TVT22SPO",
+		"TVT23SPO",
+		"TVT24SPO",
+		"TVT25SPO",
+		"TVT26SPO",
+		"TVT27SPO",
+		"TVT28SPO",
+		"TVT29SPO",
+		"TVT30SPO",
+		"TVT21KMO",
+		"TVT22KMO",
+		"TVT23KMO",
+		"TVT24KMO",
+		"TVT25KMO",
+		"TVT26KMO",
+		"TVT27KMO",
+		"TVT28KMO",
+		"TVT29KMO",
+		"TVT30KMO",
+	]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setFile(e.target.files[0]);
-      setError(null);
-    }
-  };
+	const [file, setFile] = useState<File | null>(null);
+	const [validStudents, setValidStudents] = useState([]);
+	const [invalidRows, setInvalidRows] = useState([]);
+	const [loading, setLoading] = useState(false);
+	const [showPreview, setShowPreview] = useState(false);
+	const [error, setError] = useState(null);
 
+	const handleFileChange = (e) => {
+		setFile(e.target.files?.[0] || null);
+		setError(null);
+	};
 
-  const parseCSV = () => {
-    if (!file) {
-      setError(t('pleaseSelectFile'));
-      return;
-    }
+	const parseCSV = () => {
+		if (!file) return;
 
-    setLoading(true);
-    setError(null);
+		setLoading(true);
+		Papa.parse<string[]>(file, {
+			delimiter: ";",
+			skipEmptyLines: true,
+			complete: (results) => {
+				const rows = results.data.slice(1); // Skip header
+				const valid = [];
+				const invalid = [];
 
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (results) => {
-        const handleImport = async () => {
-          if (parsedData.length === 0) {
-            setError(t('noDataToImport'));
-            return;
-          }
-        
-          setLoading(true);
-          setError(null);
-          setSuccess(null);
-        
-          console.log('Starting import of', parsedData.length, 'students');
-          
-          try {
-            let newCount = 0;
-            let updateCount = 0;
-            let errorDetails = [];
-            
-            for (const student of parsedData) {
-              try {
-                console.log('Importing student:', JSON.stringify(student));
-                
-                // Split the name into first and last name
-                let firstName = '';
-                let lastName = '';
-                
-                if (student.student_name) {
-                  const nameParts = student.student_name.split(' ');
-                  firstName = nameParts[0] || '';
-                  lastName = nameParts.slice(1).join(' ') || '';
-                }
-                
-                // Use try/catch for each student to continue even if one fails
-                const response = await addNewStudent({
-                  student_name: student.student_name,
-                  email: student.email,
-                  class_code: student.class_code
-                });
-                
-                console.log('Server response:', JSON.stringify(response));
-                
-                if (response) {
-                  // Check if this was an update (200) or a new student (201)
-                  if (response.statusCode === 200) {
-                    updateCount++;
-                    console.log(`Updated existing student ${student.email}`);
-                  } else {
-                    newCount++;
-                    console.log(`Created new student ${student.email}`);
-                  }
-                } else {
-                  console.error(`Failed to import student ${student.email}: No response data`);
-                  errorDetails.push({email: student.email, error: 'No response data'});
-                }
-              } catch (err) {
-                const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-                console.error(`Error adding student ${student.email}:`, errorMsg);
-                errorDetails.push({email: student.email, error: errorMsg});
-              }
-            }
-            
-            console.log(`Import completed: ${newCount} new, ${updateCount} updated, ${errorDetails.length} failed`);
-            
-            if (newCount > 0 || updateCount > 0) {
-              setSuccess(t('importSuccess', { count: newCount, updateCount: updateCount }));
-              if (errorDetails.length > 0) {
-                // Show error details for debugging
-                console.error('Failed imports:', errorDetails);
-                setError(t('partialImportFailed', { count: errorDetails.length }));
-              }
-              setPreviewMode(false);
-              setParsedData([]);
-              setFile(null);
-            } else {
-              setError(t('allImportsFailed'));
-              console.error('All imports failed. Details:', JSON.stringify(errorDetails));
-            }
-          } catch (error) {
-            setError(t('importError'));
-            console.error('Import error:', error);
-          } finally {
-            setLoading(false);
-          }
-        };        console.log('CSV parsing results:', results);
-        
-        // Check if we have data
-        if (!results.data || results.data.length === 0) {
-          setError(t('noDataInCSV'));
-          setLoading(false);
-          return;
-        }
-        
-        // Check if CSV has required columns
-        const firstRow = results.data[0] as any;
-        console.log('First row:', firstRow);
-        
-        if (!firstRow || (typeof firstRow !== 'object')) {
-          setError(t('invalidCSVFormat'));
-          setLoading(false);
-          return;
-        }
-        
-        // Check column names (case-insensitive)
-        const columnNames = Object.keys(firstRow).map(key => key.toLowerCase());
-        console.log('Column names:', columnNames);
-        
-        const hasNameColumn = columnNames.some(col => 
-          col === 'name' || col === 'student_name' || col === 'studentname'
-        );
-        
-        const hasEmailColumn = columnNames.some(col => 
-          col === 'email' || col === 'student_email' || col === 'mail'
-        );
+				rows.forEach((row: string[], index) => {
+					const studentNumIndex = row.findIndex((cell) =>
+						/^\d+$/.test(cell?.trim()),
+					);
 
-        const hasClassCodeColumns = columnNames.some(col =>
-            col === 'group' || col === 'class_code' || col === 'code' || col === 'class'
-        );
+					if (studentNumIndex > -1) {
+						const firstName = row[studentNumIndex + 1]?.trim() || "";
+						const lastName = row[studentNumIndex + 2]?.trim() || "";
+						const email = row[studentNumIndex + 3]?.trim() || "";
+						const classes_set = new Set(
+							row.slice(0, studentNumIndex).map((s) => s.trim().toUpperCase()),
+						);
+						const has_predefined_class = () => {
+							for (const c of classes_set) {
+								if (predefined_classes.has(c)) {
+									return c;
+								}
+							}
+							return "";
+						};
 
+						valid.push({
+							student_name: `${firstName} ${lastName}`.trim(),
+							email: email,
+							class_code: has_predefined_class(),
+						});
+					} else {
+						invalid.push({
+							line: index + 2,
+							content: row.join(";"),
+						});
+					}
+				});
 
-        if (!hasNameColumn || !hasEmailColumn) {
-          setError(t('csvMissingColumns'));
-          setLoading(false);
-          return;
-        }
-        
-        // Map CSV data to our format, accounting for different possible column names
-        const mapped = results.data.map((row: any) => {
-          // Find the name and email columns (case-insensitive)
-          const nameKey = Object.keys(row).find(key => 
-            key.toLowerCase() === 'name' || 
-            key.toLowerCase() === 'student_name' || 
-            key.toLowerCase() === 'studentname'
-          ) || '';
-          
-          const emailKey = Object.keys(row).find(key => 
-            key.toLowerCase() === 'email' || 
-            key.toLowerCase() === 'student_email' || 
-            key.toLowerCase() === 'mail'
-          ) || '';
+				setValidStudents(valid);
+				setInvalidRows(invalid);
+				setShowPreview(true);
+				setLoading(false);
+			},
+			error: () => {
+				setError("Failed to parse CSV file");
+				setLoading(false);
+			},
+		});
+	};
 
-          const classCodeKey = Object.keys(row).find(key =>
-              key.toLowerCase() === 'group' ||
-              key.toLowerCase() === 'class_code' ||
-              key.toLowerCase() === 'code' ||
-              key.toLowerCase() === 'class'
-          ) || '';
-          
-          return {
-            student_name: row[nameKey],
-            email: row[emailKey],
-            class_code: row[classCodeKey] || null
-          };
-        }).filter(student => student.student_name && student.email);
+	const handleImport = async () => {
+		setLoading(true);
+		console.log("Importing:", validStudents);
 
-        console.log('Mapped data:', mapped);
-        
-        if (mapped.length === 0) {
-          setError(t('noValidDataInCSV'));
-          setLoading(false);
-          return;
-        }
-        
-        setParsedData(mapped);
-        setPreviewMode(true);
-        setLoading(false);
-      },
-      error: (error) => {
-        console.error('CSV parsing error:', error);
-        setError(`${t('csvParseError')}: ${error.message}`);
-        setLoading(false);
-      }
-    });
-  };
+		try {
+			await batchStudentsMutation.mutateAsync({
+				data: { students: validStudents },
+			});
+			setLoading(false);
+			toast.success(t("toast_success"));
+			handleClose();
+		} catch (err) {
+			toast.error(t("toast_error"));
+			setError("Import failed.");
+		} finally {
+			setLoading(false);
+		}
+	};
 
-  const handleImport = async () => {
-    if (parsedData.length === 0) {
-      setError(t('noDataToImport'));
-      return;
-    }
+	const StudentRow = ({ index, style }) => (
+		<div
+			style={style}
+			className="flex items-center justify-between p-4 border-b last:border-b-0 hover:bg-muted/50"
+		>
+			<div className="flex items-center flex-1">
+				<div className="flex-1 min-w-0">
+					<div className="text-sm font-medium truncate">
+						{validStudents[index].student_name}
+					</div>
 
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
+					<div className="flex gap-2 text-xs text-muted-foreground truncate">
+						<Badge className="text-xs" variant="secondary">
+							{validStudents[index].email}
+						</Badge>
+						<Badge className="text-xs" variant="secondary">
+							{validStudents[index].class_code}
+						</Badge>
+					</div>
+				</div>
+			</div>
+		</div>
+	);
 
-    console.log('Starting import of', parsedData.length, 'students');
-    
-    try {
-      let newCount: number = 0;
-      let updateCount: number = 0;
-      let errorDetails = [];
-      let errorEmails: Set<string> = new Set();
-      
-      for (const student of parsedData) {
-        try {
-          console.log('Importing student:', JSON.stringify(student));
+	const InvalidRow = ({ index, style }) => (
+		<div style={style} className="p-4 border-b last:border-b-0">
+			<div className="text-sm font-medium">Line {invalidRows[index].line}</div>
+			<div className="text-xs text-muted-foreground mt-1 font-mono bg-muted p-2 rounded">
+				{invalidRows[index].content}
+			</div>
+		</div>
+	);
 
+	if (showPreview) {
+		return (
+			<div className="space-y-6">
+				{/* Header with stats */}
+				<div className="flex items-center justify-between">
+					<Button
+						className="hover:cursor-pointer"
+						variant="outline"
+						onClick={() => setShowPreview(false)}
+					>
+						<ArrowLeft className="w-4 h-4 mr-2" />
+						Back
+					</Button>
 
-          
-          // Use try/catch for each student to continue even if one fails
-          const response = await addNewStudent({
-            student_name: student.student_name,
-            email: student.email,
-            class_code: student.class_code
-          });
-          
-          console.log('Server response:', JSON.stringify(response));
-          
-          if (response) {
-            // Check if this was an update (200) or a new student (201)
-            if (response.statusCode === 200) {
-              updateCount++;
-              console.log(`Updated existing student ${student.email}`);
-            } else {
-              newCount++;
-              console.log(`Created new student ${student.email}`);
-            }
-          } else {
-            console.error(`Failed to import student ${student.email}: No response data`);
-            errorEmails.add(student.email);
+					{/* Stats on the right */}
+					<div className="flex gap-6">
+						<div className="text-center">
+							<div className="text-2xl font-bold text-primary">
+								{validStudents.length}
+							</div>
+							<div className="text-sm text-muted-foreground">
+								Valid Students
+							</div>
+						</div>
+						<div className="text-center">
+							<div className="text-2xl font-bold text-primary">
+								{invalidRows.length}
+							</div>
+							<div className="text-sm text-muted-foreground">Invalid Rows</div>
+						</div>
+					</div>
+				</div>
 
-            //errorDetails.push({email: student.email, error: 'No response data'}); will be changed
+				{/* Tabs */}
+				<Tabs defaultValue="valid" className="w-full">
+					<TabsList className="grid w-full grid-cols-2">
+						<TabsTrigger value="valid" className="flex items-center gap-2">
+							Valid Students
+							{validStudents.length > 0 && (
+								<Badge variant="secondary" className="ml-1">
+									{validStudents.length}
+								</Badge>
+							)}
+						</TabsTrigger>
+						<TabsTrigger value="invalid" className="flex items-center gap-2">
+							Invalid Rows
+							{invalidRows.length > 0 && (
+								<Badge variant="secondary" className="ml-1">
+									{invalidRows.length}
+								</Badge>
+							)}
+						</TabsTrigger>
+					</TabsList>
 
-          }
-        } catch (err) {
-          const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-          errorEmails.add(student.email);
-          console.error(`Error adding student ${student.email}:`, errorMsg);
+					<TabsContent value="valid" className="mt-4">
+						{validStudents.length > 0 ? (
+							<Card>
+								<CardContent className="p-0">
+									<List
+										height={250}
+										width={"100%"}
+										itemCount={validStudents.length}
+										itemSize={100}
+									>
+										{StudentRow}
+									</List>
+								</CardContent>
+							</Card>
+						) : (
+							<Card>
+								<CardContent className="p-8 text-center text-muted-foreground">
+									No valid students found
+								</CardContent>
+							</Card>
+						)}
+					</TabsContent>
 
+					<TabsContent value="invalid" className="mt-4">
+						{invalidRows.length > 0 ? (
+							<Card>
+								<CardContent className="p-0">
+									<List
+										height={250}
+										width={"100%"}
+										itemCount={invalidRows.length}
+										itemSize={100}
+									>
+										{InvalidRow}
+									</List>
+								</CardContent>
+							</Card>
+						) : (
+							<Card>
+								<CardContent className="p-8 text-center text-muted-foreground">
+									No invalid rows found
+								</CardContent>
+							</Card>
+						)}
+					</TabsContent>
+				</Tabs>
 
-          //errorDetails.push({email: student.email, error: errorMsg}); will be changed
-        }
-      }
-      
-      console.log(`Import completed: ${newCount} new, ${updateCount} updated, ${errorDetails.length} failed`);
-      
-      if (newCount > 0 || updateCount > 0) {
-        setSuccess(t('importSuccess', { count: newCount, updateCount: updateCount }));
-        if (errorEmails.size) {
+				{/* Import button */}
+				<div className="flex justify-end">
+					<Button
+						onClick={handleImport}
+						disabled={loading || validStudents.length === 0}
+					>
+						{loading ? (
+							<Loader2 className="w-4 h-4 mr-2 animate-spin" />
+						) : (
+							<Upload className="w-4 h-4 mr-2" />
+						)}
+						Import {validStudents.length} Students
+					</Button>
+				</div>
+			</div>
+		);
+	}
 
-          console.error('Failed imports:', errorDetails);
-          setError(t('partialImportFailed', {
-            count: errorEmails.size,
-            emails: [...errorEmails].join(', ')
-          }));
-        }
-        setPreviewMode(false);
-        setParsedData([]);
-        setFile(null);
-      } else {
-        setError(t('allImportsFailed'));
-        console.error('All imports failed. Details:', JSON.stringify(errorDetails));
-      }
-    } catch (error) {
-      setError(t('importError'));
-      console.error('Import error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>Import Students</CardTitle>
+			</CardHeader>
+			<CardContent className="space-y-4">
+				<Input type="file" accept=".csv" onChange={handleFileChange} />
 
-  const checkApiConnection = async () => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/health`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-      
-      if (response.ok) {
-        console.log('API connection successful');
-        return true;
-      } else {
-        console.error('API connection failed with status:', response.status);
-        return false;
-      }
-    } catch (error) {
-      console.error('Failed to connect to API:', error);
-      return false;
-    }
-  };
+				{error && <div className="text-sm text-primary">{error}</div>}
 
-  useEffect(() => {
-    checkApiConnection();
-  }, []);
-
-  return (
-    <div className="import-students-container">
-      <h5>{t('importStudentsToClass')}</h5>
-      
-      {error && <Alert variant="danger">{error}</Alert>}
-      {success && <Alert variant="success">{success}</Alert>}
-      
-      {!previewMode ? (
-        <>
-
-          <Form.Group controlId="csvFile" className="mb-3">
-            <Form.Label>{t('csvFile')}</Form.Label>
-            <Form.Control 
-              type="file" 
-              accept=".csv" 
-              onChange={handleFileChange}
-            />
-            <Form.Text className="text-muted">
-              {t('csvFormatHint')}
-            </Form.Text>
-          </Form.Group>
-
-          <div className="d-flex justify-content-end mt-4">
-            <Button 
-              variant="secondary" 
-              onClick={handleClose} 
-              className="me-2"
-              disabled={loading}
-            >
-              {t('cancel')}
-            </Button>
-            <Button 
-              variant="primary" 
-              onClick={parseCSV}
-              disabled={!file || loading}
-            >
-              {loading ? (
-                <>
-                  <Spinner as="span" size="sm" animation="border" className="me-2" />
-                  {t('loading')}
-                </>
-              ) : (
-                t('previewData')
-              )}
-            </Button>
-          </div>
-        </>
-      ) : (
-        <>
-          <div className="mb-3">
-            <span className="ms-3">
-              <strong>{t('totalRecords')}:</strong> {parsedData.length}
-            </span>
-          </div>
-
-          <div className="table-responsive mb-3" style={{ maxHeight: '300px' }}>
-            <Table striped bordered hover size="sm">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>{t('studentName')}</th>
-                  <th>{t('email')}</th>
-                  <th>{t('classCode')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {parsedData.map((student, index) => (
-                  <tr key={index}>
-                    <td>{index + 1}</td>
-                    <td>{student.student_name}</td>
-                    <td>{student.email}</td>
-                    <td>{student.class_code}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          </div>
-
-          <div className="d-flex justify-content-end">
-            <Button 
-              variant="secondary" 
-              onClick={() => setPreviewMode(false)} 
-              className="me-2"
-              disabled={loading}
-            >
-              {t('back')}
-            </Button>
-            <Button 
-              variant="primary" 
-              onClick={handleImport}
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <Spinner as="span" size="sm" animation="border" className="me-2" />
-                  {t('importing')}
-                </>
-              ) : (
-                t('importStudents')
-              )}
-            </Button>
-          </div>
-        </>
-      )}
-    </div>
-  );
+				<div className="flex justify-end gap-2">
+					<Button variant="outline" onClick={handleClose}>
+						Cancel
+					</Button>
+					<Button onClick={parseCSV} disabled={!file || loading}>
+						{loading ? (
+							<Loader2 className="w-4 h-4 mr-2 animate-spin" />
+						) : (
+							<Eye className="w-4 h-4 mr-2" />
+						)}
+						{t("students_importStudents_preview")}
+					</Button>
+				</div>
+			</CardContent>
+		</Card>
+	);
 };
 
 export default ImportStudents;
