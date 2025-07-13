@@ -5,16 +5,12 @@ import express, {
 	type Response,
 } from "express";
 
-
-import authRouter from "../features/auth/routes/auth.routes";
-import companiesRouter from "../features/companies/routes/company.routes";
-import projectsRouter from "../features/projects/routes/project.routes";
-import resourcesRouter from "../features/teachers/routes/resource.routes";
-import studentsRouter from "../features/students/routes/student.routes";
-import teachersRouter from "../features/teachers/routes/teacher.routes";
-
-//This is for the creation of tables in the OpenShift MySql database
-//Comment out when working with development/feature branch and local Docker container
+import authRouter from "./features/auth/routes/auth.routes";
+import companiesRouter from "./features/companies/routes/company.routes";
+import projectsRouter from "./features/projects/routes/project.routes";
+import resourcesRouter from "./features/teachers/routes/resource.routes";
+import studentsRouter from "./features/students/routes/student.routes";
+import teachersRouter from "./features/teachers/routes/teacher.routes";
 
 export class App {
 	private readonly app: Application;
@@ -52,17 +48,8 @@ export class App {
 			this.app.use("/api/v2/auth", authRouter);
 		}
 
-		// TODO
-		/*this.app.all("*", (req: Request, res: Response) => {
-			res
-				.status(Code.NOT_FOUND)
-				.send(
-					new HttpResponse(
-						Code.NOT_FOUND,
-						Status.NOT_FOUND,
-						this.ROUTE_NOT_FOUND,
-					),
-				);
-		}); */
+		this.app.all("/*splat", (req: Request, res: Response) => {
+			res.status(404).send({ message: this.ROUTE_NOT_FOUND });
+		});
 	}
 }
