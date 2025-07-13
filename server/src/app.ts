@@ -4,21 +4,17 @@ import express, {
 	type Request,
 	type Response,
 } from "express";
-import createTables from "./createTables";
-import { HttpResponse } from "./domain/response";
-import { Code } from "./enum/code.enum";
-import { Status } from "./enum/status.enum";
-import authRouter from "./routes/auth.routes";
-import companiesRouter from "./routes/companies.routes";
-import emailRouter from "./routes/email.routes";
-import projectsRouter from "./routes/projects.routes";
-import resourcesRouter from "./routes/resources.routes";
-import studentsRouter from "./routes/students.routes";
-import teachersRouter from "./routes/teachers.routes";
+
+
+import authRouter from "../features/auth/routes/auth.routes";
+import companiesRouter from "../features/companies/routes/company.routes";
+import projectsRouter from "../features/projects/routes/project.routes";
+import resourcesRouter from "../features/teachers/routes/resource.routes";
+import studentsRouter from "../features/students/routes/student.routes";
+import teachersRouter from "../features/teachers/routes/teacher.routes";
 
 //This is for the creation of tables in the OpenShift MySql database
 //Comment out when working with development/feature branch and local Docker container
-//createTables();
 
 export class App {
 	private readonly app: Application;
@@ -45,29 +41,19 @@ export class App {
 	}
 
 	private routes(): void {
-		this.app.use("/students", studentsRouter);
-		this.app.use("/projects", projectsRouter);
-		this.app.use("/companies", companiesRouter);
-		this.app.use("/teachers", teachersRouter);
-		this.app.use("/resources", resourcesRouter);
-		this.app.use("/email", emailRouter);
+		this.app.use("/api/v2/students", studentsRouter);
+		this.app.use("/api/v2/projects", projectsRouter);
+		this.app.use("/api/v2/companies", companiesRouter);
+		this.app.use("/api/v2/teachers", teachersRouter);
+		this.app.use("/api/v2/resources", resourcesRouter);
+
 		const current_env = "development"; // should be remove later on
 		if (current_env === "development") {
-			this.app.use("/auth", authRouter);
+			this.app.use("/api/v2/auth", authRouter);
 		}
 
-		this.app.get("/", (req: Request, res: Response) => {
-			res
-				.status(Code.OK)
-				.send(
-					new HttpResponse(
-						Code.OK,
-						Status.OK,
-						"Hello World, I am using OpenShift!!!",
-					),
-				);
-		});
-		this.app.all("*", (req: Request, res: Response) => {
+		// TODO
+		/*this.app.all("*", (req: Request, res: Response) => {
 			res
 				.status(Code.NOT_FOUND)
 				.send(
@@ -77,6 +63,6 @@ export class App {
 						this.ROUTE_NOT_FOUND,
 					),
 				);
-		});
+		}); */
 	}
 }
