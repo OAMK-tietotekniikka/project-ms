@@ -3,23 +3,23 @@
  * Manages creating, reading, updating, and allocating teacher resources.
  *
  * @version 2.1.0
- * @since 5.07.2025
+ * @since 20.07.2025
  * @module
  */
 
 import type { Request, Response } from "express";
 import mariadb from "mariadb";
 import pool from "../../../shared/config/mariadb.config";
-import { responseHelper } from "../../../shared/utils/response-helper";
+import { responseHelper } from "../../../shared/utils/response_helper";
 import { R_QUERY } from "../queries/resources.query";
 import { QUERY } from "../queries/teachers.query";
-import { logError } from "../../../shared/utils/logError";
-import { logRequests } from "../../../shared/utils/logRequests";
+import { logError } from "../../../shared/utils/log_errors";
+import { logRequests } from "../../../shared/utils/log_requests";
 import { AuthenticatedRequest } from "../../../shared/middleware/auth";
 import {
 	getStudentIdByEmail,
 	getTeacherIdByEmail,
-} from "../../../shared/utils/getUsersByEmail";
+} from "../../../shared/utils/user_email_lookup";
 
 /**
  * Retrieves all resources.
@@ -34,9 +34,7 @@ export const getResources = async (
 	let connection: mariadb.PoolConnection | null = null;
 	try {
 		connection = await pool.getConnection();
-		const resources = await connection.query(
-			R_QUERY.SELECT_RESOURCES,
-		);
+		const resources = await connection.query(R_QUERY.SELECT_RESOURCES);
 		responseHelper.ok(res, resources);
 		return;
 	} catch (error: unknown) {
@@ -44,7 +42,7 @@ export const getResources = async (
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
-		if (connection) connection.release();
+		if (connection) await connection.release();
 	}
 };
 
@@ -78,14 +76,15 @@ export const getCurrentUserResources = async (
 		);
 		responseHelper.ok(res, {
 			teacher_id: teacher_id,
-			resources});
+			resources,
+		});
 		return;
 	} catch (error: unknown) {
 		logError("getResources", error);
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
-		if (connection) connection.release();
+		if (connection) await connection.release();
 	}
 };
 
@@ -121,7 +120,7 @@ export const listTeacherResources = async (
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
-		if (connection) connection.release();
+		if (connection) await connection.release();
 	}
 };
 
@@ -140,11 +139,10 @@ export const createResource = async (
 	try {
 		connection = await pool.getConnection();
 		if (total_resources >= 1) {
-			const [created_resource] = await connection.query(R_QUERY.CREATE_RESOURCE, [
-				teacher_id,
-				total_resources,
-				study_year,
-			]);
+			const [created_resource] = await connection.query(
+				R_QUERY.CREATE_RESOURCE,
+				[teacher_id, total_resources, study_year],
+			);
 			responseHelper.created(res, created_resource);
 			return;
 		}
@@ -155,7 +153,7 @@ export const createResource = async (
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
-		if (connection) connection.release();
+		if (connection) await connection.release();
 	}
 };
 
@@ -179,10 +177,9 @@ export const updateResource = async (
 
 	try {
 		connection = await pool.getConnection();
-		const existing_resource = await connection.query(
-			R_QUERY.SELECT_RESOURCE,
-			[req.params.resourceId],
-		);
+		const existing_resource = await connection.query(R_QUERY.SELECT_RESOURCE, [
+			req.params.resourceId,
+		]);
 		if (existing_resource.length === 0) {
 			responseHelper.notFound(res);
 			return;
@@ -194,10 +191,10 @@ export const updateResource = async (
 			return;
 		}
 
-		await connection.query(
-			R_QUERY.UPDATE_RESOURCE,
-			[total_resources, req.params.resourceId],
-		);
+		await connection.query(R_QUERY.UPDATE_RESOURCE, [
+			total_resources,
+			req.params.resourceId,
+		]);
 		responseHelper.ok(res, {
 			resource_id: req.params.resourceId,
 			teacher_id: existing_resource[0].teacher_id,
@@ -211,7 +208,7 @@ export const updateResource = async (
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
-		if (connection) connection.release();
+		if (connection) await connection.release();
 	}
 };
 
@@ -221,16 +218,18 @@ export const updateResource = async (
  * Assigns a teacher to a project for a given study year and company context. Returns an assigned teacher_id.
  */
 export const allocateTeacher = async (
-	company_id: string,
+	company_id: number,
 	studyYear: string,
 	student_id: number,
 	connection: mariadb.PoolConnection,
 ): Promise<number> => {
 	try {
-		const result = await connection.query(
-			QUERY.ALLOCATE_TEACHER,
-			[student_id, student_id, company_id, studyYear],
-		);
+		const result = await connection.query(QUERY.ALLOCATE_TEACHER, [
+			student_id,
+			student_id,
+			company_id,
+			studyYear,
+		]);
 
 		if (!result || result.length === 0) {
 			return 0; // 0 meaning no teacher

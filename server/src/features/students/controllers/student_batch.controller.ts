@@ -4,7 +4,7 @@
  * Manages creating and updating student records in bulk.
  *
  * @version 2.1.0
- * @since 5.07.2025
+ * @since 20.07.2025
  * @module
  */
 
@@ -13,10 +13,11 @@ import pool from "../../../shared/config/mariadb.config";
 
 import mariadb from "mariadb";
 import { z } from "zod";
-import { responseHelper } from "../../../shared/utils/response-helper";
-import { logError } from "../../../shared/utils/logError";
-import { logRequests } from "../../../shared/utils/logRequests";
+import { responseHelper } from "../../../shared/utils/response_helper";
+import { logError } from "../../../shared/utils/log_errors";
+import { logRequests } from "../../../shared/utils/log_requests";
 import { AuthenticatedRequest } from "../../../shared/middleware/auth";
+import { batchStudentSchema } from "../../../shared/validation/student.schema";
 
 const studentSchema = z.object({
 	email: z.string().email().min(8).max(100),
@@ -40,10 +41,10 @@ export const batchCreateStudents = async (
 ): Promise<void> => {
 	logRequests(req);
 	let connection: mariadb.PoolConnection | null = null;
-	const validatedStudents = studentArraySchema.safeParse(req.body);
+	const parsed = batchStudentSchema.safeParse(req.body);
 
-	if (!validatedStudents.success) {
-		const errors = validatedStudents.error.format();
+	if (!parsed.success) {
+		const errors = parsed.error.errors;
 		console.log(errors);
 		responseHelper.badRequest(res);
 		return;
@@ -68,16 +69,15 @@ export const batchCreateStudents = async (
              ON DUPLICATE KEY UPDATE 
                 student_name = VALUES(student_name),
                 class_code = COALESCE(VALUES(class_code), class_code)`,
-			batchData
+			batchData,
 		);
 
 		// With batch(), result is an array of results for each executed statement
 		let created = 0;
 		let updated = 0;
 
-
 		await connection.commit();
-		responseHelper.ok(res, {message: "success!"});
+		responseHelper.ok(res, { message: "success!" });
 	} catch (error: unknown) {
 		if (connection) {
 			try {
@@ -89,6 +89,6 @@ export const batchCreateStudents = async (
 		logError("createMultipleStudents", error);
 		responseHelper.internalServerError(res);
 	} finally {
-		if (connection) connection.release();
+		if (connection) await connection.release();
 	}
 };

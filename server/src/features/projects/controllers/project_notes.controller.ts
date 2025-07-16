@@ -3,20 +3,22 @@
  * Manages retrieving, adding, deleting notes in/to projects.
  *
  * @version 2.1.0
- * @since 5.07.2025
+ * @since 20.07.2025
  * @module
  */
 
 import type { AuthenticatedRequest } from "../../../shared/middleware/auth";
 import type { Response } from "express";
-import { logRequests } from "../../../shared/utils/logRequests";
+import { logRequests } from "../../../shared/utils/log_requests";
 import pool from "../../../shared/config/mariadb.config";
 import mariadb from "mariadb";
 import { QUERY } from "../queries/projects.query";
-import { responseHelper } from "../../../shared/utils/response-helper";
-import { logError } from "../../../shared/utils/logError";
-import {getStudentIdByEmail, getTeacherIdByEmail} from "../../../shared/utils/getUsersByEmail";
-import {no} from "zod/dist/types/v4/locales";
+import { responseHelper } from "../../../shared/utils/response_helper";
+import { logError } from "../../../shared/utils/log_errors";
+import {
+	getStudentIdByEmail,
+	getTeacherIdByEmail,
+} from "../../../shared/utils/user_email_lookup";
 
 /**
  * Adds a new project note.
@@ -31,16 +33,19 @@ export const addProjectNote = async (
 ): Promise<void> => {
 	logRequests(req);
 	let connection: mariadb.PoolConnection | null = null;
-	const validNoteTypes = ['text', 'link', 'feedback', 'milestone'];
+	const validNoteTypes = ["text", "link", "feedback", "milestone"];
 	try {
 		connection = await pool.getConnection();
-		const student_id = await getStudentIdByEmail(connection, req.user?.email || "");
+		const student_id = await getStudentIdByEmail(
+			connection,
+			req.user?.email || "",
+		);
 
 		if (student_id) {
-			const [belongs] = await connection.query(QUERY.STUDENT_BELONGS_TO_PROJECT, [
-				student_id,
-				req.params.projectId,
-			]);
+			const [belongs] = await connection.query(
+				QUERY.STUDENT_BELONGS_TO_PROJECT,
+				[student_id, req.params.projectId],
+			);
 
 			if (!belongs) {
 				responseHelper.unauthorized(res);
@@ -55,7 +60,7 @@ export const addProjectNote = async (
 		}
 		const safeNoteType = validNoteTypes.includes(req.body.note_type)
 			? req.body.note_type
-			: 'text';
+			: "text";
 
 		const email = req.user?.email || "";
 		const created_by = email.match(/^[A-Za-z]+/)?.[0] || "";
@@ -71,14 +76,10 @@ export const addProjectNote = async (
 			safeNoteType,
 			created_by,
 		];
-		const note = await connection.query(
-			QUERY.INSERT_PROJECT_NOTE,
-			note_params,
-		);
+		const note = await connection.query(QUERY.INSERT_PROJECT_NOTE, note_params);
 
 		responseHelper.created(res, note);
 		return;
-
 	} catch (error) {
 		logError("newNoteAdd", error);
 		responseHelper.internalServerError(res);
@@ -104,10 +105,9 @@ export const listProjectNotes = async (
 	let connection: mariadb.PoolConnection | null = null;
 	try {
 		connection = await pool.getConnection();
-		const notes = await connection.query(
-			QUERY.SELECT_PROJECT_NOTES,
-			[req.params.projectId],
-		);
+		const notes = await connection.query(QUERY.SELECT_PROJECT_NOTES, [
+			req.params.projectId,
+		]);
 		if (notes.length === 0) {
 			responseHelper.ok(res);
 			return;
@@ -119,7 +119,7 @@ export const listProjectNotes = async (
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
-		if (connection) connection.release();
+		if (connection) await connection.release();
 	}
 };
 
@@ -138,10 +138,7 @@ export const deleteProjectNote = async (
 	const { noteId, projectId } = req.params;
 	try {
 		connection = await pool.getConnection();
-		await connection.query(QUERY.DELETE_PROJECT_NOTE, [
-			noteId,
-			projectId,
-		]);
+		await connection.query(QUERY.DELETE_PROJECT_NOTE, [noteId, projectId]);
 		responseHelper.ok(res);
 		return;
 	} catch (error: unknown) {
@@ -149,6 +146,6 @@ export const deleteProjectNote = async (
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
-		if (connection) connection.release();
+		if (connection) await connection.release();
 	}
 };
