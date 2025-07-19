@@ -1,5 +1,5 @@
 import React from "react";
-import {NavLink, useNavigate} from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
 	House,
@@ -11,14 +11,14 @@ import {
 	BookText,
 } from "lucide-react";
 import { cn } from "@/shared/utils/utils";
-import {useRole} from "@/hooks/useUserRole.hook";
-import {useLogout} from "@/hooks/useLogout.hook";
+import { useRole } from "@/core/auth/useUserRole.hook";
+import { useLogout } from "@/core/auth/useLogout.hook";
 
 const NavBar: React.FC = () => {
 	const { t, i18n } = useTranslation();
-	const {userRole} = useRole();
+	const { userRole } = useRole();
 	const navigate = useNavigate();
-	const {logout} = useLogout();
+	const { logout } = useLogout();
 	let role = userRole;
 
 	const changeLanguage = () => {
@@ -26,25 +26,20 @@ const NavBar: React.FC = () => {
 		i18n.changeLanguage(currentLang === "en" ? "fi" : "en");
 	};
 
-
 	const handleLogout = async () => {
 		try {
 			await logout();
 		} catch (error) {
-			console.error('Logout failed:', error);
+			console.error("Logout failed:", error);
 		}
 	};
 
-
-
-
-
 	const NavItem = ({
-						 to,
-						 icon: Icon,
-						 label,
-						 onClick,
-					 }: {
+		to,
+		icon: Icon,
+		label,
+		onClick,
+	}: {
 		to?: string;
 		icon: React.ElementType;
 		label: string;
@@ -82,8 +77,6 @@ const NavBar: React.FC = () => {
 			</NavLink>
 		);
 	};
-
-
 
 	// Navigation items array to avoid duplication
 	const getNavItems = () => {
@@ -160,8 +153,6 @@ const NavBar: React.FC = () => {
 					label={`${t("language")} (${i18n.language.toUpperCase()})`}
 					onClick={changeLanguage}
 				/>
-
-
 
 				{/* Sign Out */}
 				<NavItem
