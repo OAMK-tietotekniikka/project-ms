@@ -1,21 +1,21 @@
 import axios from "axios";
-import { msalInstance } from "@/auth";
+import { msalInstance } from "@/core/auth/auth";
 import { InteractionRequiredAuthError } from "@azure/msal-browser";
-import { performLogout } from "@/lib/logout";
+import { performLogout } from "@/core/auth/logout";
 
 export const api = axios.create({
 	baseURL: "http://localhost:8081/api/v2",
 	timeout: 10000,
 });
 
-const isDevelopment = import.meta.env.VITE_RUNNING_ENV === 'development';
+const isDevelopment = import.meta.env.VITE_RUNNING_ENV === "development";
 
 // Dev mode constants
-const DEV_TOKEN_KEY = 'dev_auth_token';
-const DEV_MODE_KEY = 'dev_mode_enabled';
+const DEV_TOKEN_KEY = "dev_auth_token";
+const DEV_MODE_KEY = "dev_mode_enabled";
 
 const isDevModeEnabled = (): boolean => {
-	return isDevelopment && localStorage.getItem(DEV_MODE_KEY) === 'true';
+	return isDevelopment && localStorage.getItem(DEV_MODE_KEY) === "true";
 };
 
 // Get dev token
@@ -26,15 +26,15 @@ const getDevToken = (): string | null => {
 export const setDevToken = (token: string): void => {
 	if (isDevelopment) {
 		localStorage.setItem(DEV_TOKEN_KEY, token);
-		localStorage.setItem(DEV_MODE_KEY, 'true');
-		console.log('Dev mode enabled with custom token');
+		localStorage.setItem(DEV_MODE_KEY, "true");
+		console.log("Dev mode enabled with custom token");
 	}
 };
 
 export const clearDevToken = (): void => {
 	localStorage.removeItem(DEV_TOKEN_KEY);
 	localStorage.removeItem(DEV_MODE_KEY);
-	console.log('Dev mode disabled');
+	console.log("Dev mode disabled");
 };
 
 // Token acquisition helper
@@ -46,7 +46,7 @@ const getAccessToken = async (): Promise<string> => {
 			return devToken;
 		}
 		// If dev mode is enabled but no token, fall back to MSAL
-		console.warn('Dev mode enabled but no dev token found');
+		console.warn("Dev mode enabled but no dev token found");
 		throw new Error("No dev token available");
 	}
 
@@ -80,22 +80,22 @@ api.interceptors.request.use(
 
 			// Add dev mode header for backend identification
 			if (isDevModeEnabled()) {
-				config.headers['X-Dev-Mode'] = 'true';
+				config.headers["X-Dev-Mode"] = "true";
 			}
 		} catch (error) {
 			console.error("Failed to get access token:", error);
 		}
 		return config;
 	},
-	(error) => Promise.reject(error)
+	(error) => Promise.reject(error),
 );
 
 // Axios interceptors
 api.interceptors.response.use(
 	(response) => response,
 	async (error) => {
-		if (error.response?.status === 401) {
-			console.error("401 Unauthorized");
+		if (error.response?.status === 401 || error.response?.status === 403) {
+			console.error("401/403 Unauthorized");
 
 			if (isDevModeEnabled()) {
 				console.error("Dev token appears to be invalid — logging out.");
@@ -106,7 +106,7 @@ api.interceptors.response.use(
 		}
 
 		return Promise.reject(error);
-	}
+	},
 );
 
 // API client
@@ -139,36 +139,36 @@ export const apiClient = {
 		getToken: getDevToken,
 
 		// Helper methods for console usage
-		enable: (token: string, role: 'teacher' | 'student' = 'student') => {
+		enable: (token: string, role: "teacher" | "student" = "student") => {
 			if (!isDevelopment) {
-				console.warn('Dev mode only available in development');
+				console.warn("Dev mode only available in development");
 				return;
 			}
 
 			setDevToken(token);
-			localStorage.setItem('role', role);
-			console.log('Dev mode enabled. Reload pages to apply changes.');
+			localStorage.setItem("role", role);
+			console.log("Dev mode enabled. Reload pages to apply changes.");
 		},
 
 		disable: () => {
 			clearDevToken();
-			localStorage.removeItem('role');
-			console.log('Dev mode disabled. Reload pages to apply changes.');
+			localStorage.removeItem("role");
+			console.log("Dev mode disabled. Reload pages to apply changes.");
 		},
 
 		status: () => {
 			const enabled = isDevModeEnabled();
 			const token = getDevToken();
-			const role = localStorage.getItem('role');
+			const role = localStorage.getItem("role");
 
-			console.log('Dev Mode Status:', {
+			console.log("Dev Mode Status:", {
 				enabled,
 				hasToken: !!token,
-				tokenPreview: token ? token.substring(0, 20) + '...' : null,
-				role: role as 'teacher' | 'student' | null
+				tokenPreview: token ? token.substring(0, 20) + "..." : null,
+				role: role as "teacher" | "student" | null,
 			});
 
 			return { enabled, hasToken: !!token, role };
-		}
-	}
+		},
+	},
 };
