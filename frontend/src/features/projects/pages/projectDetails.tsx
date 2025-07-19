@@ -1,18 +1,21 @@
-import React, {useEffect} from "react";
+import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
+} from "@/shared/components/ui/tabs";
 import { Info, FileText } from "lucide-react";
 import {
 	useAddProjectMember,
 	useGetProjectDetails,
 	useGetProjectMembers,
-} from "@/hooks/use-projects";
+} from "@/features/projects/hooks/useProjects.hook";
 import ProjectHeader from "@/features/projects/components/ProjectDetailsHeader";
 import ProjectOverview from "@/features/projects/components/ProjectDetailsOverview";
 import NotesListing from "@/features/projects/components/NotesListing";
-
-
 
 const StudentProjectDetails = () => {
 	const { t } = useTranslation();
@@ -20,7 +23,6 @@ const StudentProjectDetails = () => {
 	const { id } = useParams<{ id: string }>();
 	const projectId = parseInt(id || "0");
 	const navigate = useNavigate();
-
 
 	const {
 		data: members,
@@ -33,7 +35,6 @@ const StudentProjectDetails = () => {
 		isLoading: isProjectLoading,
 		error: projectError,
 	} = useGetProjectDetails(projectId);
-
 
 	const addMemberMutation = useAddProjectMember();
 
@@ -49,10 +50,6 @@ const StudentProjectDetails = () => {
 	}, [projectError, proj, isProjectLoading, navigate]);
 
 	console.log("loading", isProjectLoading);
-
-
-
-
 
 	return (
 		<div className="max-w-4xl mx-auto p-6">
@@ -88,9 +85,7 @@ const StudentProjectDetails = () => {
 				</TabsContent>
 
 				<TabsContent value="docs-notes">
-					<NotesListing
-						project = {proj}
-					/>
+					<NotesListing project={proj} />
 				</TabsContent>
 			</Tabs>
 		</div>
