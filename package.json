@@ -26,10 +26,7 @@
 		"type-check": "npm run type-check -r",
 		"clean": "npm run clean -r && rm -rf node_modules",
 		"prepare": "husky",
-		"docs": "typedoc",
-		"release:pr": "release-please release-pr --config-file=.release-please-config.json --manifest-file=.release-please-manifest.json",
-		"release:create": "release-please github-release --config-file=.release-please-config.json --manifest-file=.release-please-manifest.json",
-		"release:check": "release-please release-pr --dry-run --config-file=.release-please-config.json --manifest-file=.release-please-manifest.json"
+		"docs": "typedoc"
 	},
 	"lint-staged": {
 		"*.{js,jsx,ts,tsx}": [
