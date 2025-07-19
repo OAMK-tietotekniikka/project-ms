@@ -51,6 +51,7 @@ All notable changes to this project will be documented in this file.
 - Minor enhancements, fixes ([7a142ac](OAMK-tietotekniikka/ProjectsMS/commit/7a142acfefd99cdeffb5401165dbe99a3842f69f))
 - Minor enhancements, fixes, add virtualization ([15d7034](OAMK-tietotekniikka/ProjectsMS/commit/15d7034615af86f04e11574b21624c38f1b5c3a4))
 - Minor changes ([3734652](OAMK-tietotekniikka/ProjectsMS/commit/373465228e4906123e4caada47045213ed94fbfd))
+- Add cliff config ([4848910](OAMK-tietotekniikka/ProjectsMS/commit/484891091a9f579d64dc8cdc9769b7cb981b3c45))
 
 ### Refactor
 
