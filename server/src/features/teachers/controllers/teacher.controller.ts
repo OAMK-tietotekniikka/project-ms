@@ -2,33 +2,36 @@
  * Teachers controller.
  * Manages creating, reading, and updating teacher records.
  *
- * @version 2.1.0
- * @since 5.07.2025
+ * @version 0.2.1
+ * @since 20.07.2025
  * @module
  */
 
 import type { Request, Response } from "express";
-import pool from "../../../shared/config/mariadb.config";
+import pool from "../../../config/mariadb.config";
 import mariadb from "mariadb";
-import { responseHelper } from "../../../shared/utils/response-helper";
+import { responseHelper } from "../../../shared/utils/response_helper";
 import { QUERY } from "../queries/teachers.query";
-import { logError } from "../../../shared/utils/logError";
-import { logRequests } from "../../../shared/utils/logRequests";
+import { logError } from "../../../shared/utils/log_errors";
+import { logRequests } from "../../../shared/utils/log_requests";
 import {
 	type Teacher,
 	TeacherNameSchema,
 	TeacherSchema,
 } from "../../../shared/validation/teacher.schema";
 import { AuthenticatedRequest } from "../../../shared/middleware/auth";
-import { getTeacherIdByEmail } from "../../../shared/utils/getUsersByEmail";
-import { getStudyYear } from "../../../shared/utils/dateUtils";
-
+import { getTeacherIdByEmail } from "../../../shared/utils/user_email_lookup";
+import { getStudyYear } from "../../../shared/utils/date_utils";
+import { NotificationService } from "../../notifications/services/notificationService";
 
 /**
  * Retrieves all teacher records.
  *
  * Fetches and returns a list of all teachers from the database.
  */
+const notificationService = NotificationService.getInstance();
+notificationService.refreshActiveUsers(); // TODO remove
+
 export const listTeachers = async (
 	req: Request,
 	res: Response,
@@ -50,7 +53,7 @@ export const listTeachers = async (
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
-		if (connection) connection.release();
+		if (connection) await connection.release();
 	}
 };
 
@@ -70,10 +73,9 @@ export const listAvailableTeachers = async (
 	const { studyYear } = req.params; // TODO available teachers for project date
 	try {
 		connection = await pool.getConnection();
-		const teachers = await connection.query(
-			QUERY.SELECT_AVAILABLE_TEACHERS,
-			[studyYear],
-		);
+		const teachers = await connection.query(QUERY.SELECT_AVAILABLE_TEACHERS, [
+			studyYear,
+		]);
 		console.log(teachers);
 		responseHelper.ok(res, teachers);
 		return;
@@ -82,7 +84,7 @@ export const listAvailableTeachers = async (
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
-		if (connection) connection.release();
+		if (connection) await connection.release();
 	}
 };
 
@@ -104,10 +106,7 @@ export const getCurrentTeacher = async (
 			responseHelper.notFound(res);
 			return;
 		}
-		const rows = await connection.query(
-			QUERY.SELECT_TEACHER,
-			[id],
-		);
+		const rows = await connection.query(QUERY.SELECT_TEACHER, [id]);
 		if (rows.length > 0) {
 			responseHelper.ok(res, rows);
 			return;
@@ -119,7 +118,7 @@ export const getCurrentTeacher = async (
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
-		if (connection) connection.release();
+		if (connection) await connection.release();
 	}
 };
 
@@ -133,10 +132,7 @@ export const createTeacher = async (
 	res: Response,
 ): Promise<void> => {
 	logRequests(req);
-	const teacherRaw = TeacherSchema.safeParse({
-		name: req.body.teacher_name,
-		email: req.body.email,
-	});
+	const teacherRaw = TeacherSchema.safeParse(req.body);
 	if (!teacherRaw.success) {
 		responseHelper.badRequest(res);
 		return;
@@ -155,7 +151,7 @@ export const createTeacher = async (
 		}
 
 		const [created_teacher] = await connection.query(QUERY.CREATE_TEACHER, [
-			teacher.name,
+			teacher.teacher_name,
 			teacher.email,
 		]);
 		responseHelper.created(res, created_teacher);
@@ -165,7 +161,7 @@ export const createTeacher = async (
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
-		if (connection) connection.release();
+		if (connection) await connection.release();
 	}
 };
 
@@ -197,6 +193,9 @@ export const updateTeacher = async (
 		const { teacherId } = req.params;
 
 		await connection.query(QUERY.UPDATE_TEACHER, [name, teacherId]);
+		try {
+			await notificationService.notifyTeacherUpdate(parseInt(teacherId), name);
+		} catch (notificationError) {}
 		responseHelper.ok(res);
 		return;
 	} catch (error: unknown) {

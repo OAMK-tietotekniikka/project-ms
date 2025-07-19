@@ -2,14 +2,14 @@
  * Resources controller.
  * Manages creating, reading, updating, and allocating teacher resources.
  *
- * @version 2.1.0
+ * @version 0.2.1
  * @since 20.07.2025
  * @module
  */
 
 import type { Request, Response } from "express";
 import mariadb from "mariadb";
-import pool from "../../../shared/config/mariadb.config";
+import pool from "../../../config/mariadb.config";
 import { responseHelper } from "../../../shared/utils/response_helper";
 import { R_QUERY } from "../queries/resources.query";
 import { QUERY } from "../queries/teachers.query";
@@ -20,12 +20,14 @@ import {
 	getStudentIdByEmail,
 	getTeacherIdByEmail,
 } from "../../../shared/utils/user_email_lookup";
+import { NotificationService } from "../../notifications/services/notificationService";
 
 /**
  * Retrieves all resources.
  *
  * Fetches and returns all available resources from the database as an array of records.
  */
+const notificationService = NotificationService.getInstance();
 export const getResources = async (
 	req: Request,
 	res: Response,
@@ -38,7 +40,7 @@ export const getResources = async (
 		responseHelper.ok(res, resources);
 		return;
 	} catch (error: unknown) {
-		logError("getResources", error);
+		logError("teacher_resources.controller.getResources", error);
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
@@ -80,7 +82,7 @@ export const getCurrentUserResources = async (
 		});
 		return;
 	} catch (error: unknown) {
-		logError("getResources", error);
+		logError("teacher_resources.controller.getCurrentResources", error);
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
@@ -116,7 +118,7 @@ export const listTeacherResources = async (
 		responseHelper.ok(res, resources);
 		return;
 	} catch (error: unknown) {
-		logError("listTeacherResources", error);
+		logError("teacher_resources.controller.listTeacherResources", error);
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
@@ -143,13 +145,23 @@ export const createResource = async (
 				R_QUERY.CREATE_RESOURCE,
 				[teacher_id, total_resources, study_year],
 			);
+
+			try {
+				await notificationService.notifyResourceUpdate(
+					parseInt(teacher_id),
+					study_year,
+					0,
+					parseInt(total_resources),
+				);
+			} catch (notificationError) {}
+
 			responseHelper.created(res, created_resource);
 			return;
 		}
 		responseHelper.notFound(res);
 		return;
 	} catch (error: unknown) {
-		logError("createResource", error);
+		logError("teacher_resources.controller.createResource", error);
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
@@ -195,6 +207,15 @@ export const updateResource = async (
 			total_resources,
 			req.params.resourceId,
 		]);
+		try {
+			await notificationService.notifyResourceUpdate(
+				existing_resource[0].teacher_id,
+				existing_resource[0].study_year,
+				existing_resource[0].total_resources,
+				total_resources,
+			);
+		} catch (notificationError) {}
+
 		responseHelper.ok(res, {
 			resource_id: req.params.resourceId,
 			teacher_id: existing_resource[0].teacher_id,
@@ -204,7 +225,7 @@ export const updateResource = async (
 		});
 		return;
 	} catch (error: unknown) {
-		logError("updateResource", error);
+		logError("teacher_resources.controller.updateResource", error);
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
@@ -250,7 +271,7 @@ export const allocateTeacher = async (
 
 		return teacherid;
 	} catch (error: unknown) {
-		logError("allocateTeacher", error);
+		logError("teacher_resources.controller.allocateTeacher", error);
 		throw error;
 	}
 };

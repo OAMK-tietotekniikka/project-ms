@@ -3,19 +3,23 @@
  * Manages retrieving and deleting companies and their related data.
  *
  * @version 2.1.0
- * @since 5.07.2025
+ * @since 20.07.2025
  * @module
  */
 
 import type { Request, Response } from "express";
 import mariadb from "mariadb";
-import pool from "../../../shared/config/mariadb.config";
-import { responseHelper } from "../../../shared/utils/response-helper";
+import pool from "../../../config/mariadb.config";
+import { responseHelper } from "../../../shared/utils/response_helper";
 import { QUERY } from "../queries/companies.query";
-import { logError } from "../../../shared/utils/logError";
-import { logRequests } from "../../../shared/utils/logRequests";
-import { getTeacherIdByEmail } from "../../../shared/utils/getUsersByEmail";
+import { logError } from "../../../shared/utils/log_errors";
+import { logRequests } from "../../../shared/utils/log_requests";
+import { getTeacherIdByEmail } from "../../../shared/utils/user_email_lookup";
 import { AuthenticatedRequest } from "../../../shared/middleware/auth";
+import {
+	companyCreateSchema,
+	companyIdParamsSchema,
+} from "../../../shared/validation/company.schema";
 
 /**
  * Retrieves companies.
@@ -31,9 +35,7 @@ export const listCompanies = async (
 	let connection: mariadb.PoolConnection | null = null;
 	try {
 		connection = await pool.getConnection();
-		const result = await connection.query(
-			QUERY.SELECT_COMPANIES,
-		);
+		const result = await connection.query(QUERY.SELECT_COMPANIES);
 		responseHelper.ok(res, result);
 		return;
 	} catch (error: unknown) {
@@ -41,7 +43,7 @@ export const listCompanies = async (
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
-		if (connection) connection.release();
+		if (connection) await connection.release();
 	}
 };
 
@@ -59,18 +61,22 @@ export const createCompany = async (
 	let connection: mariadb.PoolConnection | null = null;
 	try {
 		connection = await pool.getConnection();
-		const existing_company = await connection.query(
-			QUERY.SELECT_BY_NAME,
-			[req.body.company_name],
-		);
+		const parsed = companyCreateSchema.safeParse(req.body);
+		if (!parsed.success) {
+			responseHelper.badRequest(res);
+			return;
+		}
+
+		const existing_company = await connection.query(QUERY.SELECT_BY_NAME, [
+			parsed.data.company_name.toLowerCase(),
+		]);
 		if (existing_company && existing_company.length > 0) {
 			responseHelper.conflict(res); // add {company_id: existing_company[0].company_id}
 			return;
 		}
-		const result = await connection.query(
-			QUERY.CREATE_COMPANY,
-			[req.body.company_name],
-		);
+		const result = await connection.query(QUERY.CREATE_COMPANY, [
+			req.body.company_name,
+		]);
 		responseHelper.created(res, result);
 		return;
 	} catch (error: unknown) {
@@ -78,7 +84,7 @@ export const createCompany = async (
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
-		if (connection) connection.release();
+		if (connection) await connection.release();
 	}
 };
 
@@ -94,17 +100,22 @@ export const deleteCompany = async (
 	res: Response,
 ): Promise<void> => {
 	logRequests(req);
-	const { companyId } = req.params;
 	let connection: mariadb.PoolConnection | null = null;
 
 	try {
 		connection = await pool.getConnection();
 		await connection.beginTransaction();
 
-		const existing_company = await connection.query(
-			QUERY.SELECT_COMPANY,
-			[companyId],
-		);
+		const parsed = companyIdParamsSchema.safeParse(req.params.companyId);
+		if (!parsed.success) {
+			responseHelper.badRequest(res);
+			return;
+		}
+		const companyId = parsed.data;
+
+		const existing_company = await connection.query(QUERY.SELECT_COMPANY, [
+			companyId,
+		]);
 
 		if (!existing_company || existing_company.length === 0) {
 			await connection.rollback();
@@ -112,10 +123,9 @@ export const deleteCompany = async (
 			return;
 		}
 
-
 		const projects = await connection.query(
 			"SELECT COUNT(*) as count FROM projects WHERE company_id = ?",
-			[companyId]
+			[companyId],
 		);
 
 		if (projects[0].count > 0) {
@@ -177,25 +187,25 @@ export const listFavoriteCompanies = async (
 		);
 
 		if (!teacher_id) {
-			responseHelper.notFound(res);
+			responseHelper.unauthorized(res);
 			return;
 		}
 
-		const companies = await connection.query(
-			QUERY.SELECT_FAVO_COMPANIES,
-			[teacher_id],
-		);
+		const companies = await connection.query(QUERY.SELECT_FAVO_COMPANIES, [
+			teacher_id,
+		]);
 		if (companies.length > 0) {
 			responseHelper.ok(res, companies);
 			return;
 		}
 		responseHelper.ok(res, []);
+		return;
 	} catch (error: unknown) {
 		logError("getFavoCompanies", error);
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
-		if (connection) connection.release();
+		if (connection) await connection.release();
 	}
 };
 
@@ -225,10 +235,7 @@ export const addFavoriteCompany = async (
 			return;
 		}
 
-		await connection.query(QUERY.ADD_FAVO_COMPANY, [
-			company_id,
-			teacher_id,
-		]);
+		await connection.query(QUERY.ADD_FAVO_COMPANY, [company_id, teacher_id]);
 		responseHelper.created(res, { company_id, teacher_id });
 		return;
 	} catch (error: unknown) {
@@ -236,7 +243,7 @@ export const addFavoriteCompany = async (
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
-		if (connection) connection.release();
+		if (connection) await connection.release();
 	}
 };
 
@@ -267,10 +274,7 @@ export const removeFavoriteCompany = async (
 			return;
 		}
 
-		await connection.query(QUERY.DELETE_FAVO_COMPANY, [
-			teacher_id,
-			companyId,
-		]);
+		await connection.query(QUERY.DELETE_FAVO_COMPANY, [teacher_id, companyId]);
 		responseHelper.ok(res);
 		return;
 	} catch (error: unknown) {
@@ -278,6 +282,6 @@ export const removeFavoriteCompany = async (
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
-		if (connection) connection.release();
+		if (connection) await connection.release();
 	}
 };

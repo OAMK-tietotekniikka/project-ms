@@ -2,7 +2,7 @@
  * Project notes controller.
  * Manages retrieving, adding, deleting notes in/to projects.
  *
- * @version 2.1.0
+ * @version 0.2.1
  * @since 20.07.2025
  * @module
  */
@@ -10,7 +10,7 @@
 import type { AuthenticatedRequest } from "../../../shared/middleware/auth";
 import type { Response } from "express";
 import { logRequests } from "../../../shared/utils/log_requests";
-import pool from "../../../shared/config/mariadb.config";
+import pool from "../../../config/mariadb.config";
 import mariadb from "mariadb";
 import { QUERY } from "../queries/projects.query";
 import { responseHelper } from "../../../shared/utils/response_helper";

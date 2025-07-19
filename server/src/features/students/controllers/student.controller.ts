@@ -2,40 +2,26 @@
  * Students controller.
  * Manages creating, reading, updating, and deleting student records.
  *
- * @version 2.1.0
- * @since 5.07.2025
+ * @version 0.2.1
+ * @since 20.07.2025
  * @module
  */
 
 import { Request, Response } from "express";
-import pool from "../../../shared/config/mariadb.config";
+import pool from "../../../config/mariadb.config";
 import mariadb from "mariadb";
 import { QUERY } from "../queries/students.query";
-import { responseHelper } from "../../../shared/utils/response-helper";
-import { logRequests } from "../../../shared/utils/logRequests";
-import { logError } from "../../../shared/utils/logError";
-import { z } from "zod";
+import { responseHelper } from "../../../shared/utils/response_helper";
+import { logRequests } from "../../../shared/utils/log_requests";
+import { logError } from "../../../shared/utils/log_errors";
+
+import {
+	createStudentSchema,
+	updateStudentSchema,
+	studentIdParamsSchema,
+} from "../../../shared/validation/student.schema";
 import { AuthenticatedRequest } from "../../../shared/middleware/auth";
-import { getStudentIdByEmail } from "../../../shared/utils/getUsersByEmail";
-
-const emailValidation = z.object({
-	email: z.string().email(),
-});
-
-const updateStudentSchema = z
-	.object({
-		student_name: z.string().min(4).max(100).optional(),
-		class_code: z.string().optional(),
-	})
-	.partial();
-
-const createStudentSchema = z
-	.object({
-		email: z.string().email().min(8).max(100),
-		student_name: z.string().min(4).max(100),
-		class_code: z.string().optional(),
-	})
-	.partial();
+import { getStudentIdByEmail } from "../../../shared/utils/user_email_lookup";
 
 function getChangedFields(
 	existingData: Record<string, any>,
@@ -61,7 +47,7 @@ function getChangedFields(
  * Fetches and returns all student records from the database.
  */
 export const listStudents = async (
-	req: Request,
+	req: AuthenticatedRequest,
 	res: Response,
 ): Promise<void> => {
 	logRequests(req);
@@ -76,25 +62,36 @@ export const listStudents = async (
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
-		if (connection) connection.release();
+		if (connection) await connection.release();
 	}
 };
 
 export const listStudentProjects = async (
-	req: Request,
+	req: AuthenticatedRequest,
 	res: Response,
 ): Promise<void> => {
 	logRequests(req);
 	let connection: mariadb.PoolConnection | null = null;
 	try {
 		connection = await pool.getConnection();
-		const { studentId } = req.params;
-		const projects_obj = await connection.query(`
+
+		let parsed = studentIdParamsSchema.safeParse(req.params.studentId);
+		if (!parsed.success) {
+			responseHelper.badRequest(res);
+			return;
+		}
+		const studentId: number = parsed.data;
+
+		const projects_obj = await connection.query(
+			`
 			SELECT project_id
 			FROM student_project
-			WHERE student_id = ?`, [studentId]);
-		const projects = projects_obj.map((project: { project_id: number}) => project.project_id);
-		console.log(projects);
+			WHERE student_id = ?`,
+			[studentId],
+		);
+		const projects = projects_obj.map(
+			(project: { project_id: number }) => project.project_id,
+		);
 		responseHelper.ok(res, projects);
 		return;
 	} catch (error: unknown) {
@@ -102,7 +99,7 @@ export const listStudentProjects = async (
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
-		if (connection) connection.release();
+		if (connection) await connection.release();
 	}
 };
 
@@ -132,10 +129,9 @@ export const createStudent = async (
 	console.log("data:", studentRaw.data);
 	try {
 		connection = await pool.getConnection();
-		const existingStudent = await connection.query(
-			QUERY.STUDENT_EXISTS,
-			[email],
-		);
+		const existingStudent = await connection.query(QUERY.STUDENT_EXISTS, [
+			email,
+		]);
 
 		if (Array.isArray(existingStudent) && existingStudent.length > 0) {
 			responseHelper.ok(res, existingStudent);
@@ -148,16 +144,14 @@ export const createStudent = async (
 			class_code || null,
 		]);
 
-
-
 		responseHelper.created(res, new_student);
 		return;
 	} catch (error: unknown) {
-		logError("createStudent", error);
+		logError("student.controller.createStudent", error);
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
-		if (connection) connection.release();
+		if (connection) await connection.release();
 	}
 };
 
@@ -172,15 +166,18 @@ export const updateStudent = async (
 ): Promise<void> => {
 	logRequests(req);
 	let connection: mariadb.PoolConnection | null = null;
+
+	let parsed = studentIdParamsSchema.safeParse(req.params.studentId);
+	if (!parsed.success) {
+		responseHelper.badRequest(res);
+		return;
+	}
+
+	const studentId: number = parsed.data;
 	try {
 		connection = await pool.getConnection();
-		const { studentId } = req.params;
 
-
-		const student = await connection.query(
-			QUERY.SELECT_STUDENT,
-			[studentId],
-		);
+		const student = await connection.query(QUERY.SELECT_STUDENT, [studentId]);
 
 		if (!Array.isArray(student) || student.length === 0) {
 			responseHelper.notFound(res);
@@ -215,17 +212,20 @@ export const updateStudent = async (
 		console.log("updateQuery", updateQuery, queryValues);
 		await connection.query(updateQuery, queryValues);
 
-		const [updated_student] = await connection.query(`
-			SELECT student_id, student_name, email, class_code FROM students WHERE student_id = ?`, [studentId])
+		const [updated_student] = await connection.query(
+			`
+			SELECT student_id, student_name, email, class_code FROM students WHERE student_id = ?`,
+			[studentId],
+		);
 
 		responseHelper.ok(res, updated_student);
 		return;
 	} catch (error: unknown) {
-		logError("updateStudent", error);
+		logError("student.controller.updateStudent", error);
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
-		if (connection) connection.release();
+		if (connection) await connection.release();
 	}
 };
 
@@ -240,27 +240,34 @@ export const deleteStudent = async (
 ): Promise<void> => {
 	logRequests(req);
 	let connection: mariadb.PoolConnection | null = null;
+
+	let parsed = studentIdParamsSchema.safeParse(req.params.studentId);
+	if (!parsed.success) {
+		responseHelper.badRequest(res);
+		return;
+	}
+
+	const studentId: number = parsed.data;
+
 	try {
 		connection = await pool.getConnection();
-		const student = await connection.query(
-			QUERY.SELECT_STUDENT,
-			[req.params.studentId],
-		);
+
+		const student = await connection.query(QUERY.SELECT_STUDENT, [studentId]);
 
 		if (!Array.isArray(student) || student.length === 0) {
 			responseHelper.notFound(res);
 			return;
 		}
 
-		await connection.query(QUERY.DELETE_STUDENT, [req.params.student_id]);
+		await connection.query(QUERY.DELETE_STUDENT, [studentId]);
 		responseHelper.ok(res);
 		return;
 	} catch (error: unknown) {
-		logError("deleteStudent", error);
+		logError("student.controller.deleteStudent", error);
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
-		if (connection) connection.release();
+		if (connection) await connection.release();
 	}
 };
 
@@ -287,18 +294,15 @@ export const getCurrentStudent = async (
 			return;
 		}
 
-		const student = await connection.query(
-			QUERY.SELECT_STUDENT,
-			[student_id],
-		);
+		const student = await connection.query(QUERY.SELECT_STUDENT, [student_id]);
 
 		responseHelper.ok(res, student);
 		return;
 	} catch (error: unknown) {
-		logError("updatedStudentReturnData", error);
+		logError("student.controller.updatedStudentReturnData", error);
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
-		if (connection) connection.release();
+		if (connection) await connection.release();
 	}
 };
