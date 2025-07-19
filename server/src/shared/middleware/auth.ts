@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import jwt, { JwtHeader, SigningKeyCallback } from "jsonwebtoken";
 import jwksClient, { SigningKey } from "jwks-rsa";
-import { authConfig } from "../config/authConfig";
+import { auth_config } from "../../config/auth.config";
 
 interface DecodedToken {
 	oid?: string;
@@ -22,7 +22,7 @@ export interface AuthenticatedRequest extends Request {
 }
 
 const client = jwksClient({
-	jwksUri: authConfig.jwksUri,
+	jwksUri: auth_config.jwksUri,
 	cache: true,
 	cacheMaxAge: 24 * 1000 * 60 * 60,
 	cacheMaxEntries: 3,
@@ -52,8 +52,8 @@ export const validateToken = (token: string): Promise<DecodedToken> => {
 			getKey,
 			{
 				algorithms: ["RS256"],
-				audience: authConfig.audience,
-				issuer: authConfig.authority,
+				audience: auth_config.audience,
+				issuer: auth_config.authority,
 			},
 			(err, decoded) => {
 				if (err) {
@@ -99,7 +99,7 @@ const assignRole = (groupid: undefined | string): string => {
 	} else if (groupid === "10073ee5-6b85-4701-ada7-e6bad5c4718d") {
 		role = "teacher";
 	} else {
-		role = "student"; // TODO other -> visitor
+		role = "teacher"; // TODO other -> visitor
 	}
 	return role;
 };
