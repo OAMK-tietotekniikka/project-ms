@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import {
-	useUpdateProjectStatus,
-} from "@/hooks/use-projects";
-import {Loader2Icon} from "lucide-react";
+import { Button } from "@/shared/components/ui/button";
+import { RadioGroup, RadioGroupItem } from "@/shared/components/ui/radio-group";
+import { Label } from "@/shared/components/ui/label";
+import { useUpdateProjectStatus } from "@/features/projects/hooks/useProjects.hook";
+import { Loader2Icon } from "lucide-react";
 
 interface ChangeProjectStatusProps {
 	projectData: any;
@@ -15,9 +13,9 @@ interface ChangeProjectStatusProps {
 }
 
 const ChangeProjectStatus: React.FC<ChangeProjectStatusProps> = ({
-																	 projectData,
-																	 role,
-																 }) => {
+	projectData,
+	role,
+}) => {
 	const { t } = useTranslation();
 	const [projectStatus, setProjectStatus] = useState<string>(
 		projectData?.project_status || "",
@@ -43,7 +41,7 @@ const ChangeProjectStatus: React.FC<ChangeProjectStatusProps> = ({
 			});
 			setInitialStatus(projectStatus);
 		} catch (error) {
-			console.error('Failed to update project status:', error);
+			console.error("Failed to update project status:", error);
 			setProjectStatus(initialStatus);
 		}
 	};
@@ -100,10 +98,10 @@ const ChangeProjectStatus: React.FC<ChangeProjectStatusProps> = ({
 				className="w-full flex items-center text-foreground hover:cursor-pointer"
 			>
 				{projectStatusMutation.isPending ? (
-					<Loader2Icon className="animate-spin"/> ) : (
-						t("save")
-				)
-					}
+					<Loader2Icon className="animate-spin" />
+				) : (
+					t("save")
+				)}
 			</Button>
 		</div>
 	);

@@ -16,17 +16,6 @@ const ProjectMembers: React.FC<ProjectMembersProps> = ({
 	const { t } = useTranslation();
 	const max_members = 8;
 	console.log("members", members);
-	if (isLoading) {
-		return (
-			<div className="bg-card rounded-xl p-4">
-				<div className="flex items-center gap-2 mb-3">
-					<Users className="h-4 w-4" />
-					<span className="font-medium">{t("studInvolved")}</span>
-				</div>
-				<p className="text-sm text-muted-foreground">Loading members...</p>
-			</div>
-		);
-	}
 
 	if (error) {
 		return (
@@ -46,7 +35,9 @@ const ProjectMembers: React.FC<ProjectMembersProps> = ({
 				<Users className="h-4 w-4" />
 				<span className="font-medium">{t("studInvolved")} </span>
 
-				<span className="text-muted-foreground text-xs">{(Array.isArray(members) ? members.length : 0)}/{max_members}</span>
+				<span className="text-muted-foreground text-xs">
+					{Array.isArray(members) ? members.length : 0}/{max_members}
+				</span>
 			</div>
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
 				{Array.isArray(members) &&

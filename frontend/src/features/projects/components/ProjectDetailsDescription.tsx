@@ -10,12 +10,14 @@ const ProjectDescription: React.FC<ProjectDescriptionProps> = ({
 }) => {
 	const { t } = useTranslation();
 
-	if (!description) return null;
-
 	return (
 		<div className="bg-card rounded-xl p-4">
-			<h3 className="font-semibold mb-2">{t("projDesc")}</h3>
-			<p className="text-secondary-foreground">{description}</p>
+			<p className="font-medium mb-2">{t("projDesc")}</p>
+			<p
+				className={`text-secondary-foreground ${description ? "" : "invisible"}`}
+			>
+				{description || "*"}
+			</p>
 		</div>
 	);
 };

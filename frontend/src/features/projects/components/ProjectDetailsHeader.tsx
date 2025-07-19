@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/components/ui/button";
 import { Edit3 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -16,14 +16,22 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ proj }) => {
 		<div className="rounded-xl shadow-sm p-6 mb-6 bg-card">
 			<div className="flex items-center justify-between">
 				<div>
-					<p className="text-xl font-bold">{proj?.project_name}</p>
-					<p className="text-sm text-muted-foreground">
-						{t("projectId")} #{proj?.project_id}
+					<p
+						className={`text-xl font-bold ${proj?.project_name ? "" : "invisible"}`}
+					>
+						{proj?.project_name || "*"}
+					</p>
+					<p
+						className={`text-sm text-muted-foreground ${proj?.project_id ? "" : "invisible"}`}
+					>
+						{t("projectId")} #{proj?.project_id || "*"}
 					</p>
 				</div>
 
 				<Button
-					onClick={() => navigate(`/projects/${proj.project_id}/update`, { state: { proj } })}
+					onClick={() =>
+						navigate(`/projects/${proj.project_id}/update`, { state: { proj } })
+					}
 					variant="outline"
 					className="flex items-center"
 				>

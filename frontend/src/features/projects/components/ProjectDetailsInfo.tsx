@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import {Building, Link, CalendarDays, GraduationCap} from "lucide-react";
+import { Building, Link, CalendarDays, GraduationCap } from "lucide-react";
 import dayjs from "dayjs";
 
 interface ProjectInfoGridProps {
@@ -11,15 +11,18 @@ const ProjectInfoGrid: React.FC<ProjectInfoGridProps> = ({ proj }) => {
 	const { t } = useTranslation();
 
 	const formatDate = (dateString: string) => {
-		if (!dateString) return "Not set";
+		if (!dateString) return "";
 
 		const date = dayjs(dateString);
 		if (!date.isValid() || date.year() === 1970) {
-			return "Not set";
+			return "";
 		}
 
 		return date.format("DD.MM.YYYY");
 	};
+
+	const formatted_startDate = formatDate(proj?.start_date);
+	const formatted_endDate = formatDate(proj?.end_date);
 
 	return (
 		<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -27,21 +30,21 @@ const ProjectInfoGrid: React.FC<ProjectInfoGridProps> = ({ proj }) => {
 			<div className="bg-card rounded-xl p-4">
 				<div className="flex items-center gap-2 mb-2">
 					<CalendarDays className="h-4 w-4" />
-					<span className="font-medium">
+					<span className="font-medium capitalize">
 						{t("timeline", { defaultValue: "timeline" })}
 					</span>
 				</div>
-				<div className="space-y-2 text-sm">
+				<div className="space-y-2 text-sm text-muted-foreground">
 					<div className="flex justify-between">
-						<span className="text-muted-foreground">{t("startDate")}:</span>
-						<span className="text-muted-foreground">
-							{formatDate(proj?.start_date)}
+						<span>{t("startDate")}:</span>
+						<span className={`${formatted_startDate ? "" : "invisible"}`}>
+							{formatted_startDate || "*"}
 						</span>
 					</div>
 					<div className="flex justify-between">
-						<span className="text-muted-foreground">{t("dueDate")}:</span>
-						<span className="text-muted-foreground">
-							{formatDate(proj?.end_date)}
+						<span>{t("dueDate")}:</span>
+						<span className={`${formatted_endDate ? "" : "invisible"}`}>
+							{formatted_endDate || "*"}
 						</span>
 					</div>
 				</div>
@@ -64,10 +67,10 @@ const ProjectInfoGrid: React.FC<ProjectInfoGridProps> = ({ proj }) => {
 					<GraduationCap className="h-4 w-4" />
 					<span className="font-medium">{t("supervisor") || "Supervisor"}</span>
 				</div>
-				<p className="text-sm text-muted-foreground">
-					{!proj?.teacher_name || !proj?.teacher_id
-						? t("noTeacher")
-						: proj?.teacher_name}
+				<p
+					className={`text-sm text-muted-foreground ${proj?.teacher_name && proj?.teacher_id ? "" : "invisible"}`}
+				>
+					{proj?.teacher_name || "*"}
 				</p>
 			</div>
 
@@ -77,18 +80,14 @@ const ProjectInfoGrid: React.FC<ProjectInfoGridProps> = ({ proj }) => {
 					<Link className="h-4 w-4" />
 					<span className="font-medium">{t("url")}</span>
 				</div>
-				{proj?.project_url ? (
-					<a
-						href={proj.project_url}
-						className="text-sm text-primary hover:underline break-all"
-						target="_blank"
-						rel="noopener noreferrer"
-					>
-						{proj.project_url}
-					</a>
-				) : (
-					<span className="text-sm">{t("noUrl")}</span>
-				)}
+				<a
+					href={proj?.project_url || undefined}
+					className={`text-sm break-all ${proj?.project_url ? "text-primary hover:underline" : "invisible pointer-events-none"}`}
+					target={proj?.project_url ? "_blank" : undefined}
+					rel={proj?.project_url ? "noopener noreferrer" : undefined}
+				>
+					{proj?.project_url || t("noUrl")}
+				</a>
 			</div>
 		</div>
 	);

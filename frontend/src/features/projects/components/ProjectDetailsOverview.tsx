@@ -4,7 +4,7 @@ import ProjectDescription from "./ProjectDetailsDescription";
 import ProjectInfoGrid from "./ProjectDetailsInfo";
 import ProjectMembers from "./ProjectDetailsMembers";
 import ChangeProjectStatus from "./ChangeProjectStatus";
-import ProjectDetailsInvite from "@/components/students/ProjectDetailsInvite";
+import ProjectDetailsInvite from "@/features/projects/components/ProjectDetailsInvite";
 
 interface ProjectOverviewProps {
 	proj: any;
@@ -45,11 +45,10 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({
 						<p className="text-md font-medium mb-4">{t("changeStatus")}</p>
 						<ChangeProjectStatus projectData={proj} role={role} />
 						{role === "student" && (
-
-						<div>
-							<hr className="my-8 border-t border-muted-foreground/50" />
-							<ProjectDetailsInvite projectId={projectId}/>
-						</div>
+							<div>
+								<hr className="my-8 border-t border-muted-foreground/50" />
+								<ProjectDetailsInvite projectId={projectId} />
+							</div>
 						)}
 					</div>
 				</div>
