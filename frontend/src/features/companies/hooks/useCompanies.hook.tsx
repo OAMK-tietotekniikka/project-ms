@@ -1,5 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { companyService, projectService, studentService } from "@/shared/services";
+import {
+	companyService,
+	projectService,
+	studentService,
+} from "@/core/api/services";
 
 type FavoriteCompanies = {
 	data: any;
@@ -14,7 +18,7 @@ export const useGetCompanies = (enabled: boolean) => {
 		queryKey: ["companies"],
 		queryFn: () => companyService.listCompanies().then((res) => res.data.data),
 		staleTime: 10 * 60 * 1000,
-		enabled: enabled
+		enabled: enabled,
 	});
 };
 
@@ -24,7 +28,7 @@ export const useGetFavoriteCompanies = (enabled: boolean) => {
 		queryFn: () =>
 			companyService.getFavoriteCompanies().then((res) => res.data.data),
 		staleTime: 10 * 60 * 1000,
-		enabled: enabled
+		enabled: enabled,
 	});
 };
 
@@ -35,8 +39,10 @@ export const useAddFavoriteCompanies = () => {
 			companyService.addFavoriteCompanies(data).then((res) => res.data.data),
 		onSuccess: (newFavoriteCompany, variables) => {
 			queryClient.setQueryData(["companies", "favorite"], (oldData: any) => {
-				if (!oldData) return [{ company_id: variables.data.company_id}];
-				const exists = oldData.some((fav: any) => fav.company_id === variables.data.company_id);
+				if (!oldData) return [{ company_id: variables.data.company_id }];
+				const exists = oldData.some(
+					(fav: any) => fav.company_id === variables.data.company_id,
+				);
 				if (exists) return oldData;
 				return [...oldData, { company_id: variables.data.company_id }];
 			});
@@ -51,11 +57,15 @@ export const useDeleteFavoriteCompanies = () => {
 	const queryClient = useQueryClient();
 	return useMutation({
 		mutationFn: (companyId: number) =>
-			companyService.deleteFavoriteCompanies(companyId).then((res) => res.data.data),
+			companyService
+				.deleteFavoriteCompanies(companyId)
+				.then((res) => res.data.data),
 		onSuccess: (deletedCompany, companyId) => {
 			queryClient.setQueryData(["companies", "favorite"], (oldData: any) => {
 				if (!oldData) return [];
-				return oldData.filter((company: any) => company.company_id !== companyId);
+				return oldData.filter(
+					(company: any) => company.company_id !== companyId,
+				);
 			});
 		},
 		onError: (error) => {
@@ -64,14 +74,12 @@ export const useDeleteFavoriteCompanies = () => {
 	});
 };
 
-
 export const useCreateCompany = () => {
 	const queryClient = useQueryClient();
 	return useMutation({
 		mutationFn: (data: CreateCompanyInput) =>
 			companyService.createCompany(data).then((res) => res.data.data),
 		onSuccess: (newCompany) => {
-
 			if (Array.isArray(newCompany)) {
 				queryClient.setQueryData(["companies"], (oldData: any) => {
 					if (!oldData) return [newCompany[0]];
@@ -81,8 +89,6 @@ export const useCreateCompany = () => {
 			} else {
 				queryClient.invalidateQueries({ queryKey: ["companies"] });
 			}
-
-
 		},
 	});
 };
@@ -95,12 +101,16 @@ export const useDeleteCompany = () => {
 		onSuccess: (deletedCompany, companyId) => {
 			queryClient.setQueryData(["companies"], (oldData: any) => {
 				if (!oldData) return [];
-				return oldData.filter((company: any) => company.company_id !== companyId);
+				return oldData.filter(
+					(company: any) => company.company_id !== companyId,
+				);
 			});
 
 			queryClient.setQueryData(["companies", "favorite"], (oldData: any) => {
 				if (!oldData) return [];
-				return oldData.filter((company: any) => company.company_id !== companyId);
+				return oldData.filter(
+					(company: any) => company.company_id !== companyId,
+				);
 			});
 		},
 	});
