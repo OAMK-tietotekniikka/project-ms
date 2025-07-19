@@ -1,21 +1,23 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { FixedSizeList as List } from "react-window";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/shared/components/ui/badge";
+import { Card, CardContent } from "@/shared/components/ui/card";
 import {
 	Dialog,
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+} from "@/shared/components/ui/dialog";
+import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
 import { User, Mail, Users, Check } from "lucide-react";
-import {useGetAllStudents, useUpdateStudent} from "@/hooks/use-students";
-import not_found from "@/assets/not-found.svg";
-import {useListStudentProjectNumbers} from "@/hooks/use-projects";
-
+import {
+	useGetAllStudents,
+	useUpdateStudent,
+} from "@/features/students/hooks/useStudents.hook";
+import not_found from "@/assets/not_found_1.svg";
+import { useListStudentProjectNumbers } from "@/features/projects/hooks/useProjects.hook";
 
 interface StudentsListProps {
 	searchTerm: string;
@@ -38,12 +40,11 @@ const StudentsList: React.FC<StudentsListProps> = ({
 	const [editingField, setEditingField] = useState<string>("");
 	const [editValue, setEditValue] = useState("");
 
-
 	const { data: students, isLoading } = useGetAllStudents();
 	const updateStudentMutation = useUpdateStudent();
-	const {
-		data: studentProjectNumbers,
-	} = useListStudentProjectNumbers(selectedStudent?.student_id);
+	const { data: studentProjectNumbers } = useListStudentProjectNumbers(
+		selectedStudent?.student_id,
+	);
 
 	const filteredStudents = useMemo(() => {
 		if (!students) return [];
@@ -81,8 +82,8 @@ const StudentsList: React.FC<StudentsListProps> = ({
 			studentId: selectedStudent.student_id,
 			data: {
 				[field]: editValue,
-			}
-		})
+			},
+		});
 		if (selectedStudent) {
 			setSelectedStudent({ ...selectedStudent, [field]: editValue });
 		}
@@ -139,8 +140,7 @@ const StudentsList: React.FC<StudentsListProps> = ({
 		[filteredStudents, handleStudentClick],
 	);
 
-	if (isLoading)
-		return null;
+	if (isLoading) return null;
 
 	if (!students || students.length === 0) {
 		return (
@@ -190,9 +190,7 @@ const StudentsList: React.FC<StudentsListProps> = ({
 			>
 				<DialogContent className="max-w-md">
 					<DialogHeader>
-						<DialogTitle>
-							{selectedStudent?.student_name}
-						</DialogTitle>
+						<DialogTitle>{selectedStudent?.student_name}</DialogTitle>
 					</DialogHeader>
 					{selectedStudent && (
 						<div className="space-y-3">
@@ -229,22 +227,25 @@ const StudentsList: React.FC<StudentsListProps> = ({
 								)}
 							</div>
 
-								{studentProjectNumbers && studentProjectNumbers.length > 0 && (
-									<div className="flex items-center justify-between py-2 border-b">
+							{studentProjectNumbers && studentProjectNumbers.length > 0 && (
+								<div className="flex items-center justify-between py-2 border-b">
 									<span className="text-sm font-medium">
 										{t("projects", { defaultValue: "projects" })}
 									</span>
-										<div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-										{studentProjectNumbers.map(id => (
+									<div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+										{studentProjectNumbers.map((id) => (
 											<Badge key={id} variant="outline" className="text-xs">
-												<a href={`/projects/${id}`} className="text-primary hover:underline">
+												<a
+													href={`/projects/${id}`}
+													className="text-primary hover:underline"
+												>
 													{id}
 												</a>
 											</Badge>
 										))}
 									</div>
-									</div>
-								)}
+								</div>
+							)}
 
 							<div className="flex items-center justify-between py-2 border-b">
 								<span className="text-sm font-medium">

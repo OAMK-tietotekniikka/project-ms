@@ -2,14 +2,24 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FixedSizeList as List } from "react-window";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
+import {
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+} from "@/shared/components/ui/card";
+import {
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
+} from "@/shared/components/ui/tabs";
+import { Badge } from "@/shared/components/ui/badge";
 import { Loader2, Upload, Eye, ArrowLeft, User, Mail } from "lucide-react";
 import Papa from "papaparse";
-import { useBatchStudents } from "@/hooks/use-students";
+import { useBatchStudents } from "@/features/students/hooks/useStudents.hook";
 import { toast } from "sonner";
 
 interface ImportStudentsProps {
@@ -81,12 +91,12 @@ const ImportStudents: React.FC<ImportStudentsProps> = ({ handleClose }) => {
 		const files = e.dataTransfer.files;
 		if (files.length > 0) {
 			if (files[0]?.type != "text/csv") {
-				toast.error(t('pleaseSelectFile'));
+				toast.error(t("pleaseSelectFile"));
 				return;
 			}
 
 			if (files[0]?.size >= 1024 * 128) {
-				toast.error(t('students_importStudents_sizeLimit'));
+				toast.error(t("students_importStudents_sizeLimit"));
 				return;
 			}
 			console.log(files);
@@ -215,7 +225,7 @@ const ImportStudents: React.FC<ImportStudentsProps> = ({ handleClose }) => {
 						onClick={() => setShowPreview(false)}
 					>
 						<ArrowLeft className="w-4 h-4 mr-2" />
-						{t('back')}
+						{t("back")}
 					</Button>
 
 					{/* Stats on the right */}
@@ -225,14 +235,16 @@ const ImportStudents: React.FC<ImportStudentsProps> = ({ handleClose }) => {
 								{validStudents.length}
 							</div>
 							<div className="text-sm text-muted-foreground">
-								{t('students_importStudents_valid')}
+								{t("students_importStudents_valid")}
 							</div>
 						</div>
 						<div className="text-center">
 							<div className="text-2xl font-bold text-primary">
 								{invalidRows.length}
 							</div>
-							<div className="text-sm text-muted-foreground">{t('students_importStudents_invalid')}</div>
+							<div className="text-sm text-muted-foreground">
+								{t("students_importStudents_invalid")}
+							</div>
 						</div>
 					</div>
 				</div>
@@ -240,16 +252,22 @@ const ImportStudents: React.FC<ImportStudentsProps> = ({ handleClose }) => {
 				{/* Tabs */}
 				<Tabs defaultValue="valid" className="w-full">
 					<TabsList className="grid w-full grid-cols-2">
-						<TabsTrigger value="valid" className="flex items-center gap-2 dark:data-[state=active]:bg-card">
-							{t('students_importStudents_valid')}
+						<TabsTrigger
+							value="valid"
+							className="flex items-center gap-2 dark:data-[state=active]:bg-card"
+						>
+							{t("students_importStudents_valid")}
 							{validStudents.length > 0 && (
 								<Badge variant="secondary" className="ml-1">
 									{validStudents.length}
 								</Badge>
 							)}
 						</TabsTrigger>
-						<TabsTrigger value="invalid" className="flex items-center gap-2 dark:data-[state=active]:bg-card">
-							{t('students_importStudents_valid')}
+						<TabsTrigger
+							value="invalid"
+							className="flex items-center gap-2 dark:data-[state=active]:bg-card"
+						>
+							{t("students_importStudents_valid")}
 							{invalidRows.length > 0 && (
 								<Badge variant="secondary" className="ml-1">
 									{invalidRows.length}
@@ -275,7 +293,7 @@ const ImportStudents: React.FC<ImportStudentsProps> = ({ handleClose }) => {
 						) : (
 							<Card>
 								<CardContent className="p-8 text-center text-muted-foreground">
-									{t('students_importStudents_valid_notFound')}
+									{t("students_importStudents_valid_notFound")}
 								</CardContent>
 							</Card>
 						)}
@@ -298,7 +316,7 @@ const ImportStudents: React.FC<ImportStudentsProps> = ({ handleClose }) => {
 						) : (
 							<Card>
 								<CardContent className="p-8 text-center text-muted-foreground">
-									{t('students_importStudents_invalid_notFound')}
+									{t("students_importStudents_invalid_notFound")}
 								</CardContent>
 							</Card>
 						)}
@@ -316,7 +334,9 @@ const ImportStudents: React.FC<ImportStudentsProps> = ({ handleClose }) => {
 						) : (
 							<Upload className="w-4 h-4 mr-2" />
 						)}
-						{t('students_importStudents_count', { count: validStudents?.length || 0})}
+						{t("students_importStudents_count", {
+							count: validStudents?.length || 0,
+						})}
 					</Button>
 				</div>
 			</div>
@@ -329,15 +349,16 @@ const ImportStudents: React.FC<ImportStudentsProps> = ({ handleClose }) => {
 				onDragOver={handleDragOver}
 				onDragLeave={handleDragLeave}
 				onDrop={handleDrop}
-				onClick={() => document.getElementById('file-input').click()}
+				onClick={() => document.getElementById("file-input").click()}
 				className={`
     border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all
-    ${isDragging
-					? 'border-primary bg-primary/10'
-					: file
-						? 'border-primary bg-primary/3'
-						: 'border-muted-foreground hover:border-primary'
-				}
+    ${
+			isDragging
+				? "border-primary bg-primary/10"
+				: file
+					? "border-primary bg-primary/3"
+					: "border-muted-foreground hover:border-primary"
+		}
   `}
 			>
 				<Input
@@ -348,18 +369,20 @@ const ImportStudents: React.FC<ImportStudentsProps> = ({ handleClose }) => {
 					className="hidden"
 				/>
 				<div className="flex items-center justify-center space-x-2">
-					<p className={`text-sm max-w-[350px] break-words ${file ? 'text-primary font-medium' : 'text-muted-foreground'}`}>
+					<p
+						className={`text-sm max-w-[350px] break-words ${file ? "text-primary font-medium" : "text-muted-foreground"}`}
+					>
 						{isDragging
-							? t('students_importStudents_dropHere')
+							? t("students_importStudents_dropHere")
 							: file?.name
 								? `${file.name}`
-								: t('students_importStudents_clickDragFile')
-						}
+								: t("students_importStudents_clickDragFile")}
 					</p>
 				</div>
 				{file && (
 					<p className="text-xs text-muted-foreground mt-1">
-						{(file.size / 1024).toFixed(1)} KB • {t('students_importStudents_readyImport')}
+						{(file.size / 1024).toFixed(1)} KB •{" "}
+						{t("students_importStudents_readyImport")}
 					</p>
 				)}
 			</div>
@@ -380,7 +403,6 @@ const ImportStudents: React.FC<ImportStudentsProps> = ({ handleClose }) => {
 				</Button>
 			</div>
 		</div>
-
 	);
 };
 

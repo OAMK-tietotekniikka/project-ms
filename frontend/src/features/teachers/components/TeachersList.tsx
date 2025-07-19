@@ -1,23 +1,23 @@
 import React, { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { getStudyYear } from "../GetStudyYear";
-import { Input } from "@/components/ui/input";
+import { getStudyYear } from "../../../shared/utils/GetStudyYear";
+import { Input } from "@/shared/components/ui/input";
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+} from "@/shared/components/ui/select";
+import { Badge } from "@/shared/components/ui/badge";
+import { Card, CardContent } from "@/shared/components/ui/card";
 import {
 	Dialog,
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+} from "@/shared/components/ui/dialog";
+import { Button } from "@/shared/components/ui/button";
 import {
 	Search,
 	Mail,
@@ -29,13 +29,16 @@ import {
 	BookCheck,
 	Check,
 } from "lucide-react";
-import {useGetAllTeachers, useUpdateTeacher} from "@/hooks/use-teachers";
+import {
+	useGetAllTeachers,
+	useUpdateTeacher,
+} from "@/features/teachers/hooks/useTeachers.hook";
 import {
 	useAnyTeacherResources,
 	useCreateTeacherResources,
 	useUpdateTeacherResources,
-} from "@/hooks/use-resources";
-import not_found_2 from "@/assets/not-found-2.svg"; // TODO 2?
+} from "@/features/teachers/hooks/useResources.hook";
+import not_found_2 from "@/assets/not_found_2.svg"; // TODO 2?
 
 const TeachersList = () => {
 	const { t } = useTranslation();
@@ -173,8 +176,6 @@ const TeachersList = () => {
 		setEditValue(value);
 	};
 
-
-
 	// Save year resources
 	const saveYearResources = async (resource_id, year) => {
 		const numValue = parseInt(editValue) || 0;
@@ -212,22 +213,20 @@ const TeachersList = () => {
 		}
 
 		try {
+			await updateTeacherNameMutation.mutateAsync({
+				teacherId: selectedTeacher.teacher_id,
+				data: {
+					teacher_name: editName,
+				},
+			});
 
+			setSelectedTeacher((prev) => ({
+				...prev,
+				teacher_name: editName.trim(),
+			}));
 
-		await updateTeacherNameMutation.mutateAsync({
-			teacherId: selectedTeacher.teacher_id,
-			data: {
-				teacher_name: editName,
-			},
-		})
-
-		setSelectedTeacher(prev => ({
-			...prev,
-			teacher_name: editName.trim()
-		}));
-
-		setEditValue("");
-		setisEditingName(false);
+			setEditValue("");
+			setisEditingName(false);
 		} catch (error) {
 			console.log(error);
 		}
@@ -241,7 +240,6 @@ const TeachersList = () => {
 		setEditName("");
 		setisEditingName(false);
 	};
-
 
 	return (
 		<div className="space-y-4">
@@ -362,13 +360,15 @@ const TeachersList = () => {
 										value={editName}
 										onChange={(e) => setEditName(e.target.value)} // <- recommended for input
 										className="w-72 h-8"
-
 										autoFocus
 									/>
 									<Button
 										size="sm"
 										onClick={saveTeacherName}
-										disabled={!editName.trim() || editName === selectedTeacher?.teacher_name}
+										disabled={
+											!editName.trim() ||
+											editName === selectedTeacher?.teacher_name
+										}
 										className="h-8 px-2"
 									>
 										<Check className="h-3 w-3" />
@@ -468,7 +468,6 @@ const TeachersList = () => {
 				<div className="text-center py-12 flex flex-col text-muted-foreground">
 					<img src={not_found_2} alt="" className="h-24" />
 					<p className="text-lg font-medium mb-2">
-
 						{t("teachers_noTeachersFound", {
 							defaultValue: "No teachers found",
 						})}

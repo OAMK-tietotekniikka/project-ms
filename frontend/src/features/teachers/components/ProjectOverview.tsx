@@ -1,18 +1,18 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { FixedSizeList as List } from "react-window";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
 import {
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-} from "@/components/ui/select";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+} from "@/shared/components/ui/select";
+import { Card, CardContent } from "@/shared/components/ui/card";
+import { Badge } from "@/shared/components/ui/badge";
+import { Skeleton } from "@/shared/components/ui/skeleton";
 import {
 	FolderOpen,
 	Plus,
@@ -23,10 +23,10 @@ import {
 	User,
 	Download,
 } from "lucide-react";
-import { useGetAllProjects } from "@/hooks/use-projects";
+import { useGetAllProjects } from "@/features/projects/hooks/useProjects.hook";
 import Papa from "papaparse";
 import { useNavigate } from "react-router-dom";
-import not_found from "@/assets/not-found.svg";
+import not_found from "@/assets/not_found_1.svg";
 
 interface Project {
 	project_id?: number;
@@ -132,7 +132,6 @@ const Projects: React.FC = () => {
 	const handleProjectClick = useCallback((proj: Project) => {
 		console.log("Project clicked:", proj);
 		navigate(`/projects/${proj?.project_id}`, { state: { proj } });
-
 	}, []);
 
 	// Memoized ProjectItem component
@@ -195,8 +194,6 @@ const Projects: React.FC = () => {
 		[filteredProjects, handleProjectClick],
 	);
 
-
-
 	if (error || (!isLoading && !projects)) {
 		return (
 			<div className="max-w-4xl mx-auto p-6 min-h-500">
@@ -204,7 +201,7 @@ const Projects: React.FC = () => {
 					<div className="text-center py-12 text-muted-foreground">
 						<FolderOpen className="h-12 w-12 /50 mx-auto mb-4 opacity-50" />
 						<p className="font-medium">
-							{error ? t('error') : t('projects_noProjectsFound')}
+							{error ? t("error") : t("projects_noProjectsFound")}
 						</p>
 					</div>
 				</div>
@@ -288,13 +285,12 @@ const Projects: React.FC = () => {
 				{/* Projects List */}
 				{filteredProjects.length === 0 && !isLoading ? (
 					<div className="flex flex-col items-center text-center text-muted-foreground py-12">
-							<img src={not_found} alt="" className="h-24" />
-							<p className="text-md font-medium">
-
-								{t("projects_noProjectsFound", {
-									defaultValue: "No projects found",
-								})}
-							</p>
+						<img src={not_found} alt="" className="h-24" />
+						<p className="text-md font-medium">
+							{t("projects_noProjectsFound", {
+								defaultValue: "No projects found",
+							})}
+						</p>
 					</div>
 				) : (
 					<div className="h-[380px] w-full">
