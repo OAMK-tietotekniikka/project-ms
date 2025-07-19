@@ -1,60 +1,85 @@
 services:
-
-  mysqldb:
-    image: mysql:8.0
-    container_name: mysqlcontainer
-    command: --default_authentication_plugin=caching_sha2_password
+  mariadb:
+    image: mariadb:lts
+    container_name: project_ms_db
     restart: unless-stopped
     volumes:
       - ./dbinit/init.sql:/docker-entrypoint-initdb.d/0_init.sql
-      - $HOME/database:/var/lib/mysql
+      - mariadb_data:/var/lib/mysql
     ports:
       - 3307:3306
     environment:
-      MYSQL_DATABASE: studentsdb   # (this is just an example, not intended to be a production configuration
+      MYSQL_DATABASE: project_ms
       MYSQL_USER: admin
       MYSQL_PASSWORD: pwd@123
       MYSQL_ROOT_PASSWORD: pwd@123
       SERVICE_TAGS: prod
-      SERVICE_NAME: mysqldb
+      SERVICE_NAME: project_ms_db
     networks:
-      - internalnet 
+      - internalnet
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-u", "root", "-ppwd@123"]
+      timeout: 5s
+      retries: 10
 
-  pmappserver:
-    container_name: pmappservercontainer
-    build: ./server 
-    image: pmappserver:v1
+
+  redis:
+    image: redis:8-alpine
+    container_name: project_ms_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - 6379:6379
+    networks:
+      - internalnet
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      timeout: 3s
+      retries: 5
+      interval: 5s
+
+  pm_server:
+    container_name: project_ms_server_container
+    build: ./server
+    image: project_ms_server:v2
     ports:
       - 8081:8080
     depends_on:
-      - mysqldb
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
-      DB_HOST: mysqldb
+      DB_HOST: mariadb
       DB_PASSWORD: 'pwd@123'
       DB_USER: admin
-      DB_NAME: studentsdb
+      DB_NAME: project_ms
       DB_PORT: 3306
-      DB_CONNECTION_LIMIT: 10 
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      DB_CONNECTION_LIMIT: 10
+      NODE_ENV: production
       SERVICE_TAGS: prod
-      SERVICE_NAME: pmappserverservice  
+      SERVICE_NAME: project_ms_server_service
     networks:
       - internalnet
 
-  pmappfrontend:
-
-    container_name: pmappfrontendcontainer
+  pm_frontend:
+    container_name: project_ms_frontend_container
     build: ./frontend
-    image: pmappfrontend:v1
+    image: project_ms_frontend:v2
     ports:
       - 5000:5000
     depends_on:
-      - pmappserver
+      - pm_server
     environment:
-      VITE_APP_SERVER_URL: localhost:8081
+      VITE_APP_SERVER_URL: http://pm_server:8080
+      NODE_ENV: production
     networks:
       - internalnet
 
 networks:
   internalnet:
     driver: bridge
-

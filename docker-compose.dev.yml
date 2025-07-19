@@ -1,21 +1,20 @@
 services:
-  mysqldb:
-    image: mysql:8.0
-    container_name: mysql_dev_db
-    command: --default_authentication_plugin=caching_sha2_password
+  mariadb:
+    image: mariadb:lts
+    container_name: project_ms_dev_db
     restart: unless-stopped
     volumes:
       - ./dbinit/init.sql:/docker-entrypoint-initdb.d/0_init.sql
-      - mysql_dev_data:/var/lib/mysql  # Use named volume instead of host path
+      - project_ms_db_dev_data:/var/lib/mysql
     ports:
       - 3307:3306
     environment:
-      MYSQL_DATABASE: studentsdb
+      MYSQL_DATABASE: project_ms
       MYSQL_USER: admin
       MYSQL_PASSWORD: pwd@123
       MYSQL_ROOT_PASSWORD: pwd@123
       SERVICE_TAGS: development
-      SERVICE_NAME: mysqldb
+      SERVICE_NAME: project_ms_dev_db
     networks:
       - internalnet
     healthcheck:
@@ -23,23 +22,36 @@ services:
       timeout: 5s
       retries: 10
 
+  redis:
+    image: redis:8.0
+    container_name: project_ms_redis_dev
+    restart: unless-stopped
+    ports:
+      - 6379:6379
+    networks:
+      - internalnet
+
   pm_server_dev:
     container_name: pm_server_dev
     build:
       context: ./server
-      dockerfile: Dockerfile.dev  # Use development Dockerfile
+      dockerfile: Dockerfile.dev
     image: pm_server_dev:dev
     ports:
       - 8081:8080
     depends_on:
-      mysqldb:
+      mariadb:
         condition: service_healthy
+      redis:
+        condition: service_started
     environment:
-      DB_HOST: mysqldb
+      DB_HOST: mariadb
       DB_PASSWORD: 'pwd@123'
       DB_USER: admin
-      DB_NAME: studentsdb
+      DB_NAME: project_ms
       DB_PORT: 3306
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       DB_CONNECTION_LIMIT: 10
       NODE_ENV: development
       SERVICE_TAGS: development
@@ -76,4 +88,4 @@ networks:
     driver: bridge
 
 volumes:
-  mysql_dev_data:
+  project_ms_db_dev_data:

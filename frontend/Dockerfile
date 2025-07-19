@@ -1,5 +1,8 @@
 # Use an official Node.js runtime as the base image
-FROM node:18-alpine AS BUILD_IMAGE
+FROM node:24-alpine AS BUILD_IMAGE
+
+# Install pnpm globally
+RUN npm install -g pnpm
 
 # Set the working directory in the container to /app
 WORKDIR /app/frontend
@@ -8,22 +11,22 @@ WORKDIR /app/frontend
 COPY package*.json ./
 
 # Install the application dependencies
-RUN npm install
+RUN pnpm install
 
 # Copy the rest of the application code to the working directory
 COPY . .
 
 # Build the app
-RUN npm run build
+RUN pnpm run build
 
 # Use an official lightweight Node.js runtime as the final base image
-FROM node:18-alpine AS PRODUCTION_IMAGE
+FROM node:24-alpine AS PRODUCTION_IMAGE
 
 # Set the working directory in the container to /app
 WORKDIR /app/frontend
 
 # Install serve to serve the app on a static server
-RUN npm install -g serve
+RUN pnpm install -g serve
 
 # Copy the build directory and src directory from the build image
 COPY --from=BUILD_IMAGE /app/frontend/ /app/frontend/
@@ -32,8 +35,7 @@ COPY --from=BUILD_IMAGE /app/frontend/ /app/frontend/
 EXPOSE 5000
 
 #install typescript
-RUN npm install typescript
+RUN pnpm install typescript
 
 # Run the app
-#CMD ["npm", "run", "start"]
-CMD ["npm", "run", "preview"]
+CMD ["pnpm", "run", "start"]
