@@ -3,7 +3,7 @@ import {
 	addProjectNote,
 	deleteProjectNote,
 	listProjectNotes,
-} from "../controllers/project-notes.controller";
+} from "../controllers/project_notes.controller";
 import {
 	createProject,
 	deleteProject,
@@ -14,12 +14,15 @@ import {
 	updateProject,
 	updateProjectStatus,
 	updateProjectTeacher,
-//	getProjectStatistics,
+	//	getProjectStatistics,
 } from "../controllers/project.controller";
 import { authenticate, requireRole } from "../../../shared/middleware/auth";
-import {generateProjectJoinCode, addProjectMember} from "../controllers/project-members.controller";
+import {
+	generateProjectJoinCode,
+	addProjectMember,
+} from "../controllers/project_members.controller";
 
-const projectsRouter = Router();
+const projectsRouter: Router = Router();
 
 // Projects collection
 projectsRouter
@@ -28,9 +31,7 @@ projectsRouter
 	.post(authenticate, requireRole(["student"]), createProject);
 
 // Current user's projects
-projectsRouter
-	.route("/me")
-	.get(authenticate, listUserProjects);
+projectsRouter.route("/me").get(authenticate, listUserProjects);
 
 // Individual project
 projectsRouter
@@ -42,8 +43,7 @@ projectsRouter
 // Project members subcollection
 projectsRouter
 	.route("/:projectId/members")
-	.get(authenticate, listProjectMembers)
-
+	.get(authenticate, listProjectMembers);
 
 // Project status (special action)
 projectsRouter
@@ -70,8 +70,7 @@ projectsRouter
 	.route("/:projectId/joinCode")
 	.get(authenticate, generateProjectJoinCode);
 
-projectsRouter.route("/joinProject")
-	.post(authenticate, addProjectMember);
+projectsRouter.route("/joinProject").post(authenticate, addProjectMember);
 
 // Project statistics (future feature)
 //projectsRouter

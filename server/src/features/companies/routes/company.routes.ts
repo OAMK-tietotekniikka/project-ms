@@ -9,7 +9,7 @@ import {
 } from "../controllers/companies.controller";
 import { authenticate, requireRole } from "../../../shared/middleware/auth";
 
-const companiesRouter = Router();
+const companiesRouter: Router = Router();
 
 // Companies collection
 companiesRouter

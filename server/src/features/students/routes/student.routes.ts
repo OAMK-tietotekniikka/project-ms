@@ -2,15 +2,15 @@ import { Router } from "express";
 import {
 	createStudent,
 	deleteStudent,
-	getCurrentStudent, listStudentProjects,
+	getCurrentStudent,
+	listStudentProjects,
 	listStudents,
 	updateStudent,
 } from "../controllers/student.controller";
-import { batchCreateStudents } from "../controllers/student-batch.controller";
+import { batchCreateStudents } from "../controllers/student_batch.controller";
 import { authenticate, requireRole } from "../../../shared/middleware/auth";
 
-
-const studentsRouter = Router();
+const studentsRouter: Router = Router();
 
 studentsRouter
 	.route("/")
@@ -21,9 +21,7 @@ studentsRouter
 	.route("/batchCreate")
 	.post(authenticate, requireRole(["teacher"]), batchCreateStudents);
 
-studentsRouter
-	.route("/me")
-	.get(authenticate, getCurrentStudent);
+studentsRouter.route("/me").get(authenticate, getCurrentStudent);
 
 studentsRouter
 	.route("/:studentId")
@@ -32,6 +30,6 @@ studentsRouter
 
 studentsRouter
 	.route("/:studentId/projects")
-	.get(authenticate, requireRole(["teacher"]), listStudentProjects)
+	.get(authenticate, requireRole(["teacher"]), listStudentProjects);
 
 export default studentsRouter;

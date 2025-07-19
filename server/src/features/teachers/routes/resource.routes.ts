@@ -4,11 +4,11 @@ import {
 	listTeacherResources,
 	getCurrentUserResources,
 	updateResource,
-//	deleteResource,
-} from "../controllers/teacher-resources.controller";
+	//	deleteResource,
+} from "../controllers/teacher_resources.controller";
 import { authenticate, requireRole } from "../../../shared/middleware/auth";
 
-const resourcesRouter = Router();
+const resourcesRouter: Router = Router();
 
 // Current user's resources
 resourcesRouter
@@ -19,8 +19,8 @@ resourcesRouter
 // Individual resource
 resourcesRouter
 	.route("/:resourceId")
-	.put(authenticate, requireRole(["teacher"]), updateResource)
-	//.delete(authenticate, requireRole(["teacher"]), deleteResource);
+	.put(authenticate, requireRole(["teacher"]), updateResource);
+//.delete(authenticate, requireRole(["teacher"]), deleteResource);
 
 // Teacher's resources
 resourcesRouter
