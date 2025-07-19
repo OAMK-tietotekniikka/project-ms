@@ -1,8 +1,18 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { getStudyYear } from "@/components/GetStudyYear";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getStudyYear } from "@/shared/utils/GetStudyYear";
+import {
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+} from "@/shared/components/ui/card";
+import {
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
+} from "@/shared/components/ui/tabs";
 import {
 	User,
 	BookOpen,
@@ -13,16 +23,16 @@ import {
 	Heart,
 } from "lucide-react";
 
-import { useTeacherProfile } from "@/hooks/use-teachers";
-import {useAnyTeacherResources} from "@/hooks/use-resources";
+import { useTeacherProfile } from "@/features/teachers/hooks/useTeachers.hook";
+import { useAnyTeacherResources } from "@/features/teachers/hooks/useResources.hook";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import FavoriteCompaniesDialog from "@/features/teachers/components/CompanyFavoriteDialog";
-import {useGetUserProjects} from "@/hooks/use-projects";
-import general_teacher from "@/assets/general-teacher.svg";
+import { Button } from "@/shared/components/ui/button";
+import FavoriteCompaniesDialog from "@/features/companies/components/CompanyFavoriteDialog";
+import { useGetUserProjects } from "@/features/projects/hooks/useProjects.hook";
+import general_teacher from "@/assets/general_teacher.svg";
 
-const TeacherDashboard: React.FC = () => {
+const TeachersDashboard: React.FC = () => {
 	const { t } = useTranslation();
 	const currentDate = new Date();
 	const studyYear = getStudyYear(currentDate);
@@ -64,28 +74,30 @@ const TeacherDashboard: React.FC = () => {
 		return date.format("DD.MM.YYYY");
 	};
 
-	const teacherCurrentResource = resources ? (resources.find(r => r.study_year === studyYear)) : null; //
+	const teacherCurrentResource = resources
+		? resources.find((r) => r.study_year === studyYear)
+		: null; //
 	console.log("teacher resources", resources, teacherCurrentResource);
 
 	// Filter projects based on status
 	const ongoingProjects = projects
 		? projects.filter(
-			(proj) =>
-				proj.project_status &&
-				!["completed", "finished", "done", "closed"].includes(
-					proj.project_status.toLowerCase(),
-				),
-		)
+				(proj) =>
+					proj.project_status &&
+					!["completed", "finished", "done", "closed"].includes(
+						proj.project_status.toLowerCase(),
+					),
+			)
 		: [];
 
 	const pastProjects = projects
 		? projects.filter(
-			(proj) =>
-				proj.project_status &&
-				["completed", "finished", "done", "closed"].includes(
-					proj.project_status.toLowerCase(),
-				),
-		)
+				(proj) =>
+					proj.project_status &&
+					["completed", "finished", "done", "closed"].includes(
+						proj.project_status.toLowerCase(),
+					),
+			)
 		: [];
 
 	const getResourceStatus = (used: number, total: number) => {
@@ -97,9 +109,9 @@ const TeacherDashboard: React.FC = () => {
 
 	const resourceStatus = teacherCurrentResource
 		? getResourceStatus(
-			teacherCurrentResource.used_resources,
-			teacherCurrentResource.total_resources,
-		)
+				teacherCurrentResource.used_resources,
+				teacherCurrentResource.total_resources,
+			)
 		: "none";
 
 	const getResourceStatusColor = (status: string) => {
@@ -115,16 +127,17 @@ const TeacherDashboard: React.FC = () => {
 		}
 	};
 
-	const percentage = teacherCurrentResource
-		? Math.round(
-			(teacherCurrentResource.used_resources /
-				teacherCurrentResource.total_resources) *
-			100,
-		)
-		: 0;
+	const percentage =
+		teacherCurrentResource && teacherCurrentResource.total_resources > 0
+			? Math.round(
+					(teacherCurrentResource?.used_resources /
+						teacherCurrentResource?.total_resources) *
+						100,
+				)
+			: 0;
 
 	const ProjectsList = ({ projectsList, emptyMessage }) =>
-		projectsList && projectsList.length > 0  ? (
+		projectsList && projectsList.length > 0 ? (
 			<div className="space-y-1">
 				<p className="text-sm text-muted-foreground mb-4">
 					{t("projListBelow")}
@@ -177,7 +190,7 @@ const TeacherDashboard: React.FC = () => {
 				<div className="flex flex-col items-center text-center py-12">
 					<img src={general_teacher} alt="" className="h-32" />
 					<p className="font-medium text-muted-foreground mb-6">
-						{t('projects_noProjectsFound')}
+						{t("projects_noProjectsFound")}
 					</p>
 				</div>
 			)
@@ -188,16 +201,13 @@ const TeacherDashboard: React.FC = () => {
 			{/* Teacher Info Card */}
 			<Card className="pt-6">
 				<CardContent>
-						<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-							<div className="flex items-center space-x-4">
-								<div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
-									<User className="w-6 h-6" />
-								</div>
-								{profile && (
+					<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+						<div className="flex items-center space-x-4">
+							<div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
+								<User className="w-6 h-6" />
+							</div>
+							{profile && (
 								<div>
-
-
-
 									<p className="text-xl font-semibold">
 										{profile[0].teacher_name}
 									</p>
@@ -205,11 +215,9 @@ const TeacherDashboard: React.FC = () => {
 										{profile[0].email}
 									</p>
 								</div>
-								)}
-							</div>
-							{profile && (
-
-
+							)}
+						</div>
+						{profile && (
 							<Button
 								onClick={() => setShowCompaniesDialog(true)}
 								variant="outline"
@@ -218,68 +226,62 @@ const TeacherDashboard: React.FC = () => {
 								<Heart className="h-4 w-4" />
 								{t("favoriteCompanies", { defaultValue: "Favorite companies" })}
 							</Button>
-							)}
-						</div>
-
+						)}
+					</div>
 
 					<FavoriteCompaniesDialog
 						open={showCompaniesDialog}
 						onOpenChange={setShowCompaniesDialog}
 					/>
 
-					{teacherCurrentResource ? (
-						<div className="pt-6 border-t mt-6">
-							<div className="flex items-center justify-between mb-3">
-								<div className="flex items-center space-x-2">
-									<BookOpen className="w-4 h-4 text-muted-foreground" />
-									<span className="capitalize text-sm font-medium text-muted-foreground">
-										{t("resources", { defaultValue: "resources" })} ({studyYear}
-										)
+					<div className="pt-6 border-t mt-6">
+						<div className="flex items-center justify-between mb-3">
+							<div className="flex items-center space-x-2">
+								<BookOpen className="w-4 h-4 text-muted-foreground" />
+								<span className="capitalize text-sm font-medium text-muted-foreground">
+									{t("resources", { defaultValue: "resources" })} ({studyYear})
+								</span>
+							</div>
+						</div>
+
+						<div className="space-y-3">
+							{/* Progress Bar */}
+							<div className="w-full bg-background rounded-full h-2 overflow-hidden">
+								<div
+									className={`h-full rounded-full transition-all duration-500 ease-out ${getResourceStatusColor(resourceStatus)}`}
+									style={{
+										width: `${Math.min(percentage, 100)}%`,
+									}}
+								/>
+							</div>
+
+							{/* Usage Statistics */}
+							<div className="flex justify-between items-center text-sm">
+								<div className="flex items-center space-x-4">
+									<span className="text-muted-foreground">
+										<span className="font-semibold text-foreground">
+											{teacherCurrentResource?.used_resources || 0}
+										</span>{" "}
+										{t("used", { defaultValue: "used" })}
+									</span>
+									<span className="text-muted-foreground">
+										<span className="font-semibold text-foreground">
+											{teacherCurrentResource
+												? teacherCurrentResource.total_resources -
+													teacherCurrentResource.used_resources
+												: 0}
+										</span>{" "}
+										{t("remaining", { defaultValue: "remaining" })}
+									</span>
+								</div>
+								<div className="text-right">
+									<span className="text-sm font-semibold text-foreground">
+										{percentage || 0}%
 									</span>
 								</div>
 							</div>
-
-							<div className="space-y-3">
-								{/* Progress Bar */}
-								<div className="w-full bg-background rounded-full h-2 overflow-hidden">
-									<div
-										className={`h-full rounded-full transition-all duration-500 ease-out ${getResourceStatusColor(resourceStatus)}`}
-										style={{
-											width: `${Math.min(percentage, 100)}%`,
-										}}
-									/>
-								</div>
-
-								{/* Usage Statistics */}
-								<div className="flex justify-between items-center text-sm">
-									<div className="flex items-center space-x-4">
-										<span className="text-muted-foreground">
-											<span className="font-semibold text-foreground">
-												{teacherCurrentResource.used_resources}
-											</span>{" "}
-											{t("used", { defaultValue: "used" })}
-										</span>
-										<span className="text-muted-foreground">
-											<span className="font-semibold text-foreground">
-												{teacherCurrentResource
-													? teacherCurrentResource.total_resources -
-													teacherCurrentResource.used_resources
-													: 0}
-											</span>{" "}
-											{t("remaining", { defaultValue: "remaining" })}
-										</span>
-									</div>
-									<div className="text-right">
-										<span className="text-sm font-semibold text-foreground">
-											{percentage || 0}%
-										</span>
-									</div>
-								</div>
-							</div>
 						</div>
-					) : (
-						<div></div>
-					)}
+					</div>
 				</CardContent>
 			</Card>
 
@@ -326,4 +328,4 @@ const TeacherDashboard: React.FC = () => {
 	);
 };
 
-export default TeacherDashboard;
+export default TeachersDashboard;

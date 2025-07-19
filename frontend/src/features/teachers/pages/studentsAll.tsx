@@ -1,23 +1,24 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+} from "@/shared/components/ui/dialog";
+import { Input } from "@/shared/components/ui/input";
 import {
 	Select,
-	SelectContent, SelectGroup,
-	SelectItem, SelectLabel,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectLabel,
 	SelectTrigger,
 	SelectValue,
-} from "@/components/ui/select";
+} from "@/shared/components/ui/select";
 import { Upload, Search } from "lucide-react";
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import ImportStudents from "@/features/teachers/components/ImportStudents";
 import StudentsList from "@/features/teachers/components/StudentsList";
 
@@ -45,12 +46,14 @@ const Students: React.FC = () => {
 						</DialogTrigger>
 						<DialogContent>
 							<DialogHeader>
+								{/*}
 								<VisuallyHidden>
 									<DialogTitle className="flex items-center gap-2">
 										<Upload className="h-4 w-4" />
 										{t("students_importStudents") || "Import Students"}
 									</DialogTitle>
 								</VisuallyHidden>
+								*/}
 							</DialogHeader>
 							<ImportStudents handleClose={() => setShowImportModal(false)} />
 						</DialogContent>
@@ -96,7 +99,7 @@ const Students: React.FC = () => {
 								<SelectItem value="din28sp">din28sp</SelectItem>
 							</SelectGroup>
 							<SelectGroup>
-							<SelectLabel> TVT </SelectLabel>
+								<SelectLabel> TVT </SelectLabel>
 								<SelectItem value="tvt22sp">tvt22sp</SelectItem>
 								<SelectItem value="tvt23sp">tvt23sp</SelectItem>
 								<SelectItem value="tvt24sp">tvt24sp</SelectItem>

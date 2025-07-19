@@ -1,17 +1,17 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger,
-} from "@/components/ui/dialog";
+} from "@/shared/components/ui/dialog";
 import { Plus, Users, GraduationCap } from "lucide-react";
 import TeachersList from "@/features/teachers/components/TeachersList";
-import {useCreateTeacher} from "@/hooks/use-teachers";
-import {toast} from "sonner";
+import { useCreateTeacher } from "@/features/teachers/hooks/useTeachers.hook";
+import { toast } from "sonner";
 
 const Teachers: React.FC = () => {
 	const { t } = useTranslation();
@@ -39,7 +39,7 @@ const Teachers: React.FC = () => {
 				data: {
 					email: email,
 					teacher_name: teacherName,
-				}
+				},
 			});
 			setEmail("");
 			setTeacherName("");
@@ -48,7 +48,6 @@ const Teachers: React.FC = () => {
 		} catch (error) {
 			toast.error(t("toast_error"));
 		}
-
 	};
 	return (
 		<div className="max-w-4xl mx-auto p-6">
@@ -66,9 +65,7 @@ const Teachers: React.FC = () => {
 						</DialogTrigger>
 						<DialogContent className="max-w-md">
 							<DialogHeader>
-
-									<DialogTitle>{t("addTeacher")}</DialogTitle>
-
+								<DialogTitle>{t("addTeacher")}</DialogTitle>
 							</DialogHeader>
 							<div className="space-y-4 mt-4">
 								<div>
@@ -93,13 +90,14 @@ const Teachers: React.FC = () => {
 									/>
 								</div>
 								<div className="flex gap-2 pt-4">
-
-									<Button onClick={() => setIsDialogOpen(false)} variant="outline" className="flex-1">
+									<Button
+										onClick={() => setIsDialogOpen(false)}
+										variant="outline"
+										className="flex-1"
+									>
 										{t("cancel") || "Cancel"}
 									</Button>
-									<Button
-										onClick={addTeacher}
-										className="flex-1">
+									<Button onClick={addTeacher} className="flex-1">
 										<Plus className="h-4 w-4" />
 										{t("addTeacher") || "Add Teacher"}
 									</Button>
