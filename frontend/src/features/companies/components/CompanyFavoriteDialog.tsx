@@ -1,4 +1,4 @@
-import React, {useMemo, useState} from "react";
+import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
 	Dialog,
@@ -9,30 +9,36 @@ import {
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Badge } from "@/shared/components/ui/badge";
-import {Plus, Heart, HeartOff, Loader2, Trash2, Ellipsis, LoaderCircle, Search} from "lucide-react";
-
+import {
+	Plus,
+	Heart,
+	HeartOff,
+	Loader2,
+	Trash2,
+	Ellipsis,
+	LoaderCircle,
+	Search,
+} from "lucide-react";
 
 // Import your hooks here
 import {
 	useCreateCompany,
 	useDeleteCompany,
 	useGetCompanies,
-} from "@/hooks/useCompanies.hook";
+} from "@/features/companies/hooks/useCompanies.hook";
 import {
 	useGetFavoriteCompanies,
 	useAddFavoriteCompanies,
 	useDeleteFavoriteCompanies,
-} from "@/hooks/useCompanies.hook";
-import {toast} from "sonner";
+} from "@/features/companies/hooks/useCompanies.hook";
+import { toast } from "sonner";
 
-import { Virtuoso } from 'react-virtuoso';
+import { Virtuoso } from "react-virtuoso";
 
 const FavoriteCompaniesDialog = ({ open, onOpenChange }) => {
 	const { t } = useTranslation();
 	const [newCompanyName, setNewCompanyName] = useState("");
 	const [searchTerm, setSearchTerm] = useState("");
-
-
 
 	// Data fetching hooks
 	const {
@@ -56,7 +62,6 @@ const FavoriteCompaniesDialog = ({ open, onOpenChange }) => {
 	const createCompanyMutation = useCreateCompany();
 	const deleteCompanyMutation = useDeleteCompany();
 
-
 	const filteredCompanies = useMemo(() => {
 		if (!companies) return [];
 
@@ -64,8 +69,8 @@ const FavoriteCompaniesDialog = ({ open, onOpenChange }) => {
 			return companies;
 		}
 
-		return companies.filter(company =>
-			company.company_name.toLowerCase().includes(searchTerm.toLowerCase())
+		return companies.filter((company) =>
+			company.company_name.toLowerCase().includes(searchTerm.toLowerCase()),
 		);
 	}, [companies, searchTerm]);
 
@@ -108,11 +113,10 @@ const FavoriteCompaniesDialog = ({ open, onOpenChange }) => {
 		setNewCompanyName("");
 		setSearchTerm("");
 		onOpenChange(false);
-
 	};
 
 	// Company item renderer for Virtuoso
-	const CompanyItem = ( index ) => {
+	const CompanyItem = (index) => {
 		const company = filteredCompanies[index]; // Use filteredCompanies instead of companies
 		const isCompanyFavorite = isFavorite(company.company_id);
 
@@ -123,9 +127,7 @@ const FavoriteCompaniesDialog = ({ open, onOpenChange }) => {
 				onClick={() => handleToggleFavorite(company.company_id)}
 			>
 				<div className="flex items-center gap-3">
-					<span className="font-medium text-sm">
-						{company.company_name}
-					</span>
+					<span className="font-medium text-sm">{company.company_name}</span>
 					{isCompanyFavorite && (
 						<Badge variant="default" className="text-xs">
 							{t("favorite", { defaultValue: "Favorite" })}
@@ -135,9 +137,7 @@ const FavoriteCompaniesDialog = ({ open, onOpenChange }) => {
 
 				<div className="flex items-center gap-2">
 					<button
-						onClick={(e) =>
-							handleDeleteCompany(company.company_id, e)
-						}
+						onClick={(e) => handleDeleteCompany(company.company_id, e)}
 						title={t("deleteCompany", {
 							defaultValue: "Delete company",
 						})}
@@ -158,9 +158,7 @@ const FavoriteCompaniesDialog = ({ open, onOpenChange }) => {
 	const EmptyState = () => (
 		<div className="text-center py-8 text-muted-foreground">
 			<Heart className="h-8 w-8 mx-auto mb-2 opacity-50" />
-			<p>
-				{t("noCompanies", { defaultValue: "No companies found" })}
-			</p>
+			<p>{t("noCompanies", { defaultValue: "No companies found" })}</p>
 		</div>
 	);
 
@@ -215,7 +213,9 @@ const FavoriteCompaniesDialog = ({ open, onOpenChange }) => {
 					<div className="relative">
 						<Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
 						<Input
-							placeholder={t("searchCompanies", { defaultValue: "Search companies..." })}
+							placeholder={t("searchCompanies", {
+								defaultValue: "Search companies...",
+							})}
 							value={searchTerm}
 							onChange={(e) => setSearchTerm(e.target.value)}
 							className="pl-10"
@@ -229,7 +229,12 @@ const FavoriteCompaniesDialog = ({ open, onOpenChange }) => {
 						{filteredCompanies && filteredCompanies.length > 0 ? (
 							<Virtuoso
 								style={{
-									height: window.innerHeight >= 800 ? '350px' : window.innerHeight >= 600 ? '150px' : '75px'
+									height:
+										window.innerHeight >= 800
+											? "350px"
+											: window.innerHeight >= 600
+												? "150px"
+												: "75px",
 								}}
 								totalCount={filteredCompanies.length}
 								itemContent={CompanyItem}
