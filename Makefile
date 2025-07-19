@@ -1,11 +1,10 @@
-# Makefile for Project Management Application
 # Easily switch between local development and Docker environments
 
 .PHONY: help dev-docker dev-local prod-docker clean status logs
 
 # Default target
 help:
-	@echo "🚀 Project Management App - Development Commands"
+	@echo "🚀 Project Management System - Development Commands"
 	@echo ""
 	@echo "Available commands:"
 	@echo "  make dev-docker    - Start development environment with Docker (hot reload)"
@@ -41,14 +40,14 @@ dev-local:
 	@echo "Local Development Setup Instructions:"
 	@echo ""
 	@echo "1. Start MySQL Database:"
-	@echo "   chmod +x start-db-local.sh (root folder)"
-	@echo "   ./start-db-local.sh (root folder)"
+	@echo "   chmod +x start_mdb.sh (root folder)"
+	@echo "   ./start_mdb.sh (root folder)"
 	@echo ""
 	@echo "2. Start Server (in server directory):"
-	@echo "   cd server && npm install && npm run start:dev"
+	@echo "   cd server && pnpm install && pnpm run start:dev"
 	@echo ""
 	@echo "3. Start Frontend (in frontend directory):"
-	@echo "   cd frontend && npm install && npm run dev"
+	@echo "   cd frontend && pnpm install && pnpm run dev"
 	@echo ""
 	@echo "🌐 URLs:"
 	@echo "   Frontend: http://localhost:5000"

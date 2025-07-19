@@ -4,6 +4,9 @@ FROM node:lts-alpine
 # Install git and development tools
 RUN apk add --no-cache git
 
+# Install pnpm globally
+RUN npm install -g pnpm
+
 # Set the working directory
 WORKDIR /app/server
 
@@ -11,7 +14,7 @@ WORKDIR /app/server
 COPY package*.json ./
 
 # Install dependencies (including dev dependencies)
-RUN npm install
+RUN pnpm install
 
 # Copy the rest of the application code
 COPY . .
@@ -25,4 +28,4 @@ ENV SERVER_PORT=8080
 
 # Use nodemon for development with hot reload
 # Make sure nodemon is installed in your package.json dev dependencies
-CMD ["npm", "run", "start:dev"]
+CMD ["pnpm", "run", "start:dev"]

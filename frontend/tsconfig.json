@@ -20,7 +20,9 @@
 			"@/*": ["./src/*"]
 		}
 	},
-	"include": ["src", "src/i18next.ts"],
+	"include": ["src",
+		"src/locales/i18next.ts"
+    ],
 	"references": [{ "path": "./tsconfig.node.json" }],
 	"exclude": ["node_modules"]
 }
