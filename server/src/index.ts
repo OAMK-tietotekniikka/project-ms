@@ -1,5 +1,5 @@
 import { App } from "./app";
-import { connectRedis } from "./shared/config/redis.config";
+import { connectRedis } from "./config/redis.config";
 
 const start = async (): Promise<void> => {
 	try {
