@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { projectService } from "@/shared/services";
+import { projectService } from "@/core/api/services";
 
 interface CreateProjectData {
 	project_name: string;
@@ -68,7 +68,10 @@ export const useGetAllProjects = () => {
 export const useListStudentProjectNumbers = (studentId: number) => {
 	return useQuery({
 		queryKey: ["students", studentId, "projects"],
-		queryFn: () => projectService.listStudentProjects(studentId).then((res) => res.data.data),
+		queryFn: () =>
+			projectService
+				.listStudentProjects(studentId)
+				.then((res) => res.data.data),
 		staleTime: 5 * 60 * 1000,
 		enabled: !!studentId,
 	});
@@ -78,7 +81,8 @@ export const useListStudentProjectNumbers = (studentId: number) => {
 export const useGetUserProjects = () => {
 	return useQuery({
 		queryKey: ["me", "projects"],
-		queryFn: () => projectService.getUserProjects().then((res) => res.data.data),
+		queryFn: () =>
+			projectService.getUserProjects().then((res) => res.data.data),
 		staleTime: 5 * 60 * 1000,
 	});
 };
@@ -95,10 +99,9 @@ export const useCreateProject = () => {
 			//	return oldData ? [...oldData, newProject] : [newProject];
 			//});
 
-
 			// Update user's projects
 			console.log("created Project", newProject);
-			queryClient.invalidateQueries({queryKey: ["me", "projects"]});
+			queryClient.invalidateQueries({ queryKey: ["me", "projects"] });
 		},
 		onError: (error) => {
 			console.error("Failed to create project:", error);
@@ -115,9 +118,10 @@ export const useUpdateProject = () => {
 				.updateProject(projectId, data)
 				.then((res) => res.data.data),
 		onSuccess: (updatedProject, { projectId }) => {
-
 			const safelyMergeProject = (existingProject: any, updates: any) => {
 				if (!existingProject) return updates;
+				console.log("existingProject", existingProject);
+				console.log("updates", updates);
 
 				// Preserve important fields that might not be in the update response
 				return {
@@ -131,32 +135,40 @@ export const useUpdateProject = () => {
 
 			// Update project details
 			console.log("updatedProject", updatedProject);
-			queryClient.setQueryData(["projects", projectId, "details"], (oldData: any) => {
-				return safelyMergeProject(oldData, updatedProject);
-			});
+			queryClient.setQueryData(
+				["projects", projectId, "details"],
+				(oldData: any) => {
+					return safelyMergeProject(oldData, updatedProject);
+				},
+			);
 
 			// Update project in all projects list
 
 			queryClient.setQueryData(["projects", "list"], (oldData: any[]) => {
 				console.log("old data:", oldData, projectId, updatedProject);
-				return oldData?.map(project =>
-					project.project_id === projectId ? {
-					...project,
-					project_name: updatedProject.project_name || project.project_name,
-					} : project
-				) || [];
+				return (
+					oldData?.map((project) =>
+						project.project_id === projectId
+							? {
+									...project,
+									project_name:
+										updatedProject.project_name || project.project_name,
+								}
+							: project,
+					) || []
+				);
 			});
 
 			// Update project in user's projects
 			queryClient.setQueryData(["me", "projects"], (oldData: any[]) => {
 				if (!oldData) return [];
-				return oldData.map(project =>
-					project.id === projectId
+				console.log("old data:", oldData);
+				return oldData.map((project) =>
+					project.project_id === projectId
 						? safelyMergeProject(project, updatedProject)
-						: project
+						: project,
 				);
 			}); // todo check contents for student
-
 		},
 		onError: (error) => {
 			console.error("Failed to update project:", error);
@@ -186,9 +198,6 @@ export const useGetProjectNotes = (projectId: number) => {
 	});
 };
 
-
-
-
 export const useAddProjectNote = () => {
 	const queryClient = useQueryClient();
 
@@ -199,9 +208,12 @@ export const useAddProjectNote = () => {
 				.then((res) => res.data.data),
 		onSuccess: (newNote, { projectId }) => {
 			// Update notes list by adding the new note
-			queryClient.setQueryData(["projects", projectId, "notes"], (oldNotes: any[]) => {
-				return oldNotes ? [...oldNotes, newNote[0]] : [newNote[0]];
-			});
+			queryClient.setQueryData(
+				["projects", projectId, "notes"],
+				(oldNotes: any[]) => {
+					return oldNotes ? [...oldNotes, newNote[0]] : [newNote[0]];
+				},
+			);
 		},
 		onError: (error) => {
 			console.error("Failed to add a new note:", error);
@@ -219,9 +231,12 @@ export const useDeleteProjectNote = () => {
 				.then((res) => res.data.data),
 		onSuccess: (res, { projectId, noteId }) => {
 			// Remove the deleted note from the notes list
-			queryClient.setQueryData(["projects", projectId, "notes"], (oldNotes: any[]) => {
-				return oldNotes?.filter(note => note.note_id !== noteId) || [];
-			});
+			queryClient.setQueryData(
+				["projects", projectId, "notes"],
+				(oldNotes: any[]) => {
+					return oldNotes?.filter((note) => note.note_id !== noteId) || [];
+				},
+			);
 
 			console.log("Delete successful, updated cache for project:", projectId);
 		},
@@ -235,9 +250,9 @@ export const useJoinProject = () => {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: ({ joinCode} : joinCode) =>
+		mutationFn: ({ joinCode }: joinCode) =>
 			projectService
-				.joinProjectWithCode({joinCode})
+				.joinProjectWithCode({ joinCode })
 				.then((res) => res.data.data),
 		onSuccess: () => {
 			queryClient.invalidateQueries({
@@ -250,7 +265,6 @@ export const useJoinProject = () => {
 	});
 };
 
-
 // used to generate a new project join code
 export const useAddProjectMember = () => {
 	const queryClient = useQueryClient();
@@ -260,8 +274,7 @@ export const useAddProjectMember = () => {
 			projectService
 				.addProjectMember(projectId, data)
 				.then((res) => res.data.data),
-		onSuccess: (newMember, { projectId }) => {
-		},
+		onSuccess: (newMember, { projectId }) => {},
 		onError: (error) => {
 			console.error("Failed to add a new member:", error);
 		},
@@ -277,34 +290,51 @@ export const useUpdateProjectStatus = () => {
 				.updateProjectStatus(projectId, data)
 				.then((res) => res.data.data),
 		onSuccess: (updatedProjectStatus, { projectId }) => {
-
 			// Project details is a single object, not an array
 			console.log("updatedProjectStatus", updatedProjectStatus);
-			queryClient.setQueryData(["projects", projectId, "details"], (oldData: any) => {
-				return oldData ? {
-					...oldData,
-					project_status: updatedProjectStatus.project_status || oldData.project_status
-				} : null;
-			});
+			queryClient.setQueryData(
+				["projects", projectId, "details"],
+				(oldData: any) => {
+					return oldData
+						? {
+								...oldData,
+								project_status:
+									updatedProjectStatus.project_status || oldData.project_status,
+							}
+						: null;
+				},
+			);
 
 			// Update in projects list (this is an array)
 			queryClient.setQueryData(["projects", "list"], (oldData: any[]) => {
-				return oldData?.map(project =>
-					project.project_id === projectId ? {
-						...project,
-						project_status: updatedProjectStatus.project_status || project.project_status
-					} : project
-				) || [];
+				return (
+					oldData?.map((project) =>
+						project.project_id === projectId
+							? {
+									...project,
+									project_status:
+										updatedProjectStatus.project_status ||
+										project.project_status,
+								}
+							: project,
+					) || []
+				);
 			});
 
 			// Update in user's projects
 			queryClient.setQueryData(["me", "projects"], (oldData: any[]) => {
-				return oldData?.map(project =>
-					project.project_id === projectId ? {
-						...project,
-						project_status: updatedProjectStatus.project_status || project.project_status
-					} : project
-				) || [];
+				return (
+					oldData?.map((project) =>
+						project.project_id === projectId
+							? {
+									...project,
+									project_status:
+										updatedProjectStatus.project_status ||
+										project.project_status,
+								}
+							: project,
+					) || []
+				);
 			});
 		},
 		onError: (error) => {
@@ -326,32 +356,38 @@ export const useUpdateProjectTeacher = () => {
 
 			console.log("updatedTeacher", updatedTeacher);
 
-			queryClient.invalidateQueries({queryKey: ["me", "projects"]}); // todo improve
+			queryClient.invalidateQueries({ queryKey: ["me", "projects"] }); // todo improve
 			// todo add invalidate for available teachers
 
-
-			queryClient.setQueryData(["projects", projectId, "details"], (oldData: any) => {
-				console.log("oldData", oldData);
-				return oldData ? {
-					...oldData,
-					teacher_id: updatedTeacher.teacher_id || oldData.teacher_id,
-					teacher_name: updatedTeacher.teacher_name || oldData.teacher_name,
-				} : null;
-			});
+			queryClient.setQueryData(
+				["projects", projectId, "details"],
+				(oldData: any) => {
+					console.log("oldData", oldData);
+					return oldData
+						? {
+								...oldData,
+								teacher_id: updatedTeacher.teacher_id || oldData.teacher_id,
+								teacher_name:
+									updatedTeacher.teacher_name || oldData.teacher_name,
+							}
+						: null;
+				},
+			);
 
 			// Update in all projects list
 			queryClient.setQueryData(["projects", "list"], (oldProjects: any[]) => {
 				if (!oldProjects) return oldProjects;
 				return oldProjects.map((project) =>
 					project.project_id === projectId
-						? { ...project,
-							teacher_id: updatedTeacher.teacher_id || project.teacher_id,
-							teacher_name: updatedTeacher.teacher_name || project.teacher_name,
-						}
+						? {
+								...project,
+								teacher_id: updatedTeacher.teacher_id || project.teacher_id,
+								teacher_name:
+									updatedTeacher.teacher_name || project.teacher_name,
+							}
 						: project,
 				);
 			});
-
 		},
 		onError: (error) => {
 			console.error("Failed to update project teacher", error);

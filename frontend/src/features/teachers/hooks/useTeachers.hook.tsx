@@ -1,5 +1,9 @@
-import {useMutation, useQuery, useQueryClient} from "@tanstack/react-query";
-import {projectService, studentService, teacherService} from "@/shared/services";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+	projectService,
+	studentService,
+	teacherService,
+} from "@/core/api/services";
 
 type createTeacher = {
 	data: any;
@@ -42,26 +46,29 @@ export const useCreateTeacher = () => {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: ({data}: createTeacher) =>
+		mutationFn: ({ data }: createTeacher) =>
 			teacherService.createTeacher(data).then((res) => res.data.data),
 		onSuccess: (newTeacher) => {
-			queryClient.setQueryData(["teachers", "all"], (oldData: any[] | undefined) => {
-				if (Object.keys(newTeacher).length === 0) {
-					queryClient.invalidateQueries({
-						queryKey: ["teacher", "all"]
-					});
-				} else {
-					let new_cached = {
-						teacher_id: newTeacher.teacher_id,
-						teacher_name: newTeacher.teacher_name,
-						email: newTeacher.email,
-						used_resources: null,
-						total_resources: null,
+			queryClient.setQueryData(
+				["teachers", "all"],
+				(oldData: any[] | undefined) => {
+					if (Object.keys(newTeacher).length === 0) {
+						queryClient.invalidateQueries({
+							queryKey: ["teacher", "all"],
+						});
+					} else {
+						let new_cached = {
+							teacher_id: newTeacher.teacher_id,
+							teacher_name: newTeacher.teacher_name,
+							email: newTeacher.email,
+							used_resources: null,
+							total_resources: null,
+						};
+						if (!oldData) return [new_cached];
+						return [...oldData, new_cached];
 					}
-					if (!oldData) return [new_cached];
-					return [...oldData, new_cached];
-				}
-			});
+				},
+			);
 		},
 		onError: (error) => {
 			console.error("Failed to create teacher:", error);
@@ -74,10 +81,11 @@ export const useUpdateTeacher = () => {
 
 	return useMutation({
 		mutationFn: ({ teacherId, data }: updateTeacher) =>
-			teacherService.updateTeacherName(teacherId, data).then((res) => res.data.data),
+			teacherService
+				.updateTeacherName(teacherId, data)
+				.then((res) => res.data.data),
 		onSuccess: (_data, variables) => {
 			queryClient.invalidateQueries({ queryKey: ["teachers", "all"] });
 		},
 	});
 };
-

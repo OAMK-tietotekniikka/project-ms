@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { resourcesService, studentService } from "@/shared/services";
+import { resourcesService, studentService } from "@/core/api/services";
 
 type batchStudents = {
 	data: any;
@@ -35,17 +35,24 @@ export const useUpdateStudent = () => {
 
 	return useMutation({
 		mutationFn: ({ studentId, data }: updateStudent) =>
-			studentService.updateStudent(studentId, data).then((res) => res.data.data),
+			studentService
+				.updateStudent(studentId, data)
+				.then((res) => res.data.data),
 		onSuccess: (updatedStudent, { studentId }) => {
-
-
 			// Update in students list
 			queryClient.setQueryData(["students", "list"], (oldData: any[]) => {
-				return oldData?.map(student =>
-					student.student_id === studentId ? { ...student,
-					student_name: updatedStudent.student_name || student.student_name,
-					class_code: updatedStudent.class_code || student.class_code} : student
-				) || [];
+				return (
+					oldData?.map((student) =>
+						student.student_id === studentId
+							? {
+									...student,
+									student_name:
+										updatedStudent.student_name || student.student_name,
+									class_code: updatedStudent.class_code || student.class_code,
+								}
+							: student,
+					) || []
+				);
 			});
 		},
 		onError: (error) => {
@@ -62,4 +69,3 @@ export const useStudentProfile = () => {
 		staleTime: 5 * 60 * 1000,
 	});
 };
-
