@@ -1,6 +1,31 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.2.2] - 20.07.2025
+
+### Features
+
+- License ([9bb4797](OAMK-tietotekniikka/ProjectsMS/commit/9bb4797185ef49a653d6b3b6347d2015b919acef))
+- Security policy ([8ba0f2c](OAMK-tietotekniikka/ProjectsMS/commit/8ba0f2c655c92b0d204dc79b79e3d08174b9e093))
+- Version update script ([aa8e2b7](OAMK-tietotekniikka/ProjectsMS/commit/aa8e2b7a3993011ad22fa0a5e4f3a7d666e4ef09))
+
+### Miscellaneous Tasks
+
+- Clean not needed files ([f40c85e](OAMK-tietotekniikka/ProjectsMS/commit/f40c85e0ee2ee8ccfb9356a613544ed22f0ed9f7))
+- Minor updates ([4896a3a](OAMK-tietotekniikka/ProjectsMS/commit/4896a3aee8a1547263a37820ae962dc8d0091def))
+- Move icon to assets ([897b8f7](OAMK-tietotekniikka/ProjectsMS/commit/897b8f74b7219cdaff1879f56d3523c221ccb284))
+- Minor updates ([56ebba7](OAMK-tietotekniikka/ProjectsMS/commit/56ebba72a4e57812ed20ffb86557092f4ef62ce3))
+- Update packages, scripts ([999a09d](OAMK-tietotekniikka/ProjectsMS/commit/999a09db3ded4f55c5bc0397b0873bfc7caf3ccd))
+- Update helper scripts ([b16c942](OAMK-tietotekniikka/ProjectsMS/commit/b16c9424e8462b2de12d80190c336199999418a6))
+- Fix sql conflics ([c26b1f2](OAMK-tietotekniikka/ProjectsMS/commit/c26b1f2525a054b5750af8c44caf57cc9276cdcb))
+- **config**: Update ports ([7274543](OAMK-tietotekniikka/ProjectsMS/commit/7274543211eb2c01f31723e1db1e5b61a38ab1aa))
+- Update/improve/fix configs ([2072848](OAMK-tietotekniikka/ProjectsMS/commit/20728483fbbc4d8c15ba5f37d5d1b132f58c2276))
+
+### Ci
+
+- Update docker config ([1d12cad](OAMK-tietotekniikka/ProjectsMS/commit/1d12cadbbf8892cee69be0e60f047b25629210fa))
+- Fix docker config ([b258580](OAMK-tietotekniikka/ProjectsMS/commit/b258580c2a0ccc75b5d20ca418e8af319427a7a0))
+
 ## [0.2.1] - 19.07.2025
 
 ### Features
@@ -76,6 +101,7 @@ All notable changes to this project will be documented in this file.
 ### Docs
 
 - Update openapi.yaml ([fd55879](OAMK-tietotekniikka/ProjectsMS/commit/fd558792ce424f60e650d7796aee1db1edc61fa2))
+- Update changelog ([1eeb1f4](OAMK-tietotekniikka/ProjectsMS/commit/1eeb1f4cb8aa6443995e0624480239cd1a7ac06b))
 
 ## [2.0.0] - 30.06.2025
 
