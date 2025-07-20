@@ -22,7 +22,7 @@ export class App {
 	private readonly INTERNAL_SERVER_ERROR = "Internal server error";
 
 	constructor(
-		private readonly port: number | string = process.env.SERVER_PORT || 8080,
+		private readonly port: number | string = process.env.SERVER_PORT || 8000,
 	) {
 		this.app = express();
 		this.setupMiddlewares();

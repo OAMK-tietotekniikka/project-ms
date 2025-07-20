@@ -1,14 +1,18 @@
 import mariadb from "mariadb";
-import dotenv from "dotenv";
 
-dotenv.config();
+let host;
+let port;
+if (process.env.IS_DOCKER === "false") {
+	host = "localhost";
+	port = process.env.DB_PORT_LOCAL ? parseInt(process.env.DB_PORT_LOCAL) : 0;
+}
 
 const pool = mariadb.createPool({
-	host: process.env.DB_HOST,
+	host: host ? host : process.env.DB_HOST,
 	user: process.env.DB_USER,
 	password: process.env.DB_PASSWORD,
 	database: process.env.DB_NAME,
-	port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306,
+	port: port ? port : parseInt(process.env.DB_PORT_DOCKER || "3306"),
 	connectionLimit: process.env.DB_CONNECTION_LIMIT
 		? parseInt(process.env.DB_CONNECTION_LIMIT)
 		: 50,
@@ -18,6 +22,33 @@ const pool = mariadb.createPool({
 	compress: true,
 	pipelining: true,
 	bulk: true,
+});
+
+console.log({
+	host: host ? host : process.env.DB_HOST,
+	user: process.env.DB_USER,
+	password: process.env.DB_PASSWORD,
+	database: process.env.DB_NAME,
+	port: port ? port : parseInt(process.env.DB_PORT_DOCKER || "3306"),
+	connectionLimit: process.env.DB_CONNECTION_LIMIT
+		? parseInt(process.env.DB_CONNECTION_LIMIT)
+		: 50,
+	connectTimeout: 10000,
+	socketTimeout: 30000,
+	acquireTimeout: 30000,
+	compress: true,
+	pipelining: true,
+	bulk: true,
+});
+
+process.on("SIGTERM", async () => {
+	console.log("Closing database pool...");
+	await pool.end();
+});
+
+process.on("SIGINT", async () => {
+	console.log("Closing database pool...");
+	await pool.end();
 });
 
 export default pool;

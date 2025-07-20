@@ -1,8 +1,21 @@
 import { createClient, RedisClientType } from "redis";
 
+let host;
+if (process.env.IS_DOCKER === "false") {
+	host = "localhost";
+}
+
 const redisClient: RedisClientType = createClient({
 	socket: {
-		host: process.env.REDIS_HOST || "localhost",
+		host: host ? host : process.env.REDIS_HOST,
+		port: parseInt(process.env.REDIS_PORT || "6379", 10),
+	},
+	password: process.env.REDIS_PASSWORD || undefined,
+});
+
+console.log({
+	socket: {
+		host: host ? host : process.env.REDIS_HOST,
 		port: parseInt(process.env.REDIS_PORT || "6379", 10),
 	},
 	password: process.env.REDIS_PASSWORD || undefined,

@@ -30,7 +30,6 @@ import { NotificationService } from "../../notifications/services/notificationSe
  * Fetches and returns a list of all teachers from the database.
  */
 const notificationService = NotificationService.getInstance();
-notificationService.refreshActiveUsers(); // TODO remove
 
 export const listTeachers = async (
 	req: Request,
