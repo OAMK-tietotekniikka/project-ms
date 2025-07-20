@@ -19,13 +19,8 @@ RUN pnpm install
 # Copy the rest of the application code
 COPY . .
 
-# Expose port 8080
-EXPOSE 8080
+# Expose port
+EXPOSE 8000
 
-# Set environment variables
-ENV NODE_ENV=development
-ENV SERVER_PORT=8080
 
-# Use nodemon for development with hot reload
-# Make sure nodemon is installed in your package.json dev dependencies
 CMD ["pnpm", "run", "start:dev"]

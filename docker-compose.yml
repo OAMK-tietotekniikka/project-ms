@@ -2,25 +2,24 @@ services:
   mariadb:
     image: mariadb:lts
     container_name: project_ms_db
-    restart: unless-stopped
-    volumes:
-      - ./dbinit/init.sql:/docker-entrypoint-initdb.d/0_init.sql
-      - mariadb_data:/var/lib/mysql
-    ports:
-      - 3307:3306
     environment:
-      MYSQL_DATABASE: project_ms
-      MYSQL_USER: admin
-      MYSQL_PASSWORD: pwd@123
-      MYSQL_ROOT_PASSWORD: pwd@123
-      SERVICE_TAGS: prod
-      SERVICE_NAME: project_ms_db
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "${DB_PORT_LOCAL}:${DB_PORT_DOCKER}"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./dbinit/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - internalnet
     healthcheck:
-      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-u", "root", "-ppwd@123"]
-      timeout: 5s
-      retries: 10
+      test: ["CMD", "mariadb", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD}", "-e", "SELECT 1"]
+      timeout: 15s
+      interval: 5s
+      retries: 5
+      start_period: 30s
 
 
   redis:
@@ -31,7 +30,7 @@ services:
     volumes:
       - redis_data:/data
     ports:
-      - 6379:6379
+      - "${REDIS_PORT}:${REDIS_PORT}"
     networks:
       - internalnet
     healthcheck:
@@ -45,24 +44,23 @@ services:
     build: ./server
     image: project_ms_server:v2
     ports:
-      - 8081:8080
+      - "${SERVER_PORT}:${SERVER_PORT}"
+    environment:
+    - DB_HOST=${DB_HOST}
+    - DB_USER=${DB_USER}
+    - DB_PASSWORD=${DB_PASSWORD}
+    - DB_NAME=${DB_NAME}
+    - DB_PORT=${DB_PORT_DOCKER}
+    - REDIS_HOST=${REDIS_HOST}
+    - REDIS_PORT=${REDIS_PORT}
+    - DB_CONNECTION_LIMIT=${DB_CONNECTION_LIMIT}
+    - SERVER_PORT=${SERVER_PORT}
+    - NODE_ENV=${NODE_ENV}
     depends_on:
       mariadb:
         condition: service_healthy
       redis:
         condition: service_healthy
-    environment:
-      DB_HOST: mariadb
-      DB_PASSWORD: 'pwd@123'
-      DB_USER: admin
-      DB_NAME: project_ms
-      DB_PORT: 3306
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      DB_CONNECTION_LIMIT: 10
-      NODE_ENV: production
-      SERVICE_TAGS: prod
-      SERVICE_NAME: project_ms_server_service
     networks:
       - internalnet
 
@@ -71,15 +69,18 @@ services:
     build: ./frontend
     image: project_ms_frontend:v2
     ports:
-      - 5000:5000
+      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
     depends_on:
       - pm_server
     environment:
-      VITE_APP_SERVER_URL: http://pm_server:8080
-      NODE_ENV: production
+      - VITE_API_URL=${VITE_API_URL}
+      - VITE_NODE_ENV=${VITE_NODE_ENV}
     networks:
       - internalnet
 
 networks:
   internalnet:
     driver: bridge
+volumes:
+  mariadb_data:
+  redis_data:

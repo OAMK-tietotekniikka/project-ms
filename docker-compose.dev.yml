@@ -7,27 +7,32 @@ services:
       - ./dbinit/init.sql:/docker-entrypoint-initdb.d/0_init.sql
       - project_ms_db_dev_data:/var/lib/mysql
     ports:
-      - 3307:3306
+      - "${DB_PORT_LOCAL}:${DB_PORT_DOCKER}"
     environment:
-      MYSQL_DATABASE: project_ms
-      MYSQL_USER: admin
-      MYSQL_PASSWORD: pwd@123
-      MYSQL_ROOT_PASSWORD: pwd@123
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
       SERVICE_TAGS: development
       SERVICE_NAME: project_ms_dev_db
     networks:
       - internalnet
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      timeout: 5s
-      retries: 10
+      test: ["CMD", "mariadb", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD}", "-e", "SELECT 1"]
+      timeout: 15s
+      interval: 5s
+      retries: 5
+      start_period: 30s
 
   redis:
-    image: redis:8.0
+    image: redis:8-alpine
     container_name: project_ms_redis_dev
     restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
     ports:
-      - 6379:6379
+      - "${REDIS_PORT}:${REDIS_PORT}"
     networks:
       - internalnet
 
@@ -38,7 +43,7 @@ services:
       dockerfile: Dockerfile.dev
     image: pm_server_dev:dev
     ports:
-      - 8081:8080
+      - "${SERVER_PORT}:${SERVER_PORT}"
     depends_on:
       mariadb:
         condition: service_healthy
@@ -54,6 +59,7 @@ services:
       REDIS_PORT: 6379
       DB_CONNECTION_LIMIT: 10
       NODE_ENV: development
+      SERVER_PORT: 8000
       SERVICE_TAGS: development
       SERVICE_NAME: pm_server_devservice
     volumes:
@@ -70,12 +76,12 @@ services:
       dockerfile: Dockerfile.dev  # Use development Dockerfile
     image: pm_frontend_dev:dev
     ports:
-      - 5000:5000
+      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
     depends_on:
       - pm_server_dev
     environment:
-      VITE_APP_SERVER_URL: localhost:8081
-      NODE_ENV: development
+      - VITE_API_URL=${VITE_API_URL}
+      - VITE_NODE_ENV=${VITE_NODE_ENV}
     volumes:
       # Mount source code for hot reload
       - ./frontend:/app/frontend
@@ -89,3 +95,4 @@ networks:
 
 volumes:
   project_ms_db_dev_data:
+  redis_data:

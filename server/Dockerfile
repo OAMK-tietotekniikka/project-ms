@@ -1,29 +1,62 @@
-# Use an official Node.js runtime as the base image
-FROM node:24-alpine
+# Use multi-stage build for optimization
+FROM node:24-alpine AS build
 
 # Install pnpm globally
 RUN npm install -g pnpm
 
-# Set the working directory in the container to /app
-WORKDIR /app/server
+# Create app directory with correct permissions
+WORKDIR /app
 
-# Copy package.json and package-lock.json to the working directory
+# Copy package files first for better caching
 COPY package*.json ./
+COPY pnpm-lock.yaml* ./
 
-# Install the application dependencies
-RUN apk add --no-cache git
-RUN pnpm install
+# Install dependencies with frozen lockfile for reproducible builds
+RUN pnpm install --frozen-lockfile --prod=false
 
-# Copy the rest of the application code to the working directory
+# Copy source code
 COPY . .
 
-# Build the app
+# Build the application
 RUN pnpm run build
 
-# Expose port 8080 for the app
-ENV NODE_ENV=development
-ENV SERVER_PORT 8080
-EXPOSE $SERVER_PORT
+# Production stage
+FROM node:24-alpine AS production
 
-# Run the app
-CMD ["pnpm","run", "start:dev"]
+# Install pnpm
+RUN npm install -g pnpm
+
+# Install wget for healthcheck
+RUN apk add --no-cache wget
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodeuser -u 1001
+
+# Create app directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY pnpm-lock.yaml* ./
+
+# Install only production dependencies
+RUN pnpm install --frozen-lockfile --prod=true
+
+# Copy built application from build stage
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/src ./src
+
+# Change ownership to non-root user
+RUN chown -R nodeuser:nodejs /app
+USER nodeuser
+
+# Expose port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8000/health || exit 1
+
+# Start the application
+CMD ["pnpm", "run", "start:prod"]
