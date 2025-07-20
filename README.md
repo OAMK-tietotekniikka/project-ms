@@ -1,49 +1,60 @@
-# Company-Oriented Product Development Projects Management Tool
+<div align="center">
+
+# Project MS
+**Project management tool for company projects**
+
+
+![GitHub Tag](https://img.shields.io/github/v/tag/OAMK-tietotekniikka/ProjectsMS?color=%23488be6)
+![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/OAMK-tietotekniikka/ProjectsMS?color=%23488be6)
+
+</div>
 
 
 
-## How to run the application
-### Prerequisites
-If not installed yet:
-- Install Node.js (https://nodejs.org/en/download/package-manager/current) which by default includes npm (None Package Manager)
-- Install Git (https://git-scm.com/downloads)
-- Install Docker Desktop (https://docs.docker.com/get-started/get-docker/)
 
-Clone the repository to your local computer, and navigate to the relevant folder:
+---
+
+## Download and Install
+
+### Clone the Repository
+
+The canonical Git repository is located at: <br/>
+[https://github.com/OAMK-tietotekniikka/ProjectsMS](https://github.com/OAMK-tietotekniikka/ProjectsMS)
+
+To clone the repository:
+
 ```bash
 git clone https://github.com/OAMK-tietotekniikka/ProjectsMS.git
-cd ProjectsMS
-```
-### General modules
-- Install general dev dependencies:
-```bash
-npm install
 ```
 
-### Frontend setup
-- Change directory to *frontend* folder
-- Install dependencies for the frontend client:
-```bash
-npm install
-```
-### Backend setup
-- Change directory to *server* folder
-- Install dependencies for the backend server:
-```bash
-npm install
-```
-### Start the application
-- Navigate to the ProjectMS root folder, and execute the following command:
+### Installation Instructions
+
+After cloning, visit
+[documentation website](https://oamk-tietotekniikka.github.io/docs/en/intro/installation/)
+for detailed installation steps.
+
+---
+## Reporting Bugs
+
+Bug reports help us improve Project MS.
+
+* Use the [bug report form](https://forms.office.com/e/c4pA9Y2Fr3)
+* Or open an issue on GitHub: [new issue](https://github.com/OAMK-tietotekniikka/ProjectsMS/issues/new)
+
+---
+
+## Security Vulnerabilities
+
+To report a security issue, please refer to our
+[Security policy](https://github.com/OAMK-tietotekniikka/ProjectsMS/security)
+
+**Important:** Do not report security vulnerabilities through GitHub issues.
+
+---
+
+## Contributing
+
+We appreciate your help! <br/>
+To get started, read the [contribution guidelines](https://oamk-tietotekniikka.github.io/docs/en/how-to/contribute/)
 
 
-**On windows**
-```bash
-docker-compose -f docker-compose.dev.yml up --build - dev environment with Docker
-docker-compose up --build - production environment with Docker
-```
-**On unix**
-```bash
-make - get list of make commands
-make dev-docker    - Start development environment with Docker (hot reload)
-make prod-docker   - Start production environment with Docker
-```
