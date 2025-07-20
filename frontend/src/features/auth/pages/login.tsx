@@ -1,23 +1,24 @@
-import { Navigate, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/shared/components/ui/button";
 import { useIsAuthenticated, useMsal } from "@azure/msal-react";
 import { loginRequest } from "@/config/authConfig";
-import favicon from "../../../../public/favicon.svg";
+import icon from "@/assets/icon.svg";
 
 import { useEffect, useState } from "react";
 import { useRole } from "@/core/auth/useUserRole.hook";
-
 import { useTranslation } from "react-i18next";
+
 export const LoginPage = () => {
 	const { instance } = useMsal();
 
 	const bug_form: string = "https://forms.office.com/e/c4pA9Y2Fr3";
-	const version = "2.1.0";
+	const version = __APP_VERSION__;
 	const { t } = useTranslation();
 
 	const navigate = useNavigate();
 	const isAuthenticated = useIsAuthenticated();
-	const isDevelopment = import.meta.env.VITE_RUNNING_ENV === "development";
+	//const isDevelopment = import.meta.env.VITE_NODE_ENV === "development";
+	const isDevelopment = true; // todo change ^^ (docker dev)
 	const {
 		userRole,
 		loading: roleLoading,
@@ -121,7 +122,7 @@ export const LoginPage = () => {
 				<div className="flex flex-col items-center text-center w-full max-w-sm">
 					{/* GitHub-style Octocat placeholder - you'll add your art here */}
 					<div className="flex items-center justify-center mb-4">
-						<img src={favicon} className="h-16" />
+						<img src={icon} alt="logo" className="h-16" />
 					</div>
 
 					<p className="text-2xl font-medium mb-8">Project Management System</p>
@@ -251,7 +252,10 @@ export const LoginPage = () => {
 			<footer className="border-t py-6 text-center text-sm text-muted-foreground">
 				<div className="max-w-md mx-auto space-y-2 ">
 					<div className="flex justify-center space-x-4 ">
-						<a href="#" className="hover:underline">
+						<a
+							href="https://oamk-tietotekniikka.github.io/docs/en/how-to/contribute/"
+							className="hover:underline"
+						>
 							Contribute
 						</a>
 						<a href="https://oamk.fi/tietosuoja/" className="hover:underline">

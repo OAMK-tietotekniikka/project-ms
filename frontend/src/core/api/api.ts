@@ -4,11 +4,11 @@ import { InteractionRequiredAuthError } from "@azure/msal-browser";
 import { performLogout } from "@/core/auth/logout";
 
 export const api = axios.create({
-	baseURL: "http://localhost:8081/api/v2",
+	baseURL: "http://localhost:8000/api/v2",
 	timeout: 10000,
 });
 
-const isDevelopment = import.meta.env.VITE_RUNNING_ENV === "development";
+const isDevelopment = import.meta.env.VITE_NODE_ENV === "development";
 
 // Dev mode constants
 const DEV_TOKEN_KEY = "dev_auth_token";

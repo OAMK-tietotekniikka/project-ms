@@ -10,7 +10,7 @@ import { useMsal } from "@azure/msal-react";
 import { apiClient } from "@/core/api/api";
 
 // Check if we're in development mode
-const isDevelopment = import.meta.env.VITE_RUNNING_ENV === "development";
+const isDevelopment = import.meta.env.VITE_NODE_ENV === "development";
 
 // Define the shape of the context data
 interface RoleContextType {
