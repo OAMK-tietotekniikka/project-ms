@@ -274,9 +274,7 @@ INSERT INTO students (student_name, email, class_code) VALUES
 -- Insert sample resources
 INSERT INTO resources (teacher_id, total_resources, used_resources, study_year) VALUES
                                                                                                    (1, 10, 3, '2024-2025'),
-                                                                                                   (1, 5000, 1200, '2024-2025'),
                                                                                                    (2, 8, 2, '2024-2025'),
-                                                                                                   (2, 3000, 800, '2024-2025'),
                                                                                                    (3, 12, 4, '2024-2025');
 
 -- Insert company-teacher relationships
@@ -304,7 +302,7 @@ INSERT INTO student_project (student_id, project_id) VALUES
 -- Insert sample notes
 INSERT INTO project_note (project_id, note_type, note_title, note_content, created_by_name) VALUES
                                                                                                                                 (1, 'milestone', 'Project Kickoff', 'Initial project meeting completed successfully',  'Dr. Jane Smith'),
-                                                                                                                                (1, 'link', 'Project Repository', NULL,  'Alice Johnson'),
+                                                                                                                                (1, 'link', 'Project Repository', '',  'Alice Johnson'),
                                                                                                                                 (2, 'text', 'Requirements Review', 'Need to clarify technical requirements with Nokia team',  'Prof. John Doe'),
                                                                                                                                 (4, 'feedback', 'Progress Update', 'Good progress on dashboard wireframes',  'Dr. Maria Garcia');
 
