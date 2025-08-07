@@ -23,6 +23,28 @@ export const QUERY = {
         
     `,
 
+	SELECT_PROJECTS_FOR_EXPORT: `
+        SELECT 
+            p.project_id,
+            p.project_name,
+            p.project_status,
+            p.project_url,
+            p.study_year,
+            p.start_date,
+            p.end_date,
+            p.current_students,
+            p.created_at,
+            t.teacher_name,
+            t.email,
+            c.company_name,
+            c.industry
+            
+        FROM projects p
+        LEFT JOIN teachers t ON p.teacher_id = t.teacher_id
+        LEFT JOIN companies c ON p.company_id = c.company_id
+        
+    `,
+
 	SELECT_PROJECT: `
         SELECT * 
         FROM projects 
@@ -165,15 +187,14 @@ export const QUERY = {
               AND sp.student_id = ?
         )
     `,
-    STUDENT_BELONGS_TO_PROJECT: `
+	STUDENT_BELONGS_TO_PROJECT: `
         SELECT 1
         FROM student_project
         WHERE student_id = ? AND project_id = ?
         LIMIT 1;
     `,
 
-
-    CHECK_PROJECT_CAPACITY: `
+	CHECK_PROJECT_CAPACITY: `
     SELECT 
         p.max_students,
         COUNT(sp.student_id) as current_students,
@@ -192,8 +213,7 @@ export const QUERY = {
         VALUES (?, ?)
     `,
 
-    INSERT_PROJECT_NOTE:
-        `INSERT INTO project_note (
+	INSERT_PROJECT_NOTE: `INSERT INTO project_note (
         project_id,
         note_title,
         note_content,
@@ -203,7 +223,6 @@ export const QUERY = {
     )
         VALUES (?, ?, ?, ?, ?, ?)
         RETURNING *`,
-
 
 	SELECT_PROJECT_NOTES: `
         SELECT * 
@@ -234,32 +253,26 @@ export const QUERY = {
     `,
 
 	SELECT_PROJECTS_BY_COMPANY_AND_YEAR: `
-    SELECT 
-    c.company_name,
-    COUNT(p.project_id) AS amount_of_projects,
-    CONCAT(
-        YEAR(p.start_date), 
-        '-', 
-        YEAR(p.end_date), 
-        ' ', 
-        CASE 
-            WHEN MONTH(p.start_date) BETWEEN 1 AND 6 THEN 'Spring'
-            ELSE 'Fall'
-        END
-    ) AS study_semester
-    FROM projects p
-    JOIN companies c ON p.company_id = c.company_id
-    GROUP BY 
-        c.company_name,
-        YEAR(p.start_date),
-        YEAR(p.end_date),
-        CASE 
-            WHEN MONTH(p.start_date) BETWEEN 1 AND 6 THEN 'Spring'
-        ELSE 'Fall'
-    END
-ORDER BY 
-    c.company_name, 
-    study_semester;
-
+        SELECT
+            study_year,
+            JSON_ARRAYAGG(
+                    JSON_OBJECT(
+                            'Company', company_name,
+                            'Projects', number_of_projects,
+                            'Students', total_current_students
+                    )
+            ) as companies
+        FROM (
+                 SELECT
+                     c.company_name,
+                     COALESCE(p.study_year, 'No Projects') as study_year,
+                     COUNT(p.project_id) as number_of_projects,
+                     SUM(p.current_students) as total_current_students
+                 FROM companies c
+                          LEFT JOIN projects p ON c.company_id = p.company_id
+                 GROUP BY c.company_id, c.company_name, COALESCE(p.study_year, 'No Projects')
+             ) as subquery
+        GROUP BY study_year
+        ORDER BY study_year DESC;
     `,
 };

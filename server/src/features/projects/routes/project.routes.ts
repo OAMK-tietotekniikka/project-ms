@@ -7,15 +7,19 @@ import {
 import {
 	createProject,
 	deleteProject,
+	exportProjects,
 	getProject,
+	getProjectStatistics,
 	listProjectMembers,
 	listProjects,
 	listUserProjects,
+	//	getProjectStatistics,
+} from "../controllers/project.controller";
+import {
 	updateProject,
 	updateProjectStatus,
 	updateProjectTeacher,
-	//	getProjectStatistics,
-} from "../controllers/project.controller";
+} from "../controllers/project_updates.controller";
 import { authenticate, requireRole } from "../../../shared/middleware/auth";
 import {
 	generateProjectJoinCode,
@@ -32,6 +36,13 @@ projectsRouter
 
 // Current user's projects
 projectsRouter.route("/me").get(authenticate, listUserProjects);
+projectsRouter
+	.route("/export")
+	.get(authenticate, requireRole(["teacher"]), exportProjects);
+
+projectsRouter
+	.route("/statistics")
+	.get(authenticate, requireRole(["teacher"]), getProjectStatistics);
 
 // Individual project
 projectsRouter
@@ -71,10 +82,5 @@ projectsRouter
 	.get(authenticate, generateProjectJoinCode);
 
 projectsRouter.route("/joinProject").post(authenticate, addProjectMember);
-
-// Project statistics (future feature)
-//projectsRouter
-//	.route("/statistics")
-//	.get(authenticate, requireRole(["teacher"]), getProjectStatistics);
 
 export default projectsRouter;
