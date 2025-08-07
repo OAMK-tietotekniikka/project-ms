@@ -4,6 +4,9 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:ui": "vitest --ui",
     "start:build": "rimraf dist && pnpm exec tsc",
     "start:dev": "nodemon -L --exec ts-node src/index.ts",
     "start:prod": "node dist/index.js"
@@ -16,27 +19,35 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/node-cron": "^3.0.11",
     "@types/nodemailer": "^6.4.17",
     "cors": "^2.8.5",
-    "dotenv": "^17.2.0",
+    "dotenv": "^17.2.1",
     "express": "^5.1.0",
+    "form-data": "^4.0.4",
     "jsonwebtoken": "^9.0.2",
     "jwks-rsa": "^3.2.0",
-    "mariadb": "^3.4.4",
+    "mailgun.js": "^12.0.3",
+    "mariadb": "^3.4.5",
+    "node-cron": "^4.2.1",
     "nodemailer": "^7.0.5",
-    "redis": "^5.6.0",
+    "redis": "^5.6.1",
     "winston": "^3.17.0",
     "winston-daily-rotate-file": "^5.0.0",
-    "zod": "^4.0.5"
+    "zod": "^4.0.10"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
-    "@types/node": "^24.0.13",
-    "@typescript-eslint/eslint-plugin": "^8.36.0",
-    "@typescript-eslint/parser": "^8.36.0",
+    "@types/node": "^24.1.0",
+    "@types/supertest": "^6.0.3",
+    "@typescript-eslint/eslint-plugin": "^8.38.0",
+    "@typescript-eslint/parser": "^8.38.0",
+    "@vitest/ui": "^3.2.4",
     "nodemon": "^3.1.10",
+    "supertest": "^7.1.4",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
   }
 }
