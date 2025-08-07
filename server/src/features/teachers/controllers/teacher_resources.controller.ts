@@ -2,8 +2,8 @@
  * Resources controller.
  * Manages creating, reading, updating, and allocating teacher resources.
  *
- * @version 0.2.1
- * @since 20.07.2025
+ * @version 0.3.0
+ * @since 07.08.2025
  * @module
  */
 
@@ -16,18 +16,15 @@ import { QUERY } from "../queries/teachers.query";
 import { logError } from "../../../shared/utils/log_errors";
 import { logRequests } from "../../../shared/utils/log_requests";
 import { AuthenticatedRequest } from "../../../shared/middleware/auth";
-import {
-	getStudentIdByEmail,
-	getTeacherIdByEmail,
-} from "../../../shared/utils/user_email_lookup";
-import { NotificationService } from "../../notifications/services/notificationService";
+import { getTeacherIdByEmail } from "../../../shared/utils/user_email_lookup";
+import { notifyResourceUpdate } from "../../notifications/services/notificationService";
 
 /**
  * Retrieves all resources.
  *
  * Fetches and returns all available resources from the database as an array of records.
  */
-const notificationService = NotificationService.getInstance();
+
 export const getResources = async (
 	req: Request,
 	res: Response,
@@ -147,7 +144,7 @@ export const createResource = async (
 			);
 
 			try {
-				await notificationService.notifyResourceUpdate(
+				await notifyResourceUpdate(
 					parseInt(teacher_id),
 					study_year,
 					0,
@@ -208,7 +205,7 @@ export const updateResource = async (
 			req.params.resourceId,
 		]);
 		try {
-			await notificationService.notifyResourceUpdate(
+			await notifyResourceUpdate(
 				existing_resource[0].teacher_id,
 				existing_resource[0].study_year,
 				existing_resource[0].total_resources,

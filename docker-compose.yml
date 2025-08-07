@@ -22,22 +22,7 @@ services:
       start_period: 30s
 
 
-  redis:
-    image: redis:8-alpine
-    container_name: project_ms_redis
-    restart: unless-stopped
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
-    ports:
-      - "${REDIS_PORT}:${REDIS_PORT}"
-    networks:
-      - internalnet
-    healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
-      timeout: 3s
-      retries: 5
-      interval: 5s
+
 
   pm_server:
     container_name: project_ms_server_container
@@ -58,8 +43,6 @@ services:
     - NODE_ENV=${NODE_ENV}
     depends_on:
       mariadb:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     networks:
       - internalnet
@@ -83,4 +66,3 @@ networks:
     driver: bridge
 volumes:
   mariadb_data:
-  redis_data:

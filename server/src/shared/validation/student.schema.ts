@@ -2,15 +2,34 @@ import { z } from "zod";
 
 export const updateStudentSchema = z
 	.object({
-		student_name: z.string().min(4).max(100).optional(),
-		class_code: z.string().optional(),
+		student_name: z
+			.string()
+			.min(4)
+			.max(127)
+			.optional()
+			.transform((val) => val?.toLowerCase()),
+		class_code: z
+			.string()
+			.optional()
+			.transform((val) => val?.toLowerCase()),
 	})
 	.partial();
 
 export const createStudentSchema = z.object({
-	email: z.email().min(8).max(100),
-	student_name: z.string().min(4).max(100),
-	class_code: z.string().optional(),
+	email: z
+		.email()
+		.min(8)
+		.max(127)
+		.transform((val) => val.toLowerCase()),
+	student_name: z
+		.string()
+		.min(4)
+		.max(127)
+		.transform((val) => val.toLowerCase()),
+	class_code: z
+		.string()
+		.optional()
+		.transform((val) => val?.toLowerCase()),
 });
 
 export const batchStudentSchema = z.object({

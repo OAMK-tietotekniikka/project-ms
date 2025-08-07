@@ -2,8 +2,8 @@
  * Teachers controller.
  * Manages creating, reading, and updating teacher records.
  *
- * @version 0.2.1
- * @since 20.07.2025
+ * @version 0.3.0
+ * @since 07.08.2025
  * @module
  */
 
@@ -22,14 +22,13 @@ import {
 import { AuthenticatedRequest } from "../../../shared/middleware/auth";
 import { getTeacherIdByEmail } from "../../../shared/utils/user_email_lookup";
 import { getStudyYear } from "../../../shared/utils/date_utils";
-import { NotificationService } from "../../notifications/services/notificationService";
+import { notifyTeacherUpdate } from "../../notifications/services/notificationService";
 
 /**
  * Retrieves all teacher records.
  *
  * Fetches and returns a list of all teachers from the database.
  */
-const notificationService = NotificationService.getInstance();
 
 export const listTeachers = async (
 	req: Request,
@@ -48,7 +47,7 @@ export const listTeachers = async (
 		responseHelper.ok(res, teachers);
 		return;
 	} catch (error: unknown) {
-		logError("getTeachers", error);
+		logError("teacher.controller.getTeachers", error);
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
@@ -79,7 +78,7 @@ export const listAvailableTeachers = async (
 		responseHelper.ok(res, teachers);
 		return;
 	} catch (error: unknown) {
-		logError("listAvailableTeachers", error);
+		logError("teacher.controller.listAvailableTeachers", error);
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
@@ -113,7 +112,7 @@ export const getCurrentTeacher = async (
 		responseHelper.notFound(res);
 		return;
 	} catch (error: unknown) {
-		logError("getTeacher", error);
+		logError("teacher.controller.getTeacher", error);
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
@@ -156,7 +155,7 @@ export const createTeacher = async (
 		responseHelper.created(res, created_teacher);
 		return;
 	} catch (error: unknown) {
-		logError("createTeacher", error);
+		logError("teacher.controller.createTeacher", error);
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
@@ -193,12 +192,12 @@ export const updateTeacher = async (
 
 		await connection.query(QUERY.UPDATE_TEACHER, [name, teacherId]);
 		try {
-			await notificationService.notifyTeacherUpdate(parseInt(teacherId), name);
+			await notifyTeacherUpdate(parseInt(teacherId), name);
 		} catch (notificationError) {}
 		responseHelper.ok(res);
 		return;
 	} catch (error: unknown) {
-		logError("updateTeacher", error);
+		logError("teacher.controller.updateTeacher", error);
 		responseHelper.internalServerError(res);
 		return;
 	}

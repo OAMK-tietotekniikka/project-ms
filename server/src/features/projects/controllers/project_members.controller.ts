@@ -1,3 +1,12 @@
+/**
+ * Project members controller.
+ * Handles operations related to project members.
+ *
+ * @version 0.3.0
+ * @since 07.08.2025
+ * @module
+ */
+
 import type { AuthenticatedRequest } from "../../../shared/middleware/auth";
 import type { Response } from "express";
 import { logRequests } from "../../../shared/utils/log_requests";
@@ -8,10 +17,9 @@ import { responseHelper } from "../../../shared/utils/response_helper";
 import { QUERY } from "../queries/projects.query";
 import { logError } from "../../../shared/utils/log_errors";
 import { OTPService } from "../services/project_invitation";
-import { NotificationService } from "../../notifications/services/notificationService";
+import { notifyStudentJoinedProject } from "../../notifications/services/notificationService";
 
 const MAX_STUDENT_PROJECTS = 8;
-const notificationService = NotificationService.getInstance();
 
 export const generateProjectJoinCode = async (
 	req: AuthenticatedRequest,
@@ -45,17 +53,32 @@ export const generateProjectJoinCode = async (
 		}
 
 		// Check if code already exists for this project
-		const existingCode = await OTPService.getExistingCodeForProject(project_id);
-		if (existingCode) {
-			responseHelper.created(res, { joinCode: existingCode });
+		//const existingCode = await OTPService.getExistingCodeForProject(project_id);
+
+		const [existingCode] = await connection.query(
+			`SELECT join_code FROM projects WHERE project_id = ? LIMIT 1`,
+			[project_id],
+		);
+
+		if (existingCode?.join_code) {
+			responseHelper.created(res, { joinCode: existingCode.join_code });
 			return;
 		}
 
 		// Generate new unique code
-		const joinCode = await OTPService.generateProjectOTP(project_id);
+		//const joinCode = await OTPService.generateProjectOTP(project_id);
+
+		const joinCode = parseInt(project_id)
+			.toString(36)
+			.toUpperCase()
+			.padStart(6, "0");
+		await connection.query(
+			`UPDATE projects SET join_code = ? WHERE project_id = ?`,
+			[joinCode, project_id],
+		);
 		responseHelper.created(res, { joinCode });
 	} catch (error: unknown) {
-		logError("generateProjectJoinCode", error);
+		logError("project_members.controller.generateProjectJoinCode", error);
 		responseHelper.internalServerError(res);
 	} finally {
 		if (connection) await connection.release();
@@ -83,13 +106,23 @@ export const addProjectMember = async (
 		}
 
 		// Validate join code and get project info
-		const otpResult = await OTPService.validateAndJoinProject(joinCode);
-		if (!otpResult) {
+		//const otpResult = await OTPService.validateAndJoinProject(joinCode);
+		//if (!otpResult) {
+		//	responseHelper.notFound(res);
+		//	return;
+		//}
+		//const project_id = otpResult.project_id;
+
+		const [result] = await connection.query(
+			`SELECT project_id FROM projects WHERE join_code = ? LIMIT 1`,
+			[joinCode],
+		);
+		if (!result?.project_id) {
 			responseHelper.notFound(res);
 			return;
 		}
+		const project_id = result.project_id;
 
-		const project_id = otpResult.project_id;
 		const [teacher_id] = await connection.query(
 			`select teacher_id from projects where project_id = ? LIMIT 1`,
 			[project_id],
@@ -140,7 +173,7 @@ export const addProjectMember = async (
 
 			await connection.commit();
 			try {
-				await notificationService.notifyStudentJoinedProject(
+				await notifyStudentJoinedProject(
 					parseInt(project_id),
 					parseInt(teacher_id?.teacher_id),
 				);
@@ -152,7 +185,7 @@ export const addProjectMember = async (
 			throw transactionError;
 		}
 	} catch (error: unknown) {
-		logError("addProjectMember", error);
+		logError("project_members.controller.addProjectMember", error);
 		responseHelper.internalServerError(res);
 	} finally {
 		if (connection) await connection.release();

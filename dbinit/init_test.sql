@@ -1,5 +1,5 @@
-CREATE DATABASE IF NOT EXISTS project_ms;
-USE project_ms;
+CREATE DATABASE IF NOT EXISTS project_ms_test;
+USE project_ms_test;
 
 
 
@@ -7,47 +7,47 @@ USE project_ms;
 -- Table `companies`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS companies (
-                           company_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-                           company_name VARCHAR(255) NOT NULL,
-                           industry VARCHAR(100) NULL,
-                           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                           PRIMARY KEY (company_id),
-                           INDEX idx_companies_industry (industry)
+                                         company_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                                         company_name VARCHAR(255) NOT NULL,
+                                         industry VARCHAR(100) NULL,
+                                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                         PRIMARY KEY (company_id),
+                                         INDEX idx_companies_industry (industry)
 ) AUTO_INCREMENT = 1;
 
 -- -----------------------------------------------------
 -- Table `teachers`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS teachers (
-                          teacher_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-                          teacher_name VARCHAR(127) NOT NULL,
-                          version INT UNSIGNED DEFAULT 1,
-                          email VARCHAR(127) NOT NULL,
-                          active BOOLEAN DEFAULT TRUE,
-                          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                          PRIMARY KEY (teacher_id),
-                          UNIQUE KEY uk_teachers_email (email),
-                          INDEX idx_teachers_active (active),
-                          INDEX idx_teachers_email_covering (email, teacher_id)
+                                        teacher_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                                        teacher_name VARCHAR(127) NOT NULL,
+                                        version INT UNSIGNED DEFAULT 1,
+                                        email VARCHAR(127) NOT NULL,
+                                        active BOOLEAN DEFAULT TRUE,
+                                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                        PRIMARY KEY (teacher_id),
+                                        UNIQUE KEY uk_teachers_email (email),
+                                        INDEX idx_teachers_active (active),
+                                        INDEX idx_teachers_email_covering (email, teacher_id)
 ) AUTO_INCREMENT = 1;
 
 -- -----------------------------------------------------
 -- Table `students`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS students (
-                          student_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-                          student_name VARCHAR(127) NOT NULL,
-                          email VARCHAR(127) NOT NULL,
-                          class_code VARCHAR(25) NULL,
-                          current_projects TINYINT UNSIGNED DEFAULT 0 NOT NULL,
-                          active BOOLEAN DEFAULT TRUE,
-                          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                          version INT UNSIGNED DEFAULT 1,
-                          PRIMARY KEY (student_id),
-                          UNIQUE KEY uk_students_email (email),
-                          INDEX idx_students_class_code (class_code),
-                          INDEX idx_students_active (active),
-                          INDEX idx_students_project_counts (current_projects)
+                                        student_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                                        student_name VARCHAR(127) NOT NULL,
+                                        email VARCHAR(127) NOT NULL,
+                                        class_code VARCHAR(25) NULL,
+                                        current_projects TINYINT UNSIGNED DEFAULT 0 NOT NULL,
+                                        active BOOLEAN DEFAULT TRUE,
+                                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                        version INT UNSIGNED DEFAULT 1,
+                                        PRIMARY KEY (student_id),
+                                        UNIQUE KEY uk_students_email (email),
+                                        INDEX idx_students_class_code (class_code),
+                                        INDEX idx_students_active (active),
+                                        INDEX idx_students_project_counts (current_projects)
 
 ) AUTO_INCREMENT = 1;
 
@@ -98,17 +98,17 @@ CREATE TABLE IF NOT EXISTS projects (
 -- Table `resources`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS resources (
-                           resource_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-                           teacher_id INT UNSIGNED NOT NULL,
-                           total_resources SMALLINT UNSIGNED DEFAULT 0,
-                           used_resources SMALLINT UNSIGNED DEFAULT 0,
-                           study_year VARCHAR(10) NOT NULL,
-                           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                           PRIMARY KEY (resource_id),
-                           FOREIGN KEY fk_resources_teacher (teacher_id) REFERENCES teachers(teacher_id) ON DELETE CASCADE ON UPDATE CASCADE,
-                           UNIQUE KEY uk_resources_teacher_year_type (teacher_id, study_year),  -- Prevent duplicates
-                           INDEX idx_resources_study_year (study_year),
-                           INDEX idx_resources_usage (used_resources, total_resources) -- For capacity queries
+                                         resource_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                                         teacher_id INT UNSIGNED NOT NULL,
+                                         total_resources SMALLINT UNSIGNED DEFAULT 0,
+                                         used_resources SMALLINT UNSIGNED DEFAULT 0,
+                                         study_year VARCHAR(10) NOT NULL,
+                                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                         PRIMARY KEY (resource_id),
+                                         FOREIGN KEY fk_resources_teacher (teacher_id) REFERENCES teachers(teacher_id) ON DELETE CASCADE ON UPDATE CASCADE,
+                                         UNIQUE KEY uk_resources_teacher_year_type (teacher_id, study_year),  -- Prevent duplicates
+                                         INDEX idx_resources_study_year (study_year),
+                                         INDEX idx_resources_usage (used_resources, total_resources) -- For capacity queries
 ) AUTO_INCREMENT = 1;
 
 -- -----------------------------------------------------
@@ -128,15 +128,15 @@ CREATE TABLE IF NOT EXISTS student_project (
 -- Table `company_teacher` (Many-to-Many)
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS company_teacher (
-                                 company_id INT UNSIGNED NOT NULL,
-                                 teacher_id INT UNSIGNED NOT NULL,
-                                 active BOOLEAN DEFAULT TRUE,
-                                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                 PRIMARY KEY (company_id, teacher_id),
-                                 FOREIGN KEY fk_company_teacher_company (company_id) REFERENCES companies(company_id) ON DELETE CASCADE ON UPDATE CASCADE,
-                                 FOREIGN KEY fk_company_teacher_teacher (teacher_id) REFERENCES teachers(teacher_id) ON DELETE CASCADE ON UPDATE CASCADE,
-                                 INDEX idx_company_teacher_active (active),
-                                 INDEX idx_company_teacher_teacher (teacher_id)  -- For teacher-based queries
+                                               company_id INT UNSIGNED NOT NULL,
+                                               teacher_id INT UNSIGNED NOT NULL,
+                                               active BOOLEAN DEFAULT TRUE,
+                                               created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                               PRIMARY KEY (company_id, teacher_id),
+                                               FOREIGN KEY fk_company_teacher_company (company_id) REFERENCES companies(company_id) ON DELETE CASCADE ON UPDATE CASCADE,
+                                               FOREIGN KEY fk_company_teacher_teacher (teacher_id) REFERENCES teachers(teacher_id) ON DELETE CASCADE ON UPDATE CASCADE,
+                                               INDEX idx_company_teacher_active (active),
+                                               INDEX idx_company_teacher_teacher (teacher_id)  -- For teacher-based queries
 );
 
 -- -----------------------------------------------------
@@ -244,68 +244,3 @@ BEGIN
     END IF;
 END//
 DELIMITER ;
-
-
-
-
--- -----------------------------------------------------
--- Sample Data
--- -----------------------------------------------------
-
-
-INSERT INTO companies (company_name, industry) VALUES
-                                                                 ('Google LLC', 'Technology'),
-                                                                 ('Nokia Corporation', 'Telecommunications'),
-                                                                 ('Microsoft Corporation', 'Technology'),
-                                                                 ('Rovio Entertainment', 'Gaming');
-
--- Insert sample teachers
-INSERT INTO teachers (teacher_name, email) VALUES
-                                                           ('Dr. Jane Smith', 'jane.smith@uni.fi'),
-                                                           ('Prof. John Doe', 'john.doe@uni.fi'),
-                                                           ('Dr. Maria Garcia', 'maria.garcia@uni.fi');
-
--- Insert sample students
-INSERT INTO students (student_name, email, class_code) VALUES
-                                                                       ('Alice Johnson', 'alice.johnson@student.fi', null),
-                                                                       ('Bob Wilson', 'bob.wilson@student.fi', 'DVP23SP'),
-                                                                       ('Carol Davis', 'carol.davis@student.fi', 'DVP22SP'),
-                                                                       ('David Brown', 'david.brown@student.fi', 'DVP21SP');
-
--- Insert sample resources
-INSERT INTO resources (teacher_id, total_resources, used_resources, study_year) VALUES
-                                                                                                   (1, 10, 3, '2024-2025'),
-                                                                                                   (2, 8, 2, '2024-2025'),
-                                                                                                   (3, 12, 4, '2024-2025');
-
--- Insert company-teacher relationships
-INSERT INTO company_teacher (company_id, teacher_id) VALUES
-                                                                            (1, 1),
-                                                                            (2, 2),
-                                                                            (3, 1),
-                                                                            (4, 3),
-                                                                            (1, 3);
-
--- Insert sample projects
-INSERT INTO projects (project_name, project_desc, teacher_id, company_id, project_status, study_year, start_date, end_date, max_students) VALUES
-                                                                                                                                              ('AI Chatbot Development', 'Develop an AI-powered customer service chatbot', 1, 1, 'ongoing', '2024-2025', '2024-09-01', '2024-12-15', 2),
-                                                                                                                                              ('5G Network Optimization', 'Optimize 5G network performance for urban areas', 2, 2, 'pending', '2024-2025', '2024-10-01', '2025-01-31', 3),
-                                                                                                                                              ('Cloud Migration Strategy', 'Develop migration strategy for legacy systems', 1, 3, 'completed', '2023-2024', '2024-01-15', '2024-05-30', 1),
-                                                                                                                                              ('Mobile Game Analytics', 'Implement analytics dashboard for mobile games', 3, 4, 'ongoing', '2024-2025', '2024-08-15', '2024-11-30', 2);
-
--- Insert student-project assignments
-INSERT INTO student_project (student_id, project_id) VALUES
-                                                                                 (1, 1),
-                                                                                 (2, 1),
-                                                                                 (3, 3),
-                                                                                 (4, 4);
-
--- Insert sample notes
-INSERT INTO project_note (project_id, note_type, note_title, note_content, created_by_name) VALUES
-                                                                                                                                (1, 'milestone', 'Project Kickoff', 'Initial project meeting completed successfully',  'Dr. Jane Smith'),
-                                                                                                                                (1, 'link', 'Project Repository', '',  'Alice Johnson'),
-                                                                                                                                (2, 'text', 'Requirements Review', 'Need to clarify technical requirements with Nokia team',  'Prof. John Doe'),
-                                                                                                                                (4, 'feedback', 'Progress Update', 'Good progress on dashboard wireframes',  'Dr. Maria Garcia');
-
--- Update the note_url for the link type note
-UPDATE project_note SET note_url = 'https://github.com/company/ai-chatbot' WHERE note_id = 2;

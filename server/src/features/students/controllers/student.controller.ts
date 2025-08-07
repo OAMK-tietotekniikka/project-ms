@@ -2,8 +2,8 @@
  * Students controller.
  * Manages creating, reading, updating, and deleting student records.
  *
- * @version 0.2.1
- * @since 20.07.2025
+ * @version 0.3.0
+ * @since 07.08.2025
  * @module
  */
 
@@ -58,7 +58,7 @@ export const listStudents = async (
 		responseHelper.ok(res, students);
 		return;
 	} catch (error: unknown) {
-		logError("listStudents", error);
+		logError("student.controller.listStudents", error);
 		responseHelper.internalServerError(res);
 		return;
 	} finally {
@@ -95,7 +95,7 @@ export const listStudentProjects = async (
 		responseHelper.ok(res, projects);
 		return;
 	} catch (error: unknown) {
-		logError("listStudentProjects", error);
+		logError("student.controller.listStudentProjects", error);
 		responseHelper.internalServerError(res);
 		return;
 	} finally {

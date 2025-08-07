@@ -2,8 +2,8 @@
  * Companies controller.
  * Manages retrieving and deleting companies and their related data.
  *
- * @version 2.1.0
- * @since 20.07.2025
+ * @version 0.3.0
+ * @since 07.08.2025
  * @module
  */
 
@@ -20,6 +20,7 @@ import {
 	companyCreateSchema,
 	companyIdParamsSchema,
 } from "../../../shared/validation/company.schema";
+import { companyCleaner } from "../../../shared/utils/company_cleaner";
 
 /**
  * Retrieves companies.
@@ -67,15 +68,18 @@ export const createCompany = async (
 			return;
 		}
 
-		const existing_company = await connection.query(QUERY.SELECT_BY_NAME, [
-			parsed.data.company_name.toLowerCase(),
+		const companyName = parsed.data.company_name;
+		const normalizedName = companyCleaner(companyName);
+
+		const [existing_company] = await connection.query(QUERY.SELECT_BY_NAME, [
+			normalizedName,
 		]);
-		if (existing_company && existing_company.length > 0) {
-			responseHelper.conflict(res); // add {company_id: existing_company[0].company_id}
+		if (existing_company) {
+			responseHelper.ok(res, existing_company); // todo add {company_id: existing_company[0].company_id}
 			return;
 		}
 		const result = await connection.query(QUERY.CREATE_COMPANY, [
-			req.body.company_name,
+			normalizedName,
 		]);
 		responseHelper.created(res, result);
 		return;
@@ -187,7 +191,7 @@ export const listFavoriteCompanies = async (
 		);
 
 		if (!teacher_id) {
-			responseHelper.unauthorized(res);
+			responseHelper.forbidden(res);
 			return;
 		}
 

@@ -2,11 +2,12 @@ import mariadb from "mariadb";
 
 let host;
 let port;
+console.log("ENV", process.env);
 if (process.env.IS_DOCKER === "false") {
 	host = "localhost";
 	port = process.env.DB_PORT_LOCAL ? parseInt(process.env.DB_PORT_LOCAL) : 0;
 }
-
+console.log("host", host);
 const pool = mariadb.createPool({
 	host: host ? host : process.env.DB_HOST,
 	user: process.env.DB_USER,
@@ -22,6 +23,7 @@ const pool = mariadb.createPool({
 	compress: true,
 	pipelining: true,
 	bulk: true,
+	bigIntAsNumber: true,
 });
 
 console.log({
@@ -39,16 +41,6 @@ console.log({
 	compress: true,
 	pipelining: true,
 	bulk: true,
-});
-
-process.on("SIGTERM", async () => {
-	console.log("Closing database pool...");
-	await pool.end();
-});
-
-process.on("SIGINT", async () => {
-	console.log("Closing database pool...");
-	await pool.end();
 });
 
 export default pool;
