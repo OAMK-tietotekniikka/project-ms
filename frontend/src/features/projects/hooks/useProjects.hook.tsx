@@ -65,6 +65,16 @@ export const useGetAllProjects = () => {
 	});
 };
 
+export const useGetProjectStatistics = (open: boolean) => {
+	return useQuery({
+		queryKey: ["projects", "statistics"],
+		queryFn: () =>
+			projectService.getProjectStatistics().then((res) => res.data.data),
+		staleTime: 5 * 60 * 1000,
+		enabled: open,
+	});
+};
+
 export const useListStudentProjectNumbers = (studentId: number) => {
 	return useQuery({
 		queryKey: ["students", studentId, "projects"],
