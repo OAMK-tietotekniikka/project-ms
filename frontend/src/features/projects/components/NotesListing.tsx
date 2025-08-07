@@ -35,6 +35,14 @@ const icons = {
 	milestone: Milestone,
 };
 
+const translation_keys = {
+	text: "projects_notesCategoryText",
+	link: "projects_notesCategoryLink",
+	feedback: "projects_notesCategoryFeedback",
+	milestone: "projects_notesCategoryMilestone",
+	all: "projects_notesCategoryAll",
+};
+
 // Helper function to estimate item height based on content
 const getItemHeight = (note) => {
 	const baseHeight = 80; // Base height for padding, icon, and creator info
@@ -89,7 +97,7 @@ const NoteItem = ({ index, style, data }) => {
 				</div>
 				{note.created_by_name && (
 					<div className="text-xs text-muted-foreground ml-7">
-						Created by {note.created_by_name}
+						{note.created_by_name}
 					</div>
 				)}
 			</div>
@@ -136,7 +144,9 @@ const QuickAdd = ({ onAdd, isLoading }) => {
 						<SelectItem key={key} value={key}>
 							<div className="flex items-center gap-1">
 								<Icon className="h-3 w-3" />
-								<span className="capitalize">{key}</span>
+								<span className="capitalize">
+									{t(translation_keys[key], { defaultValue: key })}
+								</span>
 							</div>
 						</SelectItem>
 					))}

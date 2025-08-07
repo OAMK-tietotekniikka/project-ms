@@ -22,11 +22,14 @@ import {
 	Hash,
 	User,
 	Download,
+	BarChart3,
 } from "lucide-react";
 import { useGetAllProjects } from "@/features/projects/hooks/useProjects.hook";
 import Papa from "papaparse";
 import { useNavigate } from "react-router-dom";
 import not_found from "@/assets/not_found_1.svg";
+import { projectService } from "@/core/api/services";
+import ProjectStatsDialog from "@/features/projects/components/ProjectStatsDialog";
 
 interface Project {
 	project_id?: number;
@@ -57,6 +60,7 @@ const Projects: React.FC = () => {
 	const [searchTerm, setSearchTerm] = useState("");
 	const [statusFilter, setStatusFilter] = useState("all");
 	const [isExporting, setIsExporting] = useState(false);
+	const [isStatsDialogOpen, setIsStatsDialogOpen] = useState(false);
 	const navigate = useNavigate();
 
 	const { data: projects, isLoading, error } = useGetAllProjects();
@@ -85,20 +89,11 @@ const Projects: React.FC = () => {
 		});
 	}, [projects, searchTerm, statusFilter]);
 
-	// Export function
-	const handleExportProjects = useCallback(() => {
-		if (!filteredProjects.length) return;
-
+	const exportProjects = async () => {
 		setIsExporting(true);
-
 		try {
-			const exportData = filteredProjects.map((project: Project) => ({
-				"Project ID": project.project_id || "",
-				"Project Name": project.project_name || "",
-				"Teacher Name": project.teacher_name || "",
-				Status: project.project_status || "",
-			}));
-
+			const response = await projectService.getExportProjects();
+			const exportData = response.data.data;
 			const csv = Papa.unparse(exportData, {
 				header: true,
 				delimiter: ",",
@@ -112,21 +107,22 @@ const Projects: React.FC = () => {
 			link.setAttribute("href", url);
 			link.setAttribute(
 				"download",
-				`projects-export-${new Date().toISOString().split("T")[0]}.csv`,
+				`projects-${new Date().toISOString().split("T")[0]}.csv`,
 			);
 			link.style.visibility = "hidden";
 
 			document.body.appendChild(link);
 			link.click();
 			document.body.removeChild(link);
-
 			URL.revokeObjectURL(url);
+			return;
 		} catch (error) {
-			console.error("Export failed:", error);
+			console.error("Error fetching export projects:", error);
+			return;
 		} finally {
 			setIsExporting(false);
 		}
-	}, [filteredProjects]);
+	};
 
 	// Memoized click handler
 	const handleProjectClick = useCallback((proj: Project) => {
@@ -138,6 +134,8 @@ const Projects: React.FC = () => {
 	const ProjectItem = useCallback(
 		({ index, style }: { index: number; style: React.CSSProperties }) => {
 			const project = filteredProjects[index];
+			console.log("project.project_status:", project.project_status);
+			console.log("type:", typeof project.project_status);
 
 			return (
 				<div style={style}>
@@ -183,7 +181,7 @@ const Projects: React.FC = () => {
 									variant={getStatusVariant(project.project_status || "")}
 									className="text-xs flex-shrink-0 ml-2"
 								>
-									{project.project_status}
+									{t(project.project_status)}
 								</Badge>
 							</div>
 						</CardContent>
@@ -191,7 +189,7 @@ const Projects: React.FC = () => {
 				</div>
 			);
 		},
-		[filteredProjects, handleProjectClick],
+		[filteredProjects, handleProjectClick, t],
 	);
 
 	if (error || (!isLoading && !projects)) {
@@ -215,19 +213,35 @@ const Projects: React.FC = () => {
 			<div className="bg-card rounded-xl shadow-sm p-6 mb-6">
 				<div className="flex items-center justify-between">
 					<p className="text-xl font-bold">{t("projectsMain")}</p>
-					<Button
-						onClick={handleExportProjects}
-						disabled={!filteredProjects.length || isExporting}
-						variant="outline"
-						className="gap-2"
-					>
-						<Download className="h-4 w-4" />
-						{isExporting
-							? "Exporting..."
-							: t("projects_exportProjects", {
-									defaultValue: "Export projects",
-								})}
-					</Button>
+					<div className="flex gap-3">
+						<Button
+							onClick={() => setIsStatsDialogOpen(true)}
+							disabled={isExporting}
+							variant="outline"
+							className="gap-2 hover:cursor-pointer"
+						>
+							<BarChart3 className="h-4 w-4" />
+							{t("projects_stats", {
+								defaultValue: "Stats",
+							})}
+						</Button>
+
+						<ProjectStatsDialog
+							open={isStatsDialogOpen}
+							onOpenChange={setIsStatsDialogOpen}
+						/>
+						<Button
+							onClick={exportProjects}
+							disabled={isExporting || !projects?.length}
+							variant="outline"
+							className="gap-2 hover:cursor-pointer"
+						>
+							<Download className="h-4 w-4" />
+							{t("projects_exportProjects", {
+								defaultValue: "Export projects",
+							})}
+						</Button>
+					</div>
 				</div>
 			</div>
 
@@ -261,25 +275,12 @@ const Projects: React.FC = () => {
 					</Select>
 				</div>
 
-				{/* Results count and Export button for filtered results */}
+				{/* Results count */}
 				<div className="flex items-center justify-between mb-4">
 					<div className="text-sm text-muted-foreground">
 						{t("showing")} {filteredProjects.length} / {projects?.length || 0}{" "}
 						{t("projectsMain")}
 					</div>
-					{filteredProjects.length > 0 &&
-						filteredProjects.length !== projects?.length && (
-							<Button
-								onClick={handleExportProjects}
-								disabled={isExporting}
-								variant="ghost"
-								size="sm"
-								className="gap-2"
-							>
-								<Download className="h-3 w-3" />
-								{isExporting ? "Exporting..." : "Export Filtered"}
-							</Button>
-						)}
 				</div>
 
 				{/* Projects List */}

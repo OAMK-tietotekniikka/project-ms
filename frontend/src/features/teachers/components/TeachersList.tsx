@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { getStudyYear } from "../../../shared/utils/GetStudyYear";
+import { getStudyYear } from "@/shared/utils/GetStudyYear";
 import { Input } from "@/shared/components/ui/input";
 import {
 	Select,
@@ -38,7 +38,7 @@ import {
 	useCreateTeacherResources,
 	useUpdateTeacherResources,
 } from "@/features/teachers/hooks/useResources.hook";
-import not_found_2 from "@/assets/not_found_2.svg"; // TODO 2?
+import not_found_2 from "@/assets/not_found_2.svg";
 
 const TeachersList = () => {
 	const { t } = useTranslation();
