@@ -14,6 +14,7 @@ import resourcesRouter from "./features/teachers/routes/resource.routes";
 import studentsRouter from "./features/students/routes/student.routes";
 import teachersRouter from "./features/teachers/routes/teacher.routes";
 import { logError } from "./shared/utils/log_errors";
+import { startScheduledTasks } from "./features/notifications/services/scheduler";
 
 export class App {
 	private readonly app: Application;
@@ -30,10 +31,12 @@ export class App {
 		this.setupErrorHandling();
 	}
 
-	listen(): void {
-		this.app.listen(this.port, () => {
+	listen() {
+		const server = this.app.listen(this.port, () => {
 			console.info(`${this.APPLICATION_RUNNING} port: ${this.port}`);
+			//startScheduledTasks();
 		});
+		return server;
 	}
 
 	private setupMiddlewares(): void {
@@ -47,6 +50,10 @@ export class App {
 		this.app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 		this.app.use(this.timeoutMiddleware());
+	}
+
+	public getExpressApp(): Application {
+		return this.app;
 	}
 
 	private routes(): void {
