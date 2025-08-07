@@ -31,6 +31,7 @@ import { Button } from "@/shared/components/ui/button";
 import FavoriteCompaniesDialog from "@/features/companies/components/CompanyFavoriteDialog";
 import { useGetUserProjects } from "@/features/projects/hooks/useProjects.hook";
 import general_teacher from "@/assets/general_teacher.svg";
+import { getInitials } from "@/shared/utils/getInitials";
 
 const TeachersDashboard: React.FC = () => {
 	const { t } = useTranslation();
@@ -119,7 +120,7 @@ const TeachersDashboard: React.FC = () => {
 			case "full":
 				return "bg-primary/30";
 			case "partial":
-				return "bg-primary/60";
+				return "bg-primary/80";
 			case "low":
 				return "bg-primary";
 			default:
@@ -180,7 +181,7 @@ const TeachersDashboard: React.FC = () => {
 							</div>
 							<div className="text-sm">{proj.company_name}</div>
 							<div className="text-sm">{formatDate(proj.end_date)}</div>
-							<div className="text-sm">{proj.project_status}</div>
+							<div className="text-sm">{t(proj.project_status)}</div>
 						</div>
 					))}
 				</div>
@@ -203,19 +204,17 @@ const TeachersDashboard: React.FC = () => {
 				<CardContent>
 					<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 						<div className="flex items-center space-x-4">
-							<div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
-								<User className="w-6 h-6" />
+							<div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center font-semibold uppercase">
+								{profile && getInitials(profile?.[0]?.teacher_name)}
 							</div>
-							{profile && (
-								<div>
-									<p className="text-xl font-semibold">
-										{profile[0].teacher_name}
-									</p>
-									<p className="text-sm text-muted-foreground">
-										{profile[0].email}
-									</p>
-								</div>
-							)}
+							<div>
+								<p className="text-xl font-semibold capitalize">
+									{profile ? profile[0].teacher_name : ""}
+								</p>
+								<p className="text-sm text-muted-foreground">
+									{profile ? profile[0].email : ""}
+								</p>
+							</div>
 						</div>
 						{profile && (
 							<Button

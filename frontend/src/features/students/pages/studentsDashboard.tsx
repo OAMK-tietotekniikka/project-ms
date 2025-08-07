@@ -26,6 +26,7 @@ import {
 import general_success_2 from "@/assets/general_success_1.svg";
 import InputProjectCodeDialog from "@/features/projects/components/InputProjectCode";
 import { toast } from "sonner";
+import { getInitials } from "@/shared/utils/getInitials";
 
 const StudentsDashboard = () => {
 	const { t } = useTranslation();
@@ -88,15 +89,15 @@ const StudentsDashboard = () => {
 			<Card>
 				<CardContent>
 					<div className="flex items-center space-x-4">
-						<div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
-							<User className="w-6 h-6" />
+						<div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center font-semibold uppercase">
+							{profile && getInitials(profile?.[0]?.student_name)}
 						</div>
 						<div>
-							<p className="text-xl font-semibold">
-								{profile ? profile[0].student_name : "..."}
+							<p className="text-xl font-semibold capitalize">
+								{profile ? profile[0].student_name : ""}
 							</p>
 							<p className="text-sm text-muted-foreground">
-								{profile ? profile[0].email : "..."}
+								{profile ? profile[0].email : ""}
 							</p>
 							{profile &&
 							profile[0].class_code &&
