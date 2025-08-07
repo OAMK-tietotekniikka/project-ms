@@ -1,6 +1,6 @@
 {
 	"name": "projects-ms",
-	"version": "0.2.2",
+	"version": "0.3.0",
 	"description": "Project management tool",
 	"main": "index.js",
 	"repository": {
