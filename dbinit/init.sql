@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS projects (
                                         project_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
                                         project_name VARCHAR(255) NOT NULL,
                                         project_desc TEXT,
+                                        join_code CHAR(6) NULL UNIQUE,
                                         teacher_id INT UNSIGNED NULL,
                                         company_id INT UNSIGNED NULL,
                                         project_status ENUM('pending', 'ongoing', 'completed') DEFAULT 'pending',
