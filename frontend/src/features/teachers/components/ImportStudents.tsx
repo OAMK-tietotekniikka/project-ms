@@ -99,7 +99,6 @@ const ImportStudents: React.FC<ImportStudentsProps> = ({ handleClose }) => {
 				toast.error(t("students_importStudents_sizeLimit"));
 				return;
 			}
-			console.log(files);
 			handleFileChange({ target: { files } });
 		}
 	};
@@ -164,8 +163,6 @@ const ImportStudents: React.FC<ImportStudentsProps> = ({ handleClose }) => {
 
 	const handleImport = async () => {
 		setLoading(true);
-		console.log("Importing:", validStudents);
-
 		try {
 			await batchStudentsMutation.mutateAsync({
 				data: { students: validStudents },

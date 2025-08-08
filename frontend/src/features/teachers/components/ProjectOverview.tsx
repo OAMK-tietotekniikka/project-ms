@@ -126,7 +126,6 @@ const Projects: React.FC = () => {
 
 	// Memoized click handler
 	const handleProjectClick = useCallback((proj: Project) => {
-		console.log("Project clicked:", proj);
 		navigate(`/projects/${proj?.project_id}`, { state: { proj } });
 	}, []);
 
@@ -134,8 +133,6 @@ const Projects: React.FC = () => {
 	const ProjectItem = useCallback(
 		({ index, style }: { index: number; style: React.CSSProperties }) => {
 			const project = filteredProjects[index];
-			console.log("project.project_status:", project.project_status);
-			console.log("type:", typeof project.project_status);
 
 			return (
 				<div style={style}>

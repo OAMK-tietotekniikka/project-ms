@@ -38,18 +38,14 @@ const StudentProjectDetails = () => {
 
 	const addMemberMutation = useAddProjectMember();
 
-	console.log("state proj", location.state?.proj);
 	const proj = projectData; // TODO improve perfomance
 	// location.state?.proj || // TODO
-	console.log("proj", proj);
 
 	useEffect(() => {
 		if (projectError || (!proj && !isProjectLoading)) {
 			navigate("/", { replace: true });
 		}
 	}, [projectError, proj, isProjectLoading, navigate]);
-
-	console.log("loading", isProjectLoading);
 
 	return (
 		<div className="max-w-4xl mx-auto p-6">

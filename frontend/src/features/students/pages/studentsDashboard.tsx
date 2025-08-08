@@ -38,7 +38,6 @@ const StudentsDashboard = () => {
 		isLoading: isProfileLoading,
 		error: profileError,
 	} = useStudentProfile();
-	console.log("CALLING STUDENT NO REASON");
 
 	const {
 		data: projects,
@@ -63,7 +62,6 @@ const StudentsDashboard = () => {
 
 	const joinWithCode = async (code: string) => {
 		try {
-			console.log(code);
 			await mutationJoinProject.mutateAsync({ joinCode: code });
 			toast.success(t("toast_success"));
 			setIsDialogOpen(false);

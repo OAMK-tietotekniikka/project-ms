@@ -78,7 +78,6 @@ const TeachersDashboard: React.FC = () => {
 	const teacherCurrentResource = resources
 		? resources.find((r) => r.study_year === studyYear)
 		: null; //
-	console.log("teacher resources", resources, teacherCurrentResource);
 
 	// Filter projects based on status
 	const ongoingProjects = projects

@@ -52,19 +52,15 @@ export const login = async (
 			connection,
 			req.user?.email || "",
 		);
-		console.log("Teacher ID:", teacher_id);
-		console.log("Student ID:", student_id);
 		if (!student_id && !teacher_id) {
 			console.log("Creating new user");
 			await connection.query(
 				`INSERT INTO ${table} (${name_field}, email) VALUES (?, ?)`,
 				[name, email],
 			);
-			console.log("User created", { role: role });
 			responseHelper.created(res, { role: role });
 			return;
 		} else {
-			console.log("User already exists");
 			if (teacher_id && role === "teacher") {
 				responseHelper.ok(res, { role: "teacher" });
 				return;
@@ -72,7 +68,6 @@ export const login = async (
 				responseHelper.ok(res, { role: "student" });
 				return;
 			} else {
-				console.log("User already exists but has incorrect role", role);
 				responseHelper.internalServerError(res);
 				return;
 			}

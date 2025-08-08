@@ -62,13 +62,10 @@ export const RoleProvider: React.FC<RoleProviderProps> = ({ children }) => {
 	const fetchAndSetRole = useCallback(async (): Promise<
 		"teacher" | "student" | null
 	> => {
-		console.log("fetchAndSetRole called");
 		try {
 			setError(null);
 			const response = await apiClient.login();
 			const role = response?.role;
-
-			console.log("RESPONSE", response);
 
 			if (role === "teacher" || role === "student") {
 				localStorage.setItem("role", role);
@@ -110,7 +107,6 @@ export const RoleProvider: React.FC<RoleProviderProps> = ({ children }) => {
 				localStorage.removeItem("role");
 				setUserRole(null);
 				setIsDevMode(false);
-				console.log("Dev mode disabled");
 			}
 		},
 		[],
@@ -120,7 +116,6 @@ export const RoleProvider: React.FC<RoleProviderProps> = ({ children }) => {
 		const initializeRole = async () => {
 			try {
 				const devModeEnabled = checkDevMode();
-				console.log("initialized called");
 				if (devModeEnabled) {
 					// Dev mode - check for stored role
 					const storedRole = localStorage.getItem("role") as

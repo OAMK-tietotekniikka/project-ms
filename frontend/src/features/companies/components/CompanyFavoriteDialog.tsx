@@ -53,9 +53,6 @@ const FavoriteCompaniesDialog = ({ open, onOpenChange }) => {
 		error: favoriteCompaniesError,
 	} = useGetFavoriteCompanies(open);
 
-	console.log("favo companies", favoriteCompanies);
-	console.log("companies", companies);
-
 	// Mutation hooks
 	const mutateAddFavoriteCompanies = useAddFavoriteCompanies();
 	const mutateDeleteFavoriteCompanies = useDeleteFavoriteCompanies();
@@ -77,7 +74,6 @@ const FavoriteCompaniesDialog = ({ open, onOpenChange }) => {
 	const handleCreateCompany = async () => {
 		if (newCompanyName.trim()) {
 			await createCompanyMutation.mutateAsync({ company_name: newCompanyName });
-			console.log("Add new company:", newCompanyName.trim());
 			setNewCompanyName("");
 		}
 	};
@@ -89,8 +85,6 @@ const FavoriteCompaniesDialog = ({ open, onOpenChange }) => {
 		} catch (error) {
 			toast.error(t("toast_error_deleteCompany"));
 		}
-
-		console.log("Delete company:", companyId);
 	};
 
 	const handleToggleFavorite = async (companyId) => {

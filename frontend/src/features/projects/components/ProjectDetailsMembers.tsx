@@ -15,8 +15,6 @@ const ProjectMembers: React.FC<ProjectMembersProps> = ({
 }) => {
 	const { t } = useTranslation();
 	const max_members = 8;
-	console.log("members", members);
-
 	if (error) {
 		return (
 			<div className="bg-card rounded-xl p-4">

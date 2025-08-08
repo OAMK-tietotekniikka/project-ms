@@ -58,7 +58,6 @@ export const updateProjectTeacher = async (
 		// Check if same teacher
 		if (project.teacher_id == new_teacher_id) {
 			await connection.rollback();
-			console.log("Same teacher assigned");
 			responseHelper.conflict(res);
 			return;
 		}
@@ -74,7 +73,6 @@ export const updateProjectTeacher = async (
 			resources?.length > 0 &&
 			resources[0]?.used_resources < resources[0]?.total_resources;
 		if (!hasAvailableResources && project.teacher_id) {
-			console.log("No available resources", resources);
 			await connection.rollback();
 			responseHelper.conflict(res);
 			return;
@@ -153,7 +151,6 @@ export const updateProject = async (
 	});
 
 	if (!parsed.success) {
-		console.log("parsederror", parsed);
 		responseHelper.badRequest(res);
 		return;
 	}
@@ -261,7 +258,6 @@ export const updateProjectStatus = async (
 				`select teacher_id from projects where project_id = ?`,
 				[projectId],
 			);
-			console.log("ttt", teacher_id);
 		}
 		const status = await connection.query(QUERY.UPDATE_PROJECT_STATUS, [
 			project_status,

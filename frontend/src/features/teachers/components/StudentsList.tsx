@@ -77,7 +77,6 @@ const StudentsList: React.FC<StudentsListProps> = ({
 	};
 
 	const handleSave = async (field: string) => {
-		console.log(`Saving ${field}:`, editValue);
 		await updateStudentMutation.mutateAsync({
 			studentId: selectedStudent.student_id,
 			data: {

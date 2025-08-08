@@ -27,14 +27,12 @@ export const setDevToken = (token: string): void => {
 	if (isDevelopment) {
 		localStorage.setItem(DEV_TOKEN_KEY, token);
 		localStorage.setItem(DEV_MODE_KEY, "true");
-		console.log("Dev mode enabled with custom token");
 	}
 };
 
 export const clearDevToken = (): void => {
 	localStorage.removeItem(DEV_TOKEN_KEY);
 	localStorage.removeItem(DEV_MODE_KEY);
-	console.log("Dev mode disabled");
 };
 
 // Token acquisition helper
@@ -153,21 +151,12 @@ export const apiClient = {
 		disable: () => {
 			clearDevToken();
 			localStorage.removeItem("role");
-			console.log("Dev mode disabled. Reload pages to apply changes.");
 		},
 
 		status: () => {
 			const enabled = isDevModeEnabled();
 			const token = getDevToken();
 			const role = localStorage.getItem("role");
-
-			console.log("Dev Mode Status:", {
-				enabled,
-				hasToken: !!token,
-				tokenPreview: token ? token.substring(0, 20) + "..." : null,
-				role: role as "teacher" | "student" | null,
-			});
-
 			return { enabled, hasToken: !!token, role };
 		},
 	},
