@@ -4,21 +4,23 @@ FROM node:24-alpine AS build
 # Install pnpm globally
 RUN npm install -g pnpm
 
-# Create app directory with correct permissions
+# Create app directory
 WORKDIR /app
 
-# Copy package files first for better caching
+# Copy workspace files and ALL package.json files
 COPY pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY server/package*.json ./
+COPY package.json ./
+COPY server/package.json ./server/
+COPY frontend/package.json ./frontend/
 
+# Install ONLY server dep
+RUN pnpm install --filter=server --frozen-lockfile
 
-# Install dependencies with frozen lockfile for reproducible builds
-RUN pnpm install --filter ./... --frozen-lockfile --prod=false
+# Copy ONLY server source code
+COPY server/ ./server/
 
-# Copy source code
-COPY server/ .
-
-# Build the application
+# Build the server application
+WORKDIR /app/server
 RUN pnpm run build
 
 # Production stage
@@ -37,16 +39,21 @@ RUN addgroup -g 1001 -S nodejs && \
 # Create app directory
 WORKDIR /app
 
-# Copy package files
+# Copy workspace files and ALL package.json files
 COPY pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY server/package*.json ./
+COPY package.json ./
+COPY server/package.json ./server/
+COPY frontend/package.json ./frontend/
 
-# Install only production dependencies
-RUN pnpm install --filter ./... --frozen-lockfile --prod=true
+# Install ONLY server production dependencies
+RUN pnpm install --filter=server --frozen-lockfile --prod
 
 # Copy built application from build stage
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/src ./src
+COPY --from=build /app/server/dist ./dist
+COPY --from=build /app/server/src ./src
+
+# Copy the server's package.json for scripts
+COPY --from=build /app/server/package.json ./package.json
 
 # Change ownership to non-root user
 RUN chown -R nodeuser:nodejs /app

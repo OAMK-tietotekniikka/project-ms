@@ -25,7 +25,7 @@ services:
     build:
       context: .
       dockerfile: ./server/Dockerfile
-    image: project_ms_server:v2
+    image: project_ms_server
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
     environment:
@@ -49,7 +49,7 @@ services:
     build:
       context: .
       dockerfile: ./frontend/Dockerfile
-    image: project_ms_frontend:v2
+    image: project_ms_frontend
     ports:
       - "${FRONTEND_PORT}:${FRONTEND_PORT}"
     depends_on:

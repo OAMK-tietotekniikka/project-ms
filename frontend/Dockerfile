@@ -7,19 +7,23 @@ RUN npm install -g pnpm
 # Set working directory
 WORKDIR /app
 
-# Copy package files for better caching
+# Copy workspace files and ALL package.json files (required for pnpm workspace)
 COPY pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY frontend/package*.json ./
+COPY package.json ./
+COPY server/package.json ./server/
+COPY frontend/package.json ./frontend/
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+# Install ONLY frontend dep
+RUN pnpm install --filter=frontend --frozen-lockfile
 
-# Copy server source code
-COPY frontend/ .
+# Copy ONLY frontend source code
+COPY frontend/ ./frontend/
 
-# Build the application
+# Build the frontend application
+WORKDIR /app/frontend
 RUN pnpm run build
 
+# Production stage
 FROM node:24-alpine AS production
 
 # Install serve globally
@@ -29,7 +33,7 @@ RUN npm install -g serve
 WORKDIR /app
 
 # Copy built application
-COPY --from=build /app/dist ./dist
+COPY --from=build /app/frontend/dist ./dist
 
 # Expose port
 EXPOSE 3000
