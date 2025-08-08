@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [0.3.0] - 07.08.2025
+## [0.3.0] - 08.08.2025
 
 ### Features
 
@@ -9,12 +9,6 @@ All notable changes to this project will be documented in this file.
 - Security policy ([8ba0f2c](OAMK-tietotekniikka/ProjectsMS/commit/8ba0f2c655c92b0d204dc79b79e3d08174b9e093))
 - Version update script ([aa8e2b7](OAMK-tietotekniikka/ProjectsMS/commit/aa8e2b7a3993011ad22fa0a5e4f3a7d666e4ef09))
 - Add .env to git ([fef101c](OAMK-tietotekniikka/ProjectsMS/commit/fef101cd29b3077edbd28a2cba47eb26f6b1e7d7))
-- Basic integration tests ([b19ce12](OAMK-tietotekniikka/ProjectsMS/commit/b19ce126aef091516c2e029c366b6265b6a7c89a))
-- Company normalization util ([7b76dce](OAMK-tietotekniikka/ProjectsMS/commit/7b76dce2224e4b234607c20494d39ba0bf417a46))
-- Notification service (temp. disabled) ([8d10312](OAMK-tietotekniikka/ProjectsMS/commit/8d10312dcbf5ad3084401b001f229b934977885d))
-- Add project stats dialog ([f0f5a6b](OAMK-tietotekniikka/ProjectsMS/commit/f0f5a6b6afcd8488d818f20e3b7a9c42dbbf7557))
-- Temp. remove redis & add better server shutdown ([20d37d1](OAMK-tietotekniikka/ProjectsMS/commit/20d37d15dd2e21eb92b89770ea35adfbe8c88cfd))
-- Add stats and upd. project export in server ([2498e84](OAMK-tietotekniikka/ProjectsMS/commit/2498e84e8f5325f783b560642250c6214185061b))
 
 ### Miscellaneous Tasks
 
@@ -27,29 +21,22 @@ All notable changes to this project will be documented in this file.
 - Fix sql conflics ([c26b1f2](OAMK-tietotekniikka/ProjectsMS/commit/c26b1f2525a054b5750af8c44caf57cc9276cdcb))
 - **config**: Update ports ([7274543](OAMK-tietotekniikka/ProjectsMS/commit/7274543211eb2c01f31723e1db1e5b61a38ab1aa))
 - Update/improve/fix configs ([2072848](OAMK-tietotekniikka/ProjectsMS/commit/20728483fbbc4d8c15ba5f37d5d1b132f58c2276))
-- Remove redis for test release ([446636d](OAMK-tietotekniikka/ProjectsMS/commit/446636d731929a42cc8b2af9a7b56474ea431eff))
-- Improve schema validations ([f842caf](OAMK-tietotekniikka/ProjectsMS/commit/f842caf5d55dfc28e6cc3458b29b977bcaa9054d))
-- Update traslations ([55bd010](OAMK-tietotekniikka/ProjectsMS/commit/55bd010c4be04718f15df3da070431d8b36679fc))
-- Add company cleaner to controller ([649a6e1](OAMK-tietotekniikka/ProjectsMS/commit/649a6e1451b6104f481fae49e64ebca2ae33d85e))
-- Add user initials instead of base icon ([1009a04](OAMK-tietotekniikka/ProjectsMS/commit/1009a045db945dc1ffd0dc7196ad3081746999e1))
-- Config updates (auth, db) ([dab3597](OAMK-tietotekniikka/ProjectsMS/commit/dab3597af7aee609878ccf853f264e38a4226fea))
-- Update project controllers ([2351ad4](OAMK-tietotekniikka/ProjectsMS/commit/2351ad44ecb0fcc78bb1897bc322dd0c0c78d519))
-- Update controllers logging ([6cd3811](OAMK-tietotekniikka/ProjectsMS/commit/6cd381194ed717db9ea2edca0e74876c0ff9681b))
-- Update frontend service ([710ff65](OAMK-tietotekniikka/ProjectsMS/commit/710ff65638f944aeb7cdd4d5c4cd9872010e451c))
-- Minor ui changes, fixes, upd ([ddc6891](OAMK-tietotekniikka/ProjectsMS/commit/ddc6891da93b3cf4cc8c3392a417f45074ae4d68))
-
-### Refactor
-
-- Separate controller for proj. updates ([2a2a5be](OAMK-tietotekniikka/ProjectsMS/commit/2a2a5be422f3dec58fabd283ec1ce8fea724971e))
+- Remove console.logs for deployment ([89539b2](OAMK-tietotekniikka/ProjectsMS/commit/89539b21c39788611931ac7e7a471b512ed662dc))
+- Update cliff git repo link ([bbb8774](OAMK-tietotekniikka/ProjectsMS/commit/bbb877426083fc2d0e30a5665231a07cf18abe31))
+- Frontend /health -> / ([937a114](OAMK-tietotekniikka/ProjectsMS/commit/937a1148f60acbb6a4aa52e32e5900ae792d7846))
 
 ### Build
 
-- Update packages ([039cf3b](OAMK-tietotekniikka/ProjectsMS/commit/039cf3b1280f1f7ed3feaa1d189edd5f1a27fbc0))
+- Openshift config templates ([d7262c5](OAMK-tietotekniikka/ProjectsMS/commit/d7262c519adbf1c957694f99926fdda4765f7b34))
+- Add basic deployment script ([f40b4bb](OAMK-tietotekniikka/ProjectsMS/commit/f40b4bbb46df45da164c0b214990fb51c582c335))
 
 ### Ci
 
 - Update docker config ([1d12cad](OAMK-tietotekniikka/ProjectsMS/commit/1d12cadbbf8892cee69be0e60f047b25629210fa))
 - Fix docker config ([b258580](OAMK-tietotekniikka/ProjectsMS/commit/b258580c2a0ccc75b5d20ca418e8af319427a7a0))
+- Add codeql workflow ([8a77f87](OAMK-tietotekniikka/ProjectsMS/commit/8a77f87b19bee28a145f422b9fee5607fe7579bd))
+- Add basic yaml check ([82a9366](OAMK-tietotekniikka/ProjectsMS/commit/82a93660eabda05c93d3e2e3cd8604bfe2cdaf1f))
+- **cd**: Image building and publishing action ([f94a856](OAMK-tietotekniikka/ProjectsMS/commit/f94a8565d29b88e73354cc23f41e83e54eb45217))
 
 ## [0.2.1] - 19.07.2025
 
