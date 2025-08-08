@@ -55,4 +55,4 @@ sort_commits = "oldest"
 # GitHub integration
 [remote.github]
 owner = "OAMK-tietotekniikka"
-repo = "ProjectsMS"
+repo = "Project_ms_dev"
