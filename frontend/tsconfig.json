@@ -1,23 +1,28 @@
 {
-    "compilerOptions": {
-      "target": "es6",
-      "lib": ["dom", "dom.iterable", "esnext"],
-      "allowJs": true,
-      "skipLibCheck": true,
-      "esModuleInterop": true,
-      "allowSyntheticDefaultImports": true,
-      //"strict": true,
-      "forceConsistentCasingInFileNames": true,
-      "noFallthroughCasesInSwitch": true,
-      "module": "esnext",
-      "moduleResolution": "node",
-      "resolveJsonModule": true,
-      "isolatedModules": true,
-      "jsx": "react-jsx",
-      "outDir": "dist", 
-    },
-    "include": ["src", "src/i18next.ts"],
-    "references": [{ "path": "./tsconfig.node.json" }],
-    "exclude": ["node_modules"]
-  }
-  
+	"compilerOptions": {
+		"target": "es6",
+		"lib": ["dom", "dom.iterable", "esnext"],
+		"allowJs": true,
+		"skipLibCheck": true,
+		"esModuleInterop": true,
+		"allowSyntheticDefaultImports": true,
+		//"strict": true,
+		"forceConsistentCasingInFileNames": true,
+		"noFallthroughCasesInSwitch": true,
+		"module": "esnext",
+		"moduleResolution": "bundler",
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"jsx": "react-jsx",
+		"outDir": "dist",
+		"baseUrl": ".",
+		"paths": {
+			"@/*": ["./src/*"]
+		}
+	},
+	"include": ["src",
+		"src/locales/i18next.ts"
+    ],
+	"references": [{ "path": "./tsconfig.node.json" }],
+	"exclude": ["node_modules"]
+}

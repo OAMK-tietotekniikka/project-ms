@@ -1,75 +1,62 @@
 services:
-
-  mysqldb:
-    image: mysql:8.0
-    container_name: mysqlcontainer
-    command: --default_authentication_plugin=caching_sha2_password
-    restart: unless-stopped
+  mariadb:
+    image: mariadb:lts
+    container_name: project_ms_db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "${DB_PORT_LOCAL}:${DB_PORT_DOCKER}"
     volumes:
-      - ./dbinit/init.sql:/docker-entrypoint-initdb.d/0_init.sql
-      - $HOME/database:/var/lib/mysql
-
-    ports:
-      - 3307:3306
-    environment:
-      MYSQL_DATABASE: studentsdb   # (this is just an example, not intended to be a production configuration
-      MYSQL_USER: admin
-      MYSQL_PASSWORD: pwd@123
-      MYSQL_ROOT_PASSWORD: pwd@123
-      SERVICE_TAGS: prod
-      SERVICE_NAME: mysqldb
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
-      interval: 2s
-      retries: 10
-      start_period: 20s # How long after startup to begin checks
-      timeout: 2s
-    networks:
-      - internalnet 
-
-  pmappserver:
-    container_name: pmappservercontainer
-    build: ./server 
-    image: pmappserver:v1
-    ports:
-      - 8081:8080
-    depends_on:
-      mysqldb:
-        condition: service_healthy
-    environment:
-      DB_HOST: mysqldb
-      DB_PASSWORD: 'pwd@123'
-      DB_USER: admin
-      DB_NAME: studentsdb
-      DB_PORT: 3306
-      DB_CONNECTION_LIMIT: 10 
-      SERVICE_TAGS: prod
-      SERVICE_NAME: pmappserverservice
-    healthcheck:
-      test: wget --no-verbose --tries=1 --spider http://localhost:8080 || exit 1
-      interval: 2s
-      timeout: 2s
-      retries: 10
-      start_period: 2s  
+      - mariadb_data:/var/lib/mysql
+      - ./dbinit/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - internalnet
-
-  pmappfrontend:
-
-    container_name: pmappfrontendcontainer
+    healthcheck:
+      test: ["CMD", "mariadb", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD}", "-e", "SELECT 1"]
+      timeout: 15s
+      interval: 5s
+      retries: 5
+      start_period: 30s
+  pm_server:
+    container_name: project_ms_server_container
+    build: ./server
+    image: project_ms_server:v2
+    ports:
+      - "${SERVER_PORT}:${SERVER_PORT}"
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=${DB_PORT_DOCKER}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - DB_CONNECTION_LIMIT=${DB_CONNECTION_LIMIT}
+      - SERVER_PORT=${SERVER_PORT}
+      - NODE_ENV=${NODE_ENV}
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    networks:
+      - internalnet
+  pm_frontend:
+    container_name: project_ms_frontend_container
     build: ./frontend
-    image: pmappfrontend:v1
+    image: project_ms_frontend:v2
     ports:
-      - 5000:5000
+      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
     depends_on:
-      pmappserver:
-        condition: service_healthy
+      - pm_server
     environment:
-      VITE_APP_SERVER_URL: localhost:8081
+      - VITE_API_URL=${VITE_API_URL}
+      - VITE_NODE_ENV=${VITE_NODE_ENV}
     networks:
       - internalnet
-
 networks:
   internalnet:
     driver: bridge
-
+volumes:
+  mariadb_data:

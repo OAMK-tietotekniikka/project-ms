@@ -1,39 +1,41 @@
-# Use an official Node.js runtime as the base image
-FROM node:18-alpine as BUILD_IMAGE
+# Multi-stage build for optimized production image
+FROM node:24-alpine AS build
 
-# Set the working directory in the container to /app
-WORKDIR /app/frontend
+# Install pnpm globally
+RUN npm install -g pnpm
 
-# Copy package.json and package-lock.json to the working directory
+# Set working directory
+WORKDIR /app
+
+# Copy package files for better caching
 COPY package*.json ./
+COPY pnpm-lock.yaml* ./
 
-# Install the application dependencies
-RUN npm install
+# Install dependencies
+RUN pnpm install --frozen-lockfile
 
-# Copy the rest of the application code to the working directory
+# Copy source code
 COPY . .
 
-# Build the app
-RUN npm run build
+# Build the application
+RUN pnpm run build
 
-# Use an official lightweight Node.js runtime as the final base image
-FROM node:18-alpine as PRODUCTION_IMAGE
 
-# Set the working directory in the container to /app
-WORKDIR /app/frontend
 
-# Install serve to serve the app on a static server
+FROM node:24-alpine AS production
+
+ # Install serve globally
 RUN npm install -g serve
+#
 
-# Copy the build directory and src directory from the build image
-COPY --from=BUILD_IMAGE /app/frontend/ /app/frontend/
-
-# Expose port 5000 for the app
-EXPOSE 5000
-
-#install typescript
-RUN npm install typescript
-
-# Run the app
-CMD ["npm", "run", "start"]
-#CMD ["npm", "run", "preview"]
+# Set working directory
+WORKDIR /app
+#
+# Copy built application
+COPY --from=build /app/dist ./dist
+#
+# Expose port
+EXPOSE 3000
+#
+# Start the application
+CMD ["serve", "-s", "dist", "-l", "3000"]

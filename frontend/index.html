@@ -2,9 +2,33 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ProjectsMS</title>
+    <meta name="description" content="OAMK Project Management System" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta property="og:title" content="OAMK Project Management System" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://projects-ms-client-tvt-projects.apps.ocp1.oulu.fi/" />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" size="96x96" href="/96.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/180.png">
+    <link rel="preconnect" href="http://localhost:8000">
+
+    <title>Projects MS</title>
+    <script>
+      (function() {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        if (prefersDark) {
+          document.documentElement.classList.add('dark');
+          document.documentElement.style.backgroundColor = 'oklch(0.2621 0.0039 253.13)';
+        } else {
+          document.documentElement.classList.add('light');
+          document.documentElement.style.backgroundColor = 'oklch(0.9848 0.0016 253.12)';
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

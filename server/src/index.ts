@@ -1,41 +1,60 @@
-import { App } from './app';
+import dotenv from "dotenv";
+import path from "path";
 
+dotenv.config({
+	path: path.resolve(__dirname, "../../.env"),
+});
 
-const start = async() : Promise<void> => {
-    const app = new App();
-    app.listen();
-}
+import { App } from "./app";
+import { connectRedis } from "./config/redis.config";
+import pool from "./config/mariadb.config";
+
+const start = async (): Promise<void> => {
+	try {
+		//await connectRedis();
+		const app = new App();
+		const server = app.listen(); // Store server reference
+
+		// shutdown
+		const gracefulShutdown = async (signal: string) => {
+			console.log(`\nReceived ${signal}. Starting shutdown...`);
+
+			// Stop accepting new connections
+			server.close(async () => {
+				console.log("HTTP server closed.");
+
+				try {
+					// Close database pool
+					console.log("Closing database pool...");
+					await pool.end();
+					console.log("Database pool closed.");
+
+					// Close Redis connection if needed
+					// await redis.quit();
+
+					console.log("Shutdown completed.");
+					process.exit(0);
+				} catch (error) {
+					console.error("Error during graceful shutdown:", error);
+					process.exit(1);
+				}
+			});
+
+			// Force close after timeout
+			setTimeout(() => {
+				console.error(
+					"Could not close connections in time, forcefully shutting down",
+				);
+				process.exit(1);
+			}, 10000);
+		};
+
+		process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+		process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+	} catch (error) {
+		console.log(error);
+		process.exit(1);
+	}
+};
 
 start();
-
-
-
-
-
-
-
-
-
-// import express, {Express, Request, Response } from 'express';
-// import bodyParser from 'body-parser';
-// import cors from 'cors';
-
-// const app: Express = express();
-// const port: string | number = process.env.PORT || 8080;
-
-// app.use(bodyParser.json());
-// app.use(cors({
-//     origin: ['https://cop-client-cop-ms.2.rahtiapp.fi', 'http://localhost:5173', 'https://pm-app-client-pm-app-deploy.2.rahtiapp.fi','http://localhost:8080', 'http://localhost:5000'],
-//     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-//     allowedHeaders: ['Content-Type', 'Authorization']
-// }));
-
-// app.get('/', (req: Request, res: Response) => {
-//     res.json({ message: 'Hello World, I am using OpenShift!!!' });
-// });
-
-// app.listen(port, () => {
-//     console.log('Server is running on port: ' + port);
-//     }
-// );
-

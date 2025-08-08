@@ -1,0 +1,26 @@
+# Development Dockerfile for Server
+FROM node:lts-alpine
+
+# Install git and development tools
+RUN apk add --no-cache git
+
+# Install pnpm globally
+RUN npm install -g pnpm
+
+# Set the working directory
+WORKDIR /app/server
+
+# Copy package files first (for better Docker layer caching)
+COPY package*.json ./
+
+# Install dependencies (including dev dependencies)
+RUN pnpm install
+
+# Copy the rest of the application code
+COPY . .
+
+# Expose port
+EXPOSE 8000
+
+
+CMD ["pnpm", "run", "start:dev"]

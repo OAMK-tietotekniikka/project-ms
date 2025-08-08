@@ -1,0 +1,33 @@
+name: "CodeQL Config"
+paths-ignore:
+  - "node_modules/"
+  - "openshift/"
+  - "dbinit/"
+  - "dist/"
+  - "build/"
+  - "coverage/"
+  - "**/.husky/**"
+  - "**/.idea/**"
+  - "scripts"
+  - "*.min.js"
+  - "*.test.ts"
+  - "*.test.js"
+  - "*.spec.ts"
+  - "*.spec.js"
+  - "__tests__/"
+  - "test/"
+  - "tests/"
+  - "*.d.ts"
+  - "public/"
+  - "static/"
+queries:
+  - name: security-extended
+    uses: security-extended
+  - name: security-and-quality
+    uses: security-and-quality
+# Query filters
+query-filters:
+  - exclude:
+      id: js/unused-local-variable
+  - exclude:
+      id: js/debugger-statement

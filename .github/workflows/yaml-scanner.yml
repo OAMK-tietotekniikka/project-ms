@@ -1,0 +1,17 @@
+name: "YAML Lint"
+on:
+  pull_request:
+    branches: [main]
+jobs:
+  yaml-lint:
+    name: Lint YAML files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install yamllint
+        run: sudo apt-get update && sudo apt-get install -y yamllint
+      - name: Run yamllint
+        run: |-
+          yamllint -d '{"extends": "default", "rules": {"line-length": false}}' .
+        continue-on-error: true
