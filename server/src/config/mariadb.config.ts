@@ -11,6 +11,7 @@ console.log("host", host);
 const pool = mariadb.createPool({
 	host: host ? host : process.env.DB_HOST,
 	user: process.env.DB_USER,
+	password: process.env.DB_PASSWORD,
 	database: process.env.DB_NAME,
 	port: port ? port : parseInt(process.env.DB_PORT_DOCKER || "3306"),
 	connectionLimit: process.env.DB_CONNECTION_LIMIT
@@ -28,7 +29,6 @@ const pool = mariadb.createPool({
 console.log({
 	host: host ? host : process.env.DB_HOST,
 	user: process.env.DB_USER,
-	password: process.env.DB_PASSWORD,
 	database: process.env.DB_NAME,
 	port: port ? port : parseInt(process.env.DB_PORT_DOCKER || "3306"),
 	connectionLimit: process.env.DB_CONNECTION_LIMIT
