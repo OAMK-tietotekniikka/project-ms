@@ -8,15 +8,15 @@ RUN npm install -g pnpm
 WORKDIR /app
 
 # Copy package files first for better caching
-COPY ../pnpm-lock.yaml ../pnpm-workspace.yaml ./
-COPY package*.json ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY server/package*.json ./
 
 
 # Install dependencies with frozen lockfile for reproducible builds
 RUN pnpm install --filter ./... --frozen-lockfile --prod=false
 
 # Copy source code
-COPY . .
+COPY server/ .
 
 # Build the application
 RUN pnpm run build
@@ -38,8 +38,8 @@ RUN addgroup -g 1001 -S nodejs && \
 WORKDIR /app
 
 # Copy package files
-COPY ../pnpm-lock.yaml ../pnpm-workspace.yaml ./
-COPY package*.json ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY server/package*.json ./
 
 # Install only production dependencies
 RUN pnpm install --filter ./... --frozen-lockfile --prod=true

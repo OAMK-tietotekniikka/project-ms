@@ -22,7 +22,9 @@ services:
       start_period: 30s
   pm_server:
     container_name: project_ms_server_container
-    build: ./server
+    build:
+      context: .
+      dockerfile: ./server/Dockerfile
     image: project_ms_server:v2
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
@@ -44,7 +46,9 @@ services:
       - internalnet
   pm_frontend:
     container_name: project_ms_frontend_container
-    build: ./frontend
+    build:
+      context: .
+      dockerfile: ./frontend/Dockerfile
     image: project_ms_frontend:v2
     ports:
       - "${FRONTEND_PORT}:${FRONTEND_PORT}"

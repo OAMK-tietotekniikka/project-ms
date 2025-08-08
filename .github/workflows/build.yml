@@ -22,7 +22,8 @@ jobs:
       - name: Build and push server
         uses: docker/build-push-action@v5
         with:
-          context: ./server
+          context: .
+          file: ./server/Dockerfile
           push: true
           tags: |
             ${{ github.ref == 'refs/heads/main' && format('quay.io/{0}/project-ms-server:latest', secrets.QUAY_USERNAME) || '' }}
@@ -31,7 +32,8 @@ jobs:
       - name: Build and push frontend
         uses: docker/build-push-action@v5
         with:
-          context: ./frontend
+          context: .
+          file: ./frontend/Dockerfile
           push: true
           tags: |-
             ${{ github.ref == 'refs/heads/main' && format('quay.io/{0}/project-ms-frontend:latest', secrets.QUAY_USERNAME) || '' }}

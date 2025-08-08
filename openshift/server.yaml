@@ -31,10 +31,18 @@ spec:
               value: project_ms
             - name: DB_PORT
               value: "3306"
+            - name: REDIS_HOST
+              value: redis
+            - name: REDIS_PORT
+              value: "6379"
+            - name: DB_CONNECTION_LIMIT
+              value: "100"
             - name: SERVER_PORT
               value: "8000"
             - name: NODE_ENV
               value: production
+            - name: IS_DOCKER
+              value: "true"
           livenessProbe:
             httpGet:
               path: /
