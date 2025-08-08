@@ -6,7 +6,9 @@ export function logRequests(
 	additionalInfo?: Record<string, any>,
 ): void {
 	const ip = req.ip || req.socket.remoteAddress || "unknown";
-	const userAgent = req.get("User-Agent") || "unknown";
+
+	let userAgent = req.get("User-Agent") || "unknown";
+	userAgent = userAgent.replace(/[\n\r]/g, "");
 	const contentLength = req.get("Content-Length") || "0";
 
 	let logMessage = `${req.method} ${req.originalUrl} | IP: ${ip}`;
@@ -81,7 +83,8 @@ export function logSecurityEvent(
 
 	if (req) {
 		const ip = req.ip || req.socket.remoteAddress || "unknown";
-		message += ` | IP: ${ip} | Path: ${req.originalUrl}`;
+		const sanitizedUrl = req.originalUrl.replace(/[\r\n]/g, "");
+		message += ` | IP: ${ip} | Path: ${sanitizedUrl}`;
 	}
 
 	message += ` | Details: ${JSON.stringify(details)}`;

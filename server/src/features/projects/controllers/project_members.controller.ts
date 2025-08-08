@@ -91,7 +91,6 @@ export const addProjectMember = async (
 ): Promise<void> => {
 	logRequests(req);
 	const { joinCode } = req.body;
-	console.log(joinCode);
 	let connection: mariadb.PoolConnection | null = null;
 
 	try {

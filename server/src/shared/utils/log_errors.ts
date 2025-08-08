@@ -9,14 +9,15 @@ export function logError(
 	let errorContext = context ? ` | Context: ${JSON.stringify(context)}` : "";
 
 	if (error instanceof Error) {
-		errorMessage = error.stack || error.message;
+		const rawMessage = error.stack || error.message;
+		errorMessage = rawMessage.replace(/[\n\r]/g, "");
 
 		// Add error type information
 		if (error.name !== "Error") {
 			errorMessage = `[${error.name}] ${errorMessage}`;
 		}
 	} else {
-		errorMessage = String(error);
+		errorMessage = String(error).replace(/[\n\r]/g, "");
 	}
 
 	logger.error(`${location}: ${errorMessage}${errorContext}`);
