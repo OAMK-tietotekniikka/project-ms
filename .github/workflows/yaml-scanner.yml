@@ -1,9 +1,7 @@
 name: "YAML Lint"
-
 on:
   pull_request:
     branches: [ main ]
-
 jobs:
   yaml-lint:
     name: Lint YAML files
@@ -11,10 +9,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Install yamllint
         run: sudo apt-get update && sudo apt-get install -y yamllint
-
       - name: Run yamllint
         run: |
-          yamllint -d '{"extends": "default", "rules": {"line-length": {"level": "disable"}}}' .
+          yamllint -d '{"extends": "default", "rules": {"line-length": false}}' .
