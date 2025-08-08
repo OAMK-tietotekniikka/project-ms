@@ -15,7 +15,8 @@ jobs:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
-      - name: Get version
+      - name: Get version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
         id: version
         run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
       - name: Build and push server
@@ -24,13 +25,15 @@ jobs:
           context: ./server
           push: true
           tags: |
-            quay.io/${{ secrets.QUAY_USERNAME }}/project-ms-server:${{ steps.version.outputs.version }}
-            quay.io/${{ secrets.QUAY_USERNAME }}/project-ms-server:latest
+            ${{ github.ref == 'refs/heads/main' && format('quay.io/{0}/project-ms-server:latest', secrets.QUAY_USERNAME) || '' }}
+            ${{ startsWith(github.ref, 'refs/tags/v') && format('quay.io/{0}/project-ms-server:{1}', secrets.QUAY_USERNAME, steps.version.outputs.version) || '' }}
+            ${{ startsWith(github.ref, 'refs/tags/v') && format('quay.io/{0}/project-ms-server:latest', secrets.QUAY_USERNAME) || '' }}
       - name: Build and push frontend
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
           push: true
           tags: |-
-            quay.io/${{ secrets.QUAY_USERNAME }}/project-ms-frontend:${{ steps.version.outputs.version }}
-            quay.io/${{ secrets.QUAY_USERNAME }}/project-ms-frontend:latest
+            ${{ github.ref == 'refs/heads/main' && format('quay.io/{0}/project-ms-frontend:latest', secrets.QUAY_USERNAME) || '' }}
+            ${{ startsWith(github.ref, 'refs/tags/v') && format('quay.io/{0}/project-ms-frontend:{1}', secrets.QUAY_USERNAME, steps.version.outputs.version) || '' }}
+            ${{ startsWith(github.ref, 'refs/tags/v') && format('quay.io/{0}/project-ms-frontend:latest', secrets.QUAY_USERNAME) || '' }}
