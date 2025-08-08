@@ -1,5 +1,4 @@
 name: "CodeQL Config"
-
 paths-ignore:
   - "node_modules/"
   - "openshift/"
@@ -21,15 +20,11 @@ paths-ignore:
   - "*.d.ts"
   - "public/"
   - "static/"
-
-
 queries:
   - name: security-extended
     uses: security-extended
   - name: security-and-quality
     uses: security-and-quality
-
-
 # Query filters
 query-filters:
   - exclude:

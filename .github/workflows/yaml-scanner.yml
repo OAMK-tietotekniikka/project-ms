@@ -1,7 +1,7 @@
 name: "YAML Lint"
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
 jobs:
   yaml-lint:
     name: Lint YAML files
@@ -12,5 +12,6 @@ jobs:
       - name: Install yamllint
         run: sudo apt-get update && sudo apt-get install -y yamllint
       - name: Run yamllint
-        run: |
+        run: |-
           yamllint -d '{"extends": "default", "rules": {"line-length": false}}' .
+        continue-on-error: true

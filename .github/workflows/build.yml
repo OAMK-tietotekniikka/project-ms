@@ -1,28 +1,23 @@
 name: "Build and Publish images"
-
 on:
   push:
     branches: ["main"]
     tags:
       - 'v*'
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Login to Quay.io
         uses: docker/login-action@v3
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
-
       - name: Get version
         id: version
         run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-
       - name: Build and push server
         uses: docker/build-push-action@v5
         with:
@@ -31,12 +26,11 @@ jobs:
           tags: |
             quay.io/${{ secrets.QUAY_USERNAME }}/project-ms-server:${{ steps.version.outputs.version }}
             quay.io/${{ secrets.QUAY_USERNAME }}/project-ms-server:latest
-
       - name: Build and push frontend
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
           push: true
-          tags: |
+          tags: |-
             quay.io/${{ secrets.QUAY_USERNAME }}/project-ms-frontend:${{ steps.version.outputs.version }}
             quay.io/${{ secrets.QUAY_USERNAME }}/project-ms-frontend:latest

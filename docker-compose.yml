@@ -20,10 +20,6 @@ services:
       interval: 5s
       retries: 5
       start_period: 30s
-
-
-
-
   pm_server:
     container_name: project_ms_server_container
     build: ./server
@@ -31,22 +27,21 @@ services:
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
     environment:
-    - DB_HOST=${DB_HOST}
-    - DB_USER=${DB_USER}
-    - DB_PASSWORD=${DB_PASSWORD}
-    - DB_NAME=${DB_NAME}
-    - DB_PORT=${DB_PORT_DOCKER}
-    - REDIS_HOST=${REDIS_HOST}
-    - REDIS_PORT=${REDIS_PORT}
-    - DB_CONNECTION_LIMIT=${DB_CONNECTION_LIMIT}
-    - SERVER_PORT=${SERVER_PORT}
-    - NODE_ENV=${NODE_ENV}
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=${DB_PORT_DOCKER}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - DB_CONNECTION_LIMIT=${DB_CONNECTION_LIMIT}
+      - SERVER_PORT=${SERVER_PORT}
+      - NODE_ENV=${NODE_ENV}
     depends_on:
       mariadb:
         condition: service_healthy
     networks:
       - internalnet
-
   pm_frontend:
     container_name: project_ms_frontend_container
     build: ./frontend
@@ -60,7 +55,6 @@ services:
       - VITE_NODE_ENV=${VITE_NODE_ENV}
     networks:
       - internalnet
-
 networks:
   internalnet:
     driver: bridge

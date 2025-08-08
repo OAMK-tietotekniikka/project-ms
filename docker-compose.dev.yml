@@ -23,7 +23,6 @@ services:
       interval: 5s
       retries: 5
       start_period: 30s
-
   redis:
     image: redis:8-alpine
     container_name: project_ms_redis_dev
@@ -35,7 +34,6 @@ services:
       - "${REDIS_PORT}:${REDIS_PORT}"
     networks:
       - internalnet
-
   pm_server_dev:
     container_name: pm_server_dev
     build:
@@ -65,15 +63,14 @@ services:
     volumes:
       # Mount source code for hot reload
       - ./server:/app/server
-      - /app/server/node_modules  # Prevent overwriting node_modules
+      - /app/server/node_modules # Prevent overwriting node_modules
     networks:
       - internalnet
-
   pm_frontend_dev:
     container_name: pm_frontend_dev
     build:
       context: ./frontend
-      dockerfile: Dockerfile.dev  # Use development Dockerfile
+      dockerfile: Dockerfile.dev # Use development Dockerfile
     image: pm_frontend_dev:dev
     ports:
       - "${FRONTEND_PORT}:${FRONTEND_PORT}"
@@ -85,14 +82,12 @@ services:
     volumes:
       # Mount source code for hot reload
       - ./frontend:/app/frontend
-      - /app/frontend/node_modules  # Prevent overwriting node_modules
+      - /app/frontend/node_modules # Prevent overwriting node_modules
     networks:
       - internalnet
-
 networks:
   internalnet:
     driver: bridge
-
 volumes:
   project_ms_db_dev_data:
   redis_data:
