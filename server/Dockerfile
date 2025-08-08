@@ -28,6 +28,7 @@ FROM node:24-alpine AS production
 
 # Install pnpm
 RUN npm install -g pnpm
+ENV HUSKY_SKIP_INSTALL=1
 
 # Install wget for healthcheck
 RUN apk add --no-cache wget
