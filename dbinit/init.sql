@@ -124,6 +124,7 @@ CREATE TABLE IF NOT EXISTS student_project (
                                                INDEX idx_student_active_projects (student_id, project_id)
 );
 
+
 -- -----------------------------------------------------
 -- Table `company_teacher` (Many-to-Many)
 -- -----------------------------------------------------
