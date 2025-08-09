@@ -27,7 +27,6 @@ RUN pnpm run build
 FROM node:24-alpine AS production
 
 # Install pnpm
-ENV HUSKY=0
 RUN npm install -g pnpm
 
 
@@ -48,7 +47,7 @@ COPY server/package.json ./server/
 COPY frontend/package.json ./frontend/
 
 # Install ONLY server production dependencies
-RUN pnpm install --filter=server --frozen-lockfile --prod
+RUN pnpm install --filter=server --frozen-lockfile --prod --ignore-scripts
 
 # Copy built application from build stage
 COPY --from=build /app/server/dist ./dist
