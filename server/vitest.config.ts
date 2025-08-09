@@ -5,5 +5,10 @@ export default defineConfig({
 		environment: "node",
 		globals: true,
 		setupFiles: ["./tests/setup.ts"],
+		coverage: {
+			provider: "v8",
+			//enabled: true,
+			reporter: ["text", "text-summary"],
+		},
 	},
 });
