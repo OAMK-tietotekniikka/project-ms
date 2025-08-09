@@ -1,6 +1,7 @@
 name: Bug Report
 description: Found a bug? Report it here
-labels: bug
+labels: 
+  - "type: bug"
 body:
   - type: textarea
     id: problem
