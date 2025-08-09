@@ -27,8 +27,9 @@ RUN pnpm run build
 FROM node:24-alpine AS production
 
 # Install pnpm
-RUN npm install -g pnpm
 ENV HUSKY=0
+RUN npm install -g pnpm
+
 
 # Install wget for healthcheck
 RUN apk add --no-cache wget
