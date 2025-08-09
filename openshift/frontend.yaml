@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: quay.io/srntp/project-ms-frontend:v0.3.1
+          image: quay.io/srntp/project-ms-frontend:latest
           ports:
             - containerPort: 3000
           env:
