@@ -1,6 +1,7 @@
 name: Feature request
 description: Have an idea or feature request? Let us know!
-labels: type: feature
+labels: 
+  - type: feature
 body:
   - type: textarea
     id: idea
