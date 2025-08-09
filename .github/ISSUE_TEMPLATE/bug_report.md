@@ -1,54 +1,41 @@
----
-name: Bug report
-about: Found a bug? Report it here
-title: ''
+name: Bug Report
+description: Found a bug? Report it here
 labels: bug
-assignees: ''
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: |
+        Describe the bug clearly
+    validations:
+      required: true
 
----
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: How can we reproduce it (as minimally and precisely as possible)?
+    validations:
+      required: true
 
-### 1. What happened?  
-(Describe the bug clearly)
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
 
-[Replace this with your description]
+  - type: textarea
+    id: os_browser
+    attributes:
+      label: Browser & OS info
+      description: |
+        - Browser: [Find yours here](https://www.whatsmybrowser.org/)
+        - OS: [Find yours here](https://whatsmyos.com/)
+    validations:
+      required: true
 
----
-
-### 2. How to reproduce?  
-(List steps to see the bug)
-
-1. Go to '...'
-2. Click '...'
-3. Scroll to '...'
-
----
-
-### 3. What did you expect?  
-(What should have happened?)
-
-[Replace this with your expected result]
-
----
-
-### 4. Browser & OS info  
-
-- Browser: [Find yours here](https://www.whatsmybrowser.org/)  
-- OS: [Find yours here](https://whatsmyos.com/)
-
-**Browser name & version:**  
-[Replace here]
-
-**Operating system:**  
-[Replace here]
-
----
-
-### 5. Screenshots  
-(If helpful, add images)
-
----
-
-### 6. Anything else?  
-(Add other info here)
-
-[Replace this]
+  - type: textarea
+    id: additional
+    attributes:
+      label: Anything else we need to know?
