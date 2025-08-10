@@ -1,7 +1,6 @@
-# Use multi-stage build for optimization
 FROM node:24-alpine AS build
 
-# Install pnpm globally
+# Install pnpm
 RUN npm install -g pnpm
 
 # Create app directory
@@ -29,43 +28,30 @@ FROM node:24-alpine AS production
 # Install pnpm
 RUN npm install -g pnpm
 
-
-# Install wget for healthcheck
-RUN apk add --no-cache wget
-
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodeuser -u 1001
 
-# Create app directory
+# Set the working directory
 WORKDIR /app
 
-# Copy workspace files and ALL package.json files
+# Copy workspace files and package.json files
 COPY pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY package.json ./
 COPY server/package.json ./server/
 COPY frontend/package.json ./frontend/
 
-# Install ONLY server production dependencies
+# Install only production dependencies for the server
 RUN pnpm install --filter=server --frozen-lockfile --prod --ignore-scripts
 
-# Copy built application from build stage
-COPY --from=build /app/server/dist ./dist
-COPY --from=build /app/server/src ./src
+# Copy built application from build stage into the server directory
+COPY --from=build /app/server/dist ./server/dist
 
-# Copy the server's package.json for scripts
-COPY --from=build /app/server/package.json ./package.json
-
-# Change ownership to non-root user
-RUN chown -R nodeuser:nodejs /app
+# Switch to the non-root user
 USER nodeuser
 
-# Expose port
-EXPOSE 8000
+# Set working directory to the server folder
+WORKDIR /app/server
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8000/health || exit 1
-
-# Start the application
-CMD ["pnpm", "run", "start:prod"]
+# Command to run the application
+CMD ["node", "dist/index.js"]
