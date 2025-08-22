@@ -15,6 +15,7 @@ import studentsRouter from "./features/students/routes/student.routes";
 import teachersRouter from "./features/teachers/routes/teacher.routes";
 import { logError } from "./shared/utils/log_errors";
 import { startScheduledTasks } from "./features/notifications/services/scheduler";
+import rateLimit from "express-rate-limit";
 
 export class App {
 	private readonly app: Application;
@@ -46,10 +47,27 @@ export class App {
 				credentials: true,
 			}),
 		);
+		this.app.set("trust proxy", true);
+		this.app.use(this.rateLimiter());
 		this.app.use(express.json({ limit: "10mb" }));
 		this.app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 		this.app.use(this.timeoutMiddleware());
+	}
+
+	private rateLimiter() {
+		const windowMs = 5 * 60 * 1000;
+		return rateLimit({
+			windowMs: windowMs, // 5 minutes
+			limit: 2000, // 400 req per min
+			message: {
+				error: "Too many requests",
+				message: "Too many requests, try again in a 5 minutes.",
+				retryAfter: windowMs / 1000, // seconds
+			},
+			standardHeaders: true,
+			legacyHeaders: false,
+		});
 	}
 
 	public getExpressApp(): Application {
