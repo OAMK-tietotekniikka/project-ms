@@ -5,18 +5,19 @@
 	"main": "index.js",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/OAMK-tietotekniikka/ProjectsMS.git"
+		"url": "git+https://github.com/OAMK-tietotekniikka/project-ms.git"
 	},
-	"author": "",
+	"author": "OAMK-tietotekniikka",
 	"license": "MIT",
 	"bugs": {
-		"url": "https://github.com/OAMK-tietotekniikka/ProjectsMS/issues"
+		"url": "https://github.com/OAMK-tietotekniikka/project-ms/issues"
 	},
 	"engines": {
 		"node": ">=18.0.0",
 		"pnpm": ">=8.0.0"
 	},
 	"scripts": {
+		"test:server": "pnpm --filter server test:local",
 		"lint": "biome lint .",
 		"lint:fix": "biome lint --write .",
 		"format": "biome format .",
