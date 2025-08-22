@@ -1,9 +1,6 @@
 # Development Dockerfile for Server
 FROM node:lts-alpine
 
-# Install git and development tools
-RUN apk add --no-cache git
-
 # Install pnpm globally
 RUN npm install -g pnpm
 

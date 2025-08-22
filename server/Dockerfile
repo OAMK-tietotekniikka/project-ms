@@ -1,4 +1,4 @@
-FROM node:24-alpine AS build
+FROM node:24-slim AS build
 
 # Install pnpm
 RUN npm install -g pnpm
@@ -23,7 +23,7 @@ WORKDIR /app/server
 RUN pnpm run build
 
 # Production stage
-FROM node:24-alpine AS production
+FROM node:24-slim AS production
 
 # Install pnpm
 RUN npm install -g pnpm
@@ -44,11 +44,6 @@ COPY frontend/package.json ./frontend/
 # Install only production dependencies for the server
 RUN pnpm install --filter=server --frozen-lockfile --prod --ignore-scripts
 
-# Copy built application from build stage into the server directory
-COPY --from=build /app/server/dist ./server/dist
-
-# Switch to the non-root user
-USER nodeuser
 
 # Set working directory to the server folder
 WORKDIR /app/server

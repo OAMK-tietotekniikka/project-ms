@@ -39,6 +39,7 @@ services:
       - DB_CONNECTION_LIMIT=${DB_CONNECTION_LIMIT}
       - SERVER_PORT=${SERVER_PORT}
       - NODE_ENV=${NODE_ENV}
+      - IS_DOCKER=true
     depends_on:
       mariadb:
         condition: service_healthy

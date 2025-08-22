@@ -21,6 +21,7 @@ COPY frontend/ ./frontend/
 
 # Build the frontend application
 WORKDIR /app/frontend
+ENV VITE_NODE_ENV=production
 RUN pnpm run build
 
 # Production stage
