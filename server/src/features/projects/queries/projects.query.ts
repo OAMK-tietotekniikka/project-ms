@@ -11,16 +11,17 @@ export const QUERY = {
     WHERE email = ?
     `,
 
-	SELECT_PROJECTS: `
+	SELECT_PROJECTS_BY_YEAR: `
         SELECT 
             p.project_id,
             p.teacher_id,
             p.project_name,
             p.project_status,
+            p.student_names_cache,
             t.teacher_name     
         FROM projects p
         LEFT JOIN teachers t ON p.teacher_id = t.teacher_id
-        
+		WHERE p.study_year = ?
     `,
 
 	SELECT_PROJECTS_FOR_EXPORT: `
@@ -136,6 +137,7 @@ export const QUERY = {
             p.project_status,
             p.start_date,
             p.end_date,
+            p.student_names_cache,
             c.company_name,
             t.teacher_name
         FROM projects p

@@ -24,9 +24,17 @@ export const listProjects = async (
 ): Promise<void> => {
 	logRequests(req);
 	let connection: mariadb.PoolConnection | null = null;
+	const { studyYear } = req.query;
+	if (!studyYear) {
+		responseHelper.badRequest(res);
+		return;
+	}
 	try {
 		connection = await pool.getConnection();
-		const projects = await connection.query(QUERY.SELECT_PROJECTS);
+		const projects = await connection.query(
+			QUERY.SELECT_PROJECTS_BY_YEAR,
+			studyYear,
+		);
 		responseHelper.ok(res, projects);
 	} catch (error: unknown) {
 		logError("project.controller.listProjects", error);
