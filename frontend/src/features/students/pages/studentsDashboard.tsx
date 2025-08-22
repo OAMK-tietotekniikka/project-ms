@@ -128,7 +128,7 @@ const StudentsDashboard = () => {
 								onClick={() => navigate("/projects/create")}
 							>
 								<Plus className="w-4 h-4 mr-2" />
-								{t("createProj")}
+								{t("projects_createProject")}
 							</Button>
 							<InputProjectCodeDialog
 								open={isDialogOpen}
@@ -179,7 +179,7 @@ const StudentsDashboard = () => {
 										{/* Mobile Layout */}
 										<div className="md:hidden space-y-2">
 											<div className="font-medium">
-												{t("projectNo")} {index + 1}
+												{t("projectNumber")} {index + 1}
 											</div>
 											<div className="grid grid-cols-2 gap-2 text-sm">
 												<div>
@@ -206,7 +206,7 @@ const StudentsDashboard = () => {
 										{/* Desktop Layout */}
 										<div className="hidden md:grid grid-cols-4 gap-4">
 											<div className="text-sm font-medium">
-												{t("projectNo")} {index + 1}
+												{t("projectNumber")} {index + 1}
 											</div>
 											<div className="text-sm">
 												{formatDate(proj.start_date)}

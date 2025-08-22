@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
 	Dialog,
@@ -45,7 +45,7 @@ const ProjectStatsDialog = ({ open, onOpenChange }) => {
 	}, [statsData, selectedStudyYear]);
 
 	// default study year
-	React.useEffect(() => {
+	useEffect(() => {
 		if (studyYears.length > 0 && !selectedStudyYear) {
 			setSelectedStudyYear(studyYears[0]);
 		}
@@ -54,6 +54,14 @@ const ProjectStatsDialog = ({ open, onOpenChange }) => {
 	const closeDialog = () => {
 		setSelectedStudyYear("");
 		onOpenChange(false);
+	};
+
+	const getContainerHeight = () => {
+		return window.innerHeight >= 800
+			? "350px"
+			: window.innerHeight >= 600
+				? "200px"
+				: "150px";
 	};
 
 	// Company item
@@ -75,7 +83,7 @@ const ProjectStatsDialog = ({ open, onOpenChange }) => {
 							{company.Students}
 						</div>
 						<div className="text-xs text-muted-foreground">
-							{t("studentsMain", { defaultValue: "Students" })}
+							{t("students", { defaultValue: "Students" })}
 						</div>
 					</div>
 					<div className="text-center">
@@ -137,7 +145,7 @@ const ProjectStatsDialog = ({ open, onOpenChange }) => {
 						{studyYears.map((year) => (
 							<Button
 								key={year}
-								variant={selectedStudyYear === year ? "default" : "outline"}
+								variant={selectedStudyYear === year ? "default" : "secondary"}
 								size="sm"
 								onClick={() => setSelectedStudyYear(year)}
 								className="text-xs hover:cursor-pointer"
@@ -157,7 +165,7 @@ const ProjectStatsDialog = ({ open, onOpenChange }) => {
 							</div>
 							<div className="flex items-center gap-4">
 								<div className="text-center w-16">
-									{t("studentsMain", { defaultValue: "Students" })}
+									{t("students", { defaultValue: "Students" })}
 								</div>
 								<div className="text-center w-16 capitalize">
 									{t("projects", { defaultValue: "Projects" })}
@@ -168,31 +176,20 @@ const ProjectStatsDialog = ({ open, onOpenChange }) => {
 
 					{/* Companies Stats List */}
 					<div className="flex-1 min-h-0">
-						{selectedStudyYear && sortedCompanies.length > 0 ? (
-							<Virtuoso
-								style={{
-									height:
-										window.innerHeight >= 800
-											? "350px"
-											: window.innerHeight >= 600
-												? "200px"
-												: "150px",
-								}}
-								totalCount={sortedCompanies.length}
-								itemContent={CompanyStatsItem}
-							/>
-						) : selectedStudyYear ? (
-							<EmptyState />
-						) : (
-							<div className="text-center py-8 text-muted-foreground">
-								<BarChart3 className="h-8 w-8 mx-auto mb-2 opacity-50" />
-								<p>
-									{t("selectYearToView", {
-										defaultValue: "Select a study year to view statistics",
-									})}
-								</p>
-							</div>
-						)}
+						<div style={{ height: getContainerHeight() }}>
+							{selectedStudyYear && sortedCompanies.length > 0 ? (
+								<Virtuoso
+									style={{ height: "100%" }}
+									totalCount={sortedCompanies.length}
+									itemContent={CompanyStatsItem}
+									overscan={5}
+								/>
+							) : selectedStudyYear && !isStatsLoading ? (
+								<EmptyState />
+							) : (
+								<div></div>
+							)}
+						</div>
 					</div>
 				</div>
 
