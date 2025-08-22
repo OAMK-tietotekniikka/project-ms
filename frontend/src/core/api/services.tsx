@@ -12,7 +12,8 @@ export const studentService = {
 };
 
 export const projectService = {
-	getAllProjects: () => apiClient.get("/projects/"),
+	getAllProjectsByStudyYear: (studyYear: string) =>
+		apiClient.get("/projects/", { params: { studyYear: studyYear } }),
 	createProject: (data) => apiClient.post("/projects/", data),
 	getUserProjects: () => apiClient.get("/projects/me"),
 	listStudentProjects: (studentId: number) =>
