@@ -1,0 +1,67 @@
+name: Teams PR Notification
+
+on:
+  pull_request:
+    types: [opened]
+    branches:
+      - main
+
+jobs:
+  notify-teams:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Teams notification
+        run: |
+          # JSON payload
+          cat << EOF > payload.json
+          {
+            "attachments": [
+              {
+                "contentType": "application/vnd.microsoft.card.adaptive",
+                "content": {
+                  "\$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                  "type": "AdaptiveCard",
+                  "version": "1.4",
+                  "body": [
+                    {
+                      "type": "TextBlock",
+                      "text": "New Pull Request Created",
+                      "weight": "Bolder",
+                      "size": "Medium"
+                    },
+                    {
+                      "type": "TextBlock",
+                      "text": "[${{ github.event.pull_request.title }}](${{ github.event.pull_request.html_url }})",
+                      "wrap": true
+                    },
+                    {
+                      "type": "FactSet",
+                      "facts": [
+                        {
+                          "title": "Author:",
+                          "value": "${{ github.event.pull_request.user.login }}"
+                        },
+                        {
+                          "title": "Branch:",
+                          "value": "${{ github.event.pull_request.head.ref }} => ${{ github.event.pull_request.base.ref }}"
+                        }
+                      ]
+                    }
+                  ],
+                  "actions": [
+                    {
+                      "type": "Action.OpenUrl",
+                      "title": "View Pull Request",
+                      "url": "${{ github.event.pull_request.html_url }}"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+          EOF
+
+          # Send to Teams
+          curl -H "Content-Type: application/json" \
+               -d @payload.json \
+               "${{ secrets.TEAMS_WEBHOOK_URL }}"
