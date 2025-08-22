@@ -19,7 +19,7 @@ spec:
             - containerPort: 3000
           env:
             - name: VITE_API_URL
-              value: "https://api-project-ms.apps.your-cluster.com"
+              value: "http://server:8000"
             - name: VITE_NODE_ENV
               value: production
           livenessProbe:

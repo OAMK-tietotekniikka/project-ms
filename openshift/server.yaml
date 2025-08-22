@@ -1,3 +1,17 @@
+# Persistent Volume Claim
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: logs-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+
+# Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -17,18 +31,30 @@ spec:
           image: quay.io/srntp/project-ms-server:latest
           ports:
             - containerPort: 8000
+          volumeMounts:
+            - name: logs-volume
+              mountPath: /app/server/logs
           env:
             - name: DB_HOST
-              value: mariadb
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: host
             - name: DB_USER
-              value: admin
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: user
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: db-secret
                   key: password
             - name: DB_NAME
-              value: project_ms
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: db_name
             - name: DB_PORT
               value: "3306"
             - name: REDIS_HOST
@@ -45,29 +71,22 @@ spec:
               value: "true"
           livenessProbe:
             httpGet:
-              path: /
+              path: /health
               port: 8000
             initialDelaySeconds: 30
             periodSeconds: 30
+      volumes:
+        - name: logs-volume
+          persistentVolumeClaim:
+            claimName: logs-pvc
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: server
 spec:
+  type: ClusterIP
   ports:
     - port: 8000
   selector:
     app: server
----
-apiVersion: route.openshift.io/v1
-kind: Route
-metadata:
-  name: api
-spec:
-  path: /api
-  to:
-    kind: Service
-    name: server
-  tls:
-    termination: edge
