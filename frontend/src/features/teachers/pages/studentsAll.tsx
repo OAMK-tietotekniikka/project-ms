@@ -5,7 +5,6 @@ import {
 	Dialog,
 	DialogContent,
 	DialogHeader,
-	DialogTitle,
 	DialogTrigger,
 } from "@/shared/components/ui/dialog";
 import { Input } from "@/shared/components/ui/input";
@@ -21,6 +20,7 @@ import {
 import { Upload, Search } from "lucide-react";
 import ImportStudents from "@/features/teachers/components/ImportStudents";
 import StudentsList from "@/features/teachers/components/StudentsList";
+import { DialogTitle } from "@radix-ui/react-dialog";
 
 const Students: React.FC = () => {
 	const { t } = useTranslation();
@@ -33,7 +33,7 @@ const Students: React.FC = () => {
 			{/* Header */}
 			<div className="bg-card rounded-xl shadow-sm p-6 mb-6">
 				<div className="flex items-center justify-between">
-					<p className="text-xl font-bold">{t("studentsMain") || "Students"}</p>
+					<p className="text-xl font-bold">{t("students") || "Students"}</p>
 
 					<Dialog open={showImportModal} onOpenChange={setShowImportModal}>
 						<DialogTrigger asChild>
@@ -46,14 +46,10 @@ const Students: React.FC = () => {
 						</DialogTrigger>
 						<DialogContent>
 							<DialogHeader>
-								{/*}
-								<VisuallyHidden>
-									<DialogTitle className="flex items-center gap-2">
-										<Upload className="h-4 w-4" />
-										{t("students_importStudents") || "Import Students"}
-									</DialogTitle>
-								</VisuallyHidden>
-								*/}
+								<DialogTitle className="flex items-center gap-2">
+									<Upload className="h-4 w-4" />
+									{t("students_importStudents") || "Import Students"}
+								</DialogTitle>
 							</DialogHeader>
 							<ImportStudents handleClose={() => setShowImportModal(false)} />
 						</DialogContent>
