@@ -1,0 +1,85 @@
+name: Deploy to OpenShift
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  REGISTRY: quay.io/srntp
+  PROJECT_NAME: ${{ vars.OPENSHIFT_PROJECT || '' }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy to OpenShift
+
+    steps:
+      - name: Get version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Deploying version: $VERSION"
+
+      - name: Wait for images in Quay
+        run: |
+          echo "Waiting for images to be available in Quay..."
+          VERSION=${{ steps.version.outputs.version }}
+          
+          check_image() {
+            local image=$1
+            echo "Checking $image..."
+            for i in {1..10}; do
+              if curl -s -f "https://quay.io/api/v1/repository/srntp/project-ms-$image/tag/$VERSION" > /dev/null; then
+                echo "$image:$VERSION is available"
+                return 0
+              fi
+              echo "Attempt $i/10: $image:$VERSION not ready yet, waiting 30s..."
+              sleep 30
+            done
+            echo "Timeout: $image:$VERSION not found after 5 minutes"
+            return 1
+          }
+          
+          check_image "server"
+          check_image "frontend"
+          echo "Both images are available in Quay"
+
+      - name: Install OpenShift CLI
+        uses: redhat-actions/openshift-tools-installer@v1
+        with:
+          oc: "latest"
+
+      - name: Log in to OpenShift
+        uses: redhat-actions/oc-login@v1
+        with:
+          openshift_server_url: ${{ secrets.OPENSHIFT_SERVER }}
+          openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}
+          insecure_skip_tls_verify: true
+
+      - name: Deploy to OpenShift
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          echo "Deploying version: $VERSION to project: ${{ env.PROJECT_NAME }}"
+          
+          # Switch to project
+          oc project ${{ env.PROJECT_NAME }}
+          
+          echo "Updating deployment images..."
+          oc set image deployment/server server=${{ env.REGISTRY }}/project-ms-server:$VERSION
+          oc set image deployment/frontend frontend=${{ env.REGISTRY }}/project-ms-frontend:$VERSION
+          
+          echo "Waiting for rollouts..."
+          oc rollout status deployment/server --timeout=300s
+          oc rollout status deployment/frontend --timeout=300s
+          
+          
+          echo "Deployment successful!"
+          
+          # Add to job summary
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## Deployment Complete
+          
+          **Version:** \`$VERSION\`    
+          EOF
