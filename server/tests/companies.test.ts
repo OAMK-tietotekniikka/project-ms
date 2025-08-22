@@ -1,10 +1,9 @@
-// backend/tests/companies.test.ts
 import { describe, it, expect, beforeEach, afterAll, beforeAll } from "vitest";
 import request from "supertest";
 import { App } from "../src/app";
 
 import pool from "../src/config/mariadb.config";
-import { generateToken } from "./token_generator_for_tests";
+import { generateToken } from "./testsTokenGenerator";
 
 const appInstance = new App();
 const app = appInstance.getExpressApp();
@@ -48,6 +47,7 @@ describe("Companies", () => {
 				"Test teacher1",
 				"test_teacher1@uni.fi",
 				"teacher",
+				"valid",
 			);
 
 			// Create test student
@@ -60,6 +60,7 @@ describe("Companies", () => {
 				"Test student1",
 				"test_student1@student.uni.fi",
 				"student",
+				"valid",
 			);
 			console.log(testStudentToken);
 		} finally {
