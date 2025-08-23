@@ -54,7 +54,7 @@ const Teachers: React.FC = () => {
 			{/* Header */}
 			<div className="bg-card rounded-xl shadow-sm p-6 mb-6">
 				<div className="flex items-center justify-between">
-					<p className="text-xl font-bold">{t("teachersMain") || "Teachers"}</p>
+					<p className="text-xl font-bold">{t("teachers") || "Teachers"}</p>
 
 					<Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>
 						<DialogTrigger asChild>
@@ -76,7 +76,7 @@ const Teachers: React.FC = () => {
 										value={teacherName}
 										onChange={(e) => setTeacherName(e.target.value)}
 										className="w-full px-3 mb-5 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-										placeholder={t("enterName").toLowerCase()}
+										placeholder={t("enterName")}
 									/>
 									<label className="capitalize text-sm font-medium mb-2 block">
 										{t("email")}
@@ -85,7 +85,7 @@ const Teachers: React.FC = () => {
 										type="email"
 										value={email}
 										onChange={(e) => setEmail(e.target.value)}
-										className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+										className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary placeholder:capitalize"
 										placeholder={t("email")}
 									/>
 								</div>

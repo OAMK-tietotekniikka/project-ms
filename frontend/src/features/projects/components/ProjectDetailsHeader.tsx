@@ -36,7 +36,7 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({ proj }) => {
 					className="flex items-center"
 				>
 					<Edit3 className="h-4 w-4" />
-					{t("modifyData")}
+					{t("projects_updateProject")}
 				</Button>
 			</div>
 		</div>

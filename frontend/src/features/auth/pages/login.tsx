@@ -11,9 +11,10 @@ import { useTranslation } from "react-i18next";
 export const LoginPage = () => {
 	const { instance } = useMsal();
 
-	const bug_form: string = "https://forms.office.com/e/c4pA9Y2Fr3";
+	const bug_form: string =
+		"https://github.com/OAMK-tietotekniikka/project-ms/issues";
 	const version = __APP_VERSION__;
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 
 	const navigate = useNavigate();
 	const isAuthenticated = useIsAuthenticated();
@@ -35,6 +36,9 @@ export const LoginPage = () => {
 	const [showDevMode, setShowDevMode] = useState(false);
 	const [devToken, setDevToken] = useState("");
 	const [devRole, setDevRole] = useState<"teacher" | "student">("student");
+
+	// Language options - customize these based on your supported languages
+	const languages = [{ code: "fi" }, { code: "en" }, { code: "sv" }];
 
 	// Redirect if already authenticated and have role
 	useEffect(() => {
@@ -66,6 +70,11 @@ export const LoginPage = () => {
 		} finally {
 			setIsLoggingIn(false);
 		}
+	};
+
+	const handleLanguageChange = (languageCode: string) => {
+		i18n.changeLanguage(languageCode);
+		console.log("Language changed to", languageCode);
 	};
 
 	const handleDevLogin = async () => {
@@ -116,11 +125,30 @@ export const LoginPage = () => {
 	}
 
 	return (
-		<div className="min-h-screen  flex flex-col">
+		<div className="min-h-screen flex flex-col relative">
+			{/* Multiple language buttons */}
+			<div className="absolute top-4 right-4">
+				<div className="flex space-x-1">
+					{languages.map((lang) => (
+						<Button
+							variant="ghost"
+							key={lang.code}
+							onClick={() => handleLanguageChange(lang.code)}
+							className={`text-xs px-2 py-1 ${
+								i18n.language === lang.code
+									? ""
+									: "text-muted-foreground hover:text-foreground"
+							}`}
+						>
+							{lang.code.toUpperCase()}
+						</Button>
+					))}
+				</div>
+			</div>
+
 			{/* Main content */}
 			<div className="flex flex-grow items-center justify-center px-4">
 				<div className="flex flex-col items-center text-center w-full max-w-sm">
-					{/* GitHub-style Octocat placeholder - you'll add your art here */}
 					<div className="flex items-center justify-center mb-4">
 						<img src={icon} alt="logo" className="h-16" />
 					</div>
@@ -130,7 +158,6 @@ export const LoginPage = () => {
 					{/* Sign in form container */}
 					<div className="w-full bg-card border rounded-lg p-6">
 						<div className="space-y-2">
-							{/* Microsoft Sign In Button */}
 							<Button
 								variant="secondary"
 								className="w-full p-4 hover:cursor-pointer hover:border-none border-2"
@@ -146,7 +173,7 @@ export const LoginPage = () => {
 									variant="link"
 									className="text-sm hover:underline hover:cursor-pointer"
 								>
-									Does not work? Click here
+									{t("login_doesNotWork")}
 								</Button>
 							</div>
 						</div>
@@ -254,18 +281,23 @@ export const LoginPage = () => {
 					<div className="flex justify-center space-x-4 ">
 						<a
 							href="https://oamk-tietotekniikka.github.io/docs/en/how-to/contribute/"
+							target="_blank"
 							className="hover:underline"
 						>
-							Contribute
+							{t("login_contribute")}
 						</a>
-						<a href="https://oamk.fi/tietosuoja/" className="hover:underline">
-							Privacy
+						<a
+							href="https://oamk.fi/tietosuoja/"
+							target="_blank"
+							className="hover:underline"
+						>
+							{t("login_privacy")}
 						</a>
 					</div>
-					<p>© 2024 - {new Date().getFullYear()} OAMK | Project MS</p>
+					<p>© {new Date().getFullYear()} OAMK | Project MS</p>
 					<p className="text-sm">
-						<a href={bug_form} className="hover:underline">
-							Report a bug
+						<a href={bug_form} target="_blank" className="hover:underline">
+							{t("login_reportBug")}
 						</a>
 					</p>
 				</div>

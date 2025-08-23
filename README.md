@@ -4,8 +4,8 @@
 **Project management tool for company projects**
 
 
-![GitHub Tag](https://img.shields.io/github/v/tag/OAMK-tietotekniikka/ProjectsMS?color=%23488be6)
-![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/OAMK-tietotekniikka/ProjectsMS?color=%23488be6)
+![GitHub Tag](https://img.shields.io/github/v/tag/OAMK-tietotekniikka/project-ms?color=%23488be6)
+![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/OAMK-tietotekniikka/project-ms?color=%23488be6)
 
 </div>
 
@@ -18,13 +18,13 @@
 
 ### Clone the Repository
 
-The canonical Git repository is located at: <br/>
-[https://github.com/OAMK-tietotekniikka/ProjectsMS](https://github.com/OAMK-tietotekniikka/ProjectsMS)
+> [!NOTE] 
+> Upstream of: <br/> [https://github.com/OAMK-tietotekniikka/ProjectsMS](https://github.com/OAMK-tietotekniikka/ProjectsMS)
 
 To clone the repository:
 
 ```bash
-git clone https://github.com/OAMK-tietotekniikka/ProjectsMS.git
+git clone https://github.com/OAMK-tietotekniikka/project-ms.git
 ```
 
 ### Installation Instructions
@@ -38,15 +38,14 @@ for detailed installation steps.
 
 Bug reports help us improve Project MS.
 
-* Use the [bug report form](https://forms.office.com/e/c4pA9Y2Fr3)
-* Or open an issue on GitHub: [new issue](https://github.com/OAMK-tietotekniikka/ProjectsMS/issues/new)
+* Open an issue on GitHub: [new issue](https://github.com/OAMK-tietotekniikka/project-ms/issues/)
 
 ---
 
 ## Security Vulnerabilities
 
 To report a security issue, please refer to our
-[Security policy](https://github.com/OAMK-tietotekniikka/ProjectsMS/security)
+[Security policy](https://github.com/OAMK-tietotekniikka/project-ms/security)
 
 **Important:** Do not report security vulnerabilities through GitHub issues.
 

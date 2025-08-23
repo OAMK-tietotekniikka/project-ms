@@ -35,21 +35,21 @@ CREATE TABLE IF NOT EXISTS teachers (
 -- Table `students`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS students (
-                          student_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-                          student_name VARCHAR(127) NOT NULL,
-                          email VARCHAR(127) NOT NULL,
-                          class_code VARCHAR(25) NULL,
-                          current_projects TINYINT UNSIGNED DEFAULT 0 NOT NULL,
-                          active BOOLEAN DEFAULT TRUE,
-                          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                          version INT UNSIGNED DEFAULT 1,
-                          PRIMARY KEY (student_id),
-                          UNIQUE KEY uk_students_email (email),
-                          INDEX idx_students_class_code (class_code),
-                          INDEX idx_students_active (active),
-                          INDEX idx_students_project_counts (current_projects)
-
-) AUTO_INCREMENT = 1;
+        student_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+        student_name VARCHAR(127) NOT NULL,
+        email VARCHAR(127) NOT NULL,
+        class_code VARCHAR(25) NULL,
+        current_projects TINYINT UNSIGNED DEFAULT 0 NOT NULL,
+        active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        version INT UNSIGNED DEFAULT 1,
+        PRIMARY KEY (student_id),
+        UNIQUE KEY uk_students_email (email),
+        INDEX idx_students_class_code (class_code),
+        INDEX idx_students_active (active),
+        INDEX idx_students_project_counts (current_projects),
+        INDEX idx_students_active_name (active, student_name, student_id)
+    ) AUTO_INCREMENT = 1;
 
 -- -----------------------------------------------------
 -- Table `projects`
@@ -58,41 +58,43 @@ CREATE TABLE IF NOT EXISTS students (
 CREATE TABLE IF NOT EXISTS projects (
                                         project_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
                                         project_name VARCHAR(255) NOT NULL,
-                                        project_desc TEXT,
-                                        join_code CHAR(6) NULL UNIQUE,
-                                        teacher_id INT UNSIGNED NULL,
-                                        company_id INT UNSIGNED NULL,
-                                        project_status ENUM('pending', 'ongoing', 'completed') DEFAULT 'pending',
-                                        project_url VARCHAR(255) NULL,
-                                        study_year VARCHAR(10) NOT NULL,
-                                        start_date DATE NOT NULL,
-                                        end_date DATE NOT NULL,
-                                        completed_at TIMESTAMP NULL,
-                                        max_students TINYINT UNSIGNED DEFAULT 8,
-                                        current_students TINYINT UNSIGNED DEFAULT 0,
-                                        active BOOLEAN DEFAULT TRUE,
-                                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                        version INT UNSIGNED DEFAULT 1,
-                                        PRIMARY KEY (project_id),
-                                        FOREIGN KEY fk_projects_teacher (teacher_id) REFERENCES teachers(teacher_id) ON DELETE RESTRICT ON UPDATE CASCADE,
-                                        FOREIGN KEY fk_projects_company (company_id) REFERENCES companies(company_id) ON DELETE RESTRICT ON UPDATE CASCADE,
-                                        CONSTRAINT chk_project_dates CHECK (end_date > start_date),
-                                        CONSTRAINT chk_project_capacity CHECK (current_students <= max_students),
-                                        INDEX idx_projects_teacher (teacher_id),
-                                        INDEX idx_projects_company (company_id),
-                                        INDEX idx_projects_status (project_status),
-                                        INDEX idx_projects_study_year (study_year),
-                                        INDEX idx_projects_dates (start_date, end_date),
-                                        INDEX idx_projects_active (active),
-                                        INDEX idx_projects_company_year (company_id, study_year),
-                                        INDEX idx_projects_teacher_year (teacher_id, study_year),
-                                        INDEX idx_projects_status_year (project_status, study_year),
-                                        INDEX idx_student_project_completion (completed_at),
-                                        INDEX idx_projects_status_capacity (project_status, current_students, max_students),
-                                        INDEX idx_projects_teacher_status (teacher_id, project_status, study_year),
-                                        INDEX idx_projects_company_status (company_id, project_status, study_year),
-                                        INDEX idx_projects_list_covering (project_id, teacher_id, project_name, project_status)
-) AUTO_INCREMENT = 1;
+    project_desc TEXT,
+    join_code CHAR(6) NULL UNIQUE,
+    teacher_id INT UNSIGNED NULL,
+    company_id INT UNSIGNED NULL,
+    project_status ENUM('pending', 'ongoing', 'completed') DEFAULT 'pending',
+    project_url VARCHAR(255) NULL,
+    study_year VARCHAR(10) NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    completed_at TIMESTAMP NULL,
+    current_students TINYINT UNSIGNED DEFAULT 0,
+    max_students TINYINT UNSIGNED DEFAULT 8,
+    student_names_cache TEXT NULL,
+    active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    version INT UNSIGNED DEFAULT 1,
+    PRIMARY KEY (project_id),
+    FOREIGN KEY fk_projects_teacher (teacher_id) REFERENCES teachers(teacher_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY fk_projects_company (company_id) REFERENCES companies(company_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT chk_project_dates CHECK (end_date > start_date),
+    CONSTRAINT chk_project_capacity CHECK (current_students <= max_students),
+    INDEX idx_projects_teacher (teacher_id),
+    INDEX idx_projects_company (company_id),
+    INDEX idx_projects_status (project_status),
+    INDEX idx_projects_study_year (study_year),
+    INDEX idx_projects_dates (start_date, end_date),
+    INDEX idx_projects_active (active),
+    INDEX idx_projects_company_year (company_id, study_year),
+    INDEX idx_projects_teacher_year (teacher_id, study_year),
+    INDEX idx_projects_status_year (project_status, study_year),
+    INDEX idx_student_project_completion (completed_at),
+    INDEX idx_projects_status_capacity (project_status, current_students, max_students),
+    INDEX idx_projects_teacher_status (teacher_id, project_status, study_year),
+    INDEX idx_projects_company_status (company_id, project_status, study_year),
+    INDEX idx_projects_list_covering (project_id, teacher_id, project_name, project_status),
+    INDEX idx_projects_display_covering (active, created_at DESC, project_id, project_name, project_status, teacher_id, company_id)
+    ) AUTO_INCREMENT = 1;
 
 -- -----------------------------------------------------
 -- Table `resources`
@@ -236,7 +238,7 @@ BEGIN
     WHERE project_id = OLD.project_id;
 END//
 
-CREATE TRIGGER IF NOT EXISTS set_completion_date
+CREATE TRIGGER set_completion_date
     BEFORE UPDATE ON projects
     FOR EACH ROW
 BEGIN
@@ -244,6 +246,58 @@ BEGIN
         SET NEW.completed_at = CURRENT_TIMESTAMP;
     END IF;
 END//
+
+CREATE TRIGGER update_student_cache_after_insert
+    AFTER INSERT ON student_project
+    FOR EACH ROW
+BEGIN
+    DECLARE student_list TEXT DEFAULT '';
+
+    SELECT GROUP_CONCAT(s.student_name ORDER BY s.student_name SEPARATOR ', ')
+    INTO student_list
+    FROM student_project sp
+             JOIN students s ON sp.student_id = s.student_id
+    WHERE sp.project_id = NEW.project_id AND s.active = TRUE;
+
+    UPDATE projects
+    SET student_names_cache = COALESCE(student_list, '')
+    WHERE project_id = NEW.project_id;
+END//
+
+CREATE TRIGGER update_student_cache_after_delete
+    AFTER DELETE ON student_project
+    FOR EACH ROW
+BEGIN
+    DECLARE student_list TEXT DEFAULT '';
+
+    SELECT GROUP_CONCAT(s.student_name ORDER BY s.student_name SEPARATOR ', ')
+    INTO student_list
+    FROM student_project sp
+             JOIN students s ON sp.student_id = s.student_id
+    WHERE sp.project_id = OLD.project_id AND s.active = TRUE;
+
+    UPDATE projects
+    SET student_names_cache = COALESCE(student_list, '')
+    WHERE project_id = OLD.project_id;
+END//
+
+CREATE TRIGGER update_student_cache_after_student_name_update
+    AFTER UPDATE ON students
+    FOR EACH ROW
+BEGIN
+    IF OLD.student_name <> NEW.student_name THEN
+    UPDATE projects p
+        INNER JOIN student_project sp ON p.project_id = sp.project_id
+        SET p.student_names_cache = (
+        SELECT GROUP_CONCAT(s.student_name SEPARATOR ', ')
+        FROM student_project sp_inner
+        JOIN students s ON sp_inner.student_id = s.student_id
+        WHERE sp_inner.project_id = p.project_id
+        )
+    WHERE sp.student_id = NEW.student_id;
+END IF;
+END//
+
 DELIMITER ;
 
 

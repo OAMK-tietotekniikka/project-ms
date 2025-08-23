@@ -6,6 +6,7 @@ import { auth_config } from "../../config/auth.config";
 interface DecodedToken {
 	oid?: string;
 	upn?: string;
+	name?: string;
 	email?: string;
 	roles?: string[];
 	groups?: string[];
@@ -63,6 +64,7 @@ export const validateToken = (token: string): Promise<DecodedToken> => {
 
 					resolve({
 						email: payload.email,
+						name: payload.name,
 						role: assignRole(payload.groups?.[0]),
 					});
 				}
@@ -99,7 +101,7 @@ const assignRole = (groupid: undefined | string): string => {
 	} else if (groupid === "10073ee5-6b85-4701-ada7-e6bad5c4718d") {
 		role = "teacher";
 	} else {
-		role = "teacher"; // TODO other -> visitor
+		role = "visitor"; // TODO other -> visitor
 	}
 	return role;
 };

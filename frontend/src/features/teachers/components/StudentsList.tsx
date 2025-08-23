@@ -1,8 +1,7 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { FixedSizeList as List } from "react-window";
+import { Virtuoso } from "react-virtuoso"; // Changed from react-window
 import { Badge } from "@/shared/components/ui/badge";
-import { Card, CardContent } from "@/shared/components/ui/card";
 import {
 	Dialog,
 	DialogContent,
@@ -11,7 +10,7 @@ import {
 } from "@/shared/components/ui/dialog";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
-import { User, Mail, Users, Check } from "lucide-react";
+import { Mail, Check } from "lucide-react";
 import {
 	useGetAllStudents,
 	useUpdateStudent,
@@ -77,75 +76,25 @@ const StudentsList: React.FC<StudentsListProps> = ({
 	};
 
 	const handleSave = async (field: string) => {
+		if (!selectedStudent) return;
 		await updateStudentMutation.mutateAsync({
 			studentId: selectedStudent.student_id,
 			data: {
 				[field]: editValue,
 			},
 		});
-		if (selectedStudent) {
-			setSelectedStudent({ ...selectedStudent, [field]: editValue });
-		}
+		setSelectedStudent({ ...selectedStudent, [field]: editValue });
 		setEditingField("");
 	};
 
-	const StudentItem = useCallback(
-		({ index, style }: { index: number; style: React.CSSProperties }) => {
-			const student = filteredStudents[index];
-			return (
-				<div style={style}>
-					<Card
-						className="hover:shadow-md hover:bg-accent/30 transition-shadow duration-100 mb-2 cursor-pointer group"
-						onClick={() => handleStudentClick(student)}
-						role="button"
-						tabIndex={0}
-						onKeyDown={(e) => {
-							if (e.key === "Enter" || e.key === " ") {
-								e.preventDefault();
-								handleStudentClick(student);
-							}
-						}}
-					>
-						<CardContent className="p-4">
-							<div className="flex items-center justify-between">
-								<div className="flex items-center gap-4 flex-1 min-w-0">
-									<div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary/15 transition-colors duration-150 flex-shrink-0">
-										<User className="w-5 h-5 text-primary" />
-									</div>
-									<div className="space-y-1 flex-1 min-w-0">
-										<p className="font-medium text-sm group-hover:text-primary transition-colors duration-150 truncate">
-											{student.student_name}
-										</p>
-										<div className="flex items-center gap-1 text-xs text-muted-foreground">
-											<Mail className="w-3 h-3 flex-shrink-0" />
-											<span className="truncate">{student.email}</span>
-										</div>
-									</div>
-								</div>
-								{student.class_code && (
-									<Badge
-										variant="secondary"
-										className="text-xs flex-shrink-0 ml-2"
-									>
-										{student.class_code}
-									</Badge>
-								)}
-							</div>
-						</CardContent>
-					</Card>
-				</div>
-			);
-		},
-		[filteredStudents, handleStudentClick],
-	);
-
+	// Loading and empty states remain the same
 	if (isLoading) return null;
 
 	if (!students || students.length === 0) {
 		return (
-			<div className="text-center flex flex-col text-muted-foreground py-12">
-				<p className="text-lg font-medium mb-2">
-					<img src={not_found} alt="" className="h-24" />
+			<div className="text-center flex flex-col items-center text-muted-foreground py-12">
+				<img src={not_found} alt="Not Found" className="h-24 mb-2" />
+				<p className="text-lg font-medium">
 					{t("students_noStudentsFound", { defaultValue: "No students found" })}
 				</p>
 			</div>
@@ -154,10 +103,12 @@ const StudentsList: React.FC<StudentsListProps> = ({
 
 	if (filteredStudents.length === 0) {
 		return (
-			<div className="text-center flex flex-col text-muted-foreground py-12">
-				<img src={not_found} alt="" className="h-24" />
-				<p className="text-lg font-medium  mb-2">
-					{t("students_noStudentsFound", { defaultValue: "No students found" })}
+			<div className="text-center flex flex-col items-center text-muted-foreground py-12">
+				<img src={not_found} alt="Not Found" className="h-24 mb-2" />
+				<p className="text-lg font-medium">
+					{t("students_noStudentsFound", {
+						defaultValue: "No matching students found",
+					})}
 				</p>
 			</div>
 		);
@@ -167,38 +118,58 @@ const StudentsList: React.FC<StudentsListProps> = ({
 		<>
 			<div className="text-sm text-muted-foreground mb-4">
 				{t("showing")} {filteredStudents.length} / {students.length}{" "}
-				{t("studentsMain")}
+				{t("students")}
 			</div>
 
-			<div className="h-[400px] w-full">
-				<List
-					height={400}
-					width={"100%"}
-					itemCount={filteredStudents.length}
-					itemSize={130}
-					className="p-2"
-					overscanCount={5}
-				>
-					{StudentItem}
-				</List>
+			<div className="border rounded-md flex-1 min-h-0">
+				<Virtuoso
+					style={{ height: "60vh" }}
+					data={filteredStudents}
+					overscan={5}
+					itemContent={(index, student) => (
+						<div
+							key={student.student_id}
+							className="flex items-center justify-between px-4 py-3 border-b  hover:bg-accent/50 cursor-pointer group"
+							onClick={() => handleStudentClick(student)}
+							role="button"
+							tabIndex={0}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" || e.key === " ") {
+									e.preventDefault();
+									handleStudentClick(student);
+								}
+							}}
+						>
+							<div className="flex items-center gap-2 flex-1 min-w-0">
+								<p className="font-medium capitalize text-sm truncate group-hover:text-primary transition-colors">
+									{student.student_name}
+								</p>
+								<div className="flex items-center text-xs text-muted-foreground min-w-0">
+									<span className="truncate">({student.email})</span>
+								</div>
+							</div>
+						</div>
+					)}
+				/>
 			</div>
 
 			<Dialog
 				open={!!selectedStudent}
 				onOpenChange={() => setSelectedStudent(null)}
 			>
-				<DialogContent className="max-w-md">
-					<DialogHeader>
+				<DialogContent className="max-w-md max-h-[90vh] flex flex-col">
+					<DialogHeader className="flex-shrink-0">
 						<DialogTitle>{selectedStudent?.student_name}</DialogTitle>
 					</DialogHeader>
+
 					{selectedStudent && (
-						<div className="space-y-3">
-							<div className="flex items-center justify-between py-2 border-b">
-								<span className="text-sm font-medium">
-									{t("name", { defaultValue: "name" })}
+						<div className="flex-1 overflow-y-auto space-y-3 pt-2 pr-2">
+							<div className="flex items-center justify-between py-3 px-1 border-b">
+								<span className="text-sm font-medium text-muted-foreground flex-shrink-0">
+									{t("name", { defaultValue: "Name" })}
 								</span>
 								{editingField === "student_name" ? (
-									<div className="flex items-center gap-2">
+									<div className="flex items-center gap-2 min-w-0 flex-shrink">
 										<Input
 											value={editValue}
 											onChange={(e) => setEditValue(e.target.value)}
@@ -208,7 +179,7 @@ const StudentsList: React.FC<StudentsListProps> = ({
 										<Button
 											size="sm"
 											onClick={() => handleSave("student_name")}
-											className="h-8 px-2"
+											className="h-8 px-2 flex-shrink-0"
 										>
 											<Check className="h-3 w-3" />
 										</Button>
@@ -219,19 +190,21 @@ const StudentsList: React.FC<StudentsListProps> = ({
 										onClick={() =>
 											handleEdit("student_name", selectedStudent.student_name)
 										}
-										className="h-8 px-3 text-sm"
+										className="h-8 px-2 text-sm min-w-0 max-w-[200px]"
 									>
-										{selectedStudent.student_name}
+										<span className="truncate">
+											{selectedStudent.student_name}
+										</span>
 									</Button>
 								)}
 							</div>
 
 							{studentProjectNumbers && studentProjectNumbers.length > 0 && (
-								<div className="flex items-center justify-between py-2 border-b">
-									<span className="text-sm font-medium">
-										{t("projects", { defaultValue: "projects" })}
+								<div className="py-2 border-b">
+									<span className="text-sm font-medium text-muted-foreground block mb-2">
+										{t("projects", { defaultValue: "Projects" })}
 									</span>
-									<div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+									<div className="flex flex-wrap gap-2">
 										{studentProjectNumbers.map((id) => (
 											<Badge key={id} variant="outline" className="text-xs">
 												<a
@@ -247,19 +220,20 @@ const StudentsList: React.FC<StudentsListProps> = ({
 							)}
 
 							<div className="flex items-center justify-between py-2 border-b">
-								<span className="text-sm font-medium">
-									{t("email", { defaultValue: "email" })}
+								<span className="text-sm font-medium text-muted-foreground flex-shrink-0">
+									{t("email", { defaultValue: "Email" })}
 								</span>
-								<span className="text-sm text-muted-foreground">
+								<span className="text-sm text-muted-foreground px-2 truncate max-w-[200px]">
 									{selectedStudent.email}
 								</span>
 							</div>
-							<div className="flex items-center justify-between py-2 border-b">
-								<span className="text-sm font-medium">
-									{t("class", { defaultValue: "class" })}
+
+							<div className="flex items-center justify-between py-2">
+								<span className="text-sm font-medium text-muted-foreground flex-shrink-0">
+									{t("class", { defaultValue: "Class" })}
 								</span>
 								{editingField === "class_code" ? (
-									<div className="flex items-center gap-2">
+									<div className="flex items-center gap-2 min-w-0">
 										<Input
 											value={editValue}
 											onChange={(e) => setEditValue(e.target.value)}
@@ -269,7 +243,7 @@ const StudentsList: React.FC<StudentsListProps> = ({
 										<Button
 											size="sm"
 											onClick={() => handleSave("class_code")}
-											className="h-8 px-2"
+											className="h-8 px-2 flex-shrink-0"
 										>
 											<Check className="h-3 w-3" />
 										</Button>
@@ -280,21 +254,26 @@ const StudentsList: React.FC<StudentsListProps> = ({
 										onClick={() =>
 											handleEdit("class_code", selectedStudent.class_code || "")
 										}
-										className="h-8 px-3 text-sm"
+										className="h-8 px-2 text-sm min-w-0 max-w-[150px]"
 									>
-										{selectedStudent.class_code || t("students_noClass")}
+										<span className="truncate">
+											{selectedStudent.class_code || t("students_noClass")}
+										</span>
 									</Button>
 								)}
 							</div>
 						</div>
 					)}
-					<Button
-						variant="outline"
-						onClick={() => setSelectedStudent(null)}
-						className="w-full mt-4"
-					>
-						Close
-					</Button>
+
+					<div className="flex-shrink-0 pt-4 border-t">
+						<Button
+							variant="outline"
+							onClick={() => setSelectedStudent(null)}
+							className="w-full hover:cursor-pointer"
+						>
+							Close
+						</Button>
+					</div>
 				</DialogContent>
 			</Dialog>
 		</>

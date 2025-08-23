@@ -14,13 +14,13 @@ import {
 	TabsTrigger,
 } from "@/shared/components/ui/tabs";
 import {
-	User,
 	BookOpen,
-	FolderOpen,
 	Calendar,
 	ChartLine,
 	Building2,
 	Heart,
+	Users,
+	Search, // Added Search Icon
 } from "lucide-react";
 
 import { useTeacherProfile } from "@/features/teachers/hooks/useTeachers.hook";
@@ -32,11 +32,15 @@ import FavoriteCompaniesDialog from "@/features/companies/components/CompanyFavo
 import { useGetUserProjects } from "@/features/projects/hooks/useProjects.hook";
 import general_teacher from "@/assets/general_teacher.svg";
 import { getInitials } from "@/shared/utils/getInitials";
+import { Input } from "@/shared/components/ui/input"; // Added Input component
 
 const TeachersDashboard: React.FC = () => {
 	const { t } = useTranslation();
 	const currentDate = new Date();
 	const studyYear = getStudyYear(currentDate);
+
+	const [showCompaniesDialog, setShowCompaniesDialog] = useState(false);
+	const [searchTerm, setSearchTerm] = useState(""); // State for the search input
 
 	const {
 		data: profile,
@@ -52,53 +56,63 @@ const TeachersDashboard: React.FC = () => {
 	} = useAnyTeacherResources(teacherId);
 
 	const {
-		data: projects,
+		data: projectsRaw,
 		isLoading: isProjectsLoading,
 		error: projectsError,
 	} = useGetUserProjects();
 
-	const [showCompaniesDialog, setShowCompaniesDialog] = useState(false);
+	const navigate = useNavigate();
+
+	// --- DATA PROCESSING ---
+	const projects = projectsRaw?.map((proj) => ({
+		...proj,
+		display_names: proj.student_names_cache?.replace(/,\s*/g, "\n") || "",
+	}));
+
 	if (profileError) {
 		//logout();
 	}
 
-	const navigate = useNavigate();
-
 	const formatDate = (dateString) => {
 		if (!dateString) return "Not set";
-
 		const date = dayjs(dateString);
 		if (!date.isValid() || date.year() === 1970) {
 			return "Not set";
 		}
-
 		return date.format("DD.MM.YYYY");
 	};
 
 	const teacherCurrentResource = resources
 		? resources.find((r) => r.study_year === studyYear)
-		: null; //
+		: null;
 
-	// Filter projects based on status
-	const ongoingProjects = projects
+	const filteredProjects = projects
 		? projects.filter(
 				(proj) =>
-					proj.project_status &&
-					!["completed", "finished", "done", "closed"].includes(
-						proj.project_status.toLowerCase(),
-					),
+					proj.project_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+					proj.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+					(proj.student_names_cache &&
+						proj.student_names_cache
+							.toLowerCase()
+							.includes(searchTerm.toLowerCase())),
 			)
 		: [];
 
-	const pastProjects = projects
-		? projects.filter(
-				(proj) =>
-					proj.project_status &&
-					["completed", "finished", "done", "closed"].includes(
-						proj.project_status.toLowerCase(),
-					),
-			)
-		: [];
+	const ongoingProjects = filteredProjects.filter(
+		(proj) =>
+			proj.project_status &&
+			!["completed", "finished", "done", "closed"].includes(
+				proj.project_status.toLowerCase(),
+			),
+	);
+
+	const pastProjects = filteredProjects.filter(
+		(proj) =>
+			proj.project_status &&
+			["completed", "finished", "done", "closed"].includes(
+				proj.project_status.toLowerCase(),
+			),
+	);
 
 	const getResourceStatus = (used: number, total: number) => {
 		const percentage = (used / total) * 100;
@@ -136,15 +150,12 @@ const TeachersDashboard: React.FC = () => {
 				)
 			: 0;
 
+	// --- SUB-COMPONENTS ---
 	const ProjectsList = ({ projectsList, emptyMessage }) =>
 		projectsList && projectsList.length > 0 ? (
 			<div className="space-y-1">
-				<p className="text-sm text-muted-foreground mb-4">
-					{t("projListBelow")}
-				</p>
-
 				{/* Table Header */}
-				<div className="grid grid-cols-4 gap-4 py-3 px-4 bg-card rounded-xl text-sm font-medium">
+				<div className="grid grid-cols-5 gap-4 py-3 px-4 bg-card rounded-xl text-sm font-medium">
 					<span>{t("project")}</span>
 
 					<div className="flex items-center space-x-1">
@@ -159,6 +170,10 @@ const TeachersDashboard: React.FC = () => {
 						<ChartLine className="w-4 h-4" />
 						<span>{t("status")}</span>
 					</div>
+					<div className="flex items-center space-x-1">
+						<Users className="w-4 h-4" />
+						<span>{t("students")}</span>
+					</div>
 				</div>
 
 				{/* Project Rows */}
@@ -171,16 +186,19 @@ const TeachersDashboard: React.FC = () => {
 									state: { proj },
 								})
 							}
-							className="grid grid-cols-4 gap-4 py-4 px-4 rounded-xl hover:bg-accent cursor-pointer border"
+							className="grid grid-cols-5 gap-4 py-4 px-4 rounded-xl hover:bg-accent cursor-pointer border items-center"
 						>
 							<div>
-								<span className="text-sm font-medium">
-									{t("projectNo")} {proj.project_id}
+								<span className="text-sm font-medium capitalize">
+									{proj.project_name}
 								</span>
 							</div>
 							<div className="text-sm">{proj.company_name}</div>
 							<div className="text-sm">{formatDate(proj.end_date)}</div>
 							<div className="text-sm">{t(proj.project_status)}</div>
+							<div className="text-sm  whitespace-pre-line">
+								{proj.display_names}
+							</div>
 						</div>
 					))}
 				</div>
@@ -196,6 +214,7 @@ const TeachersDashboard: React.FC = () => {
 			)
 		);
 
+	// --- RENDER ---
 	return (
 		<div className="max-w-4xl mx-auto space-y-6 p-6 ">
 			{/* Teacher Info Card */}
@@ -285,26 +304,33 @@ const TeachersDashboard: React.FC = () => {
 
 			{/* Projects Section with Tabs */}
 			<Card className="border-0 shadow-sm">
-				<CardHeader className="pb-4">
-					<CardTitle className="text-lg font-semibold flex items-center space-x-2">
-						<FolderOpen className="w-5 h-5" />
-						<span className="capitalize">{t("projects")}</span>
-					</CardTitle>
-				</CardHeader>
 				<CardContent>
+					{/* Search Input */}
+					<div className="relative mb-4">
+						<Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+						<Input
+							placeholder={t("projects_search", {
+								defaultValue: "Search by project, company, or student...",
+							})}
+							value={searchTerm}
+							onChange={(e) => setSearchTerm(e.target.value)}
+							className="pl-10"
+						/>
+					</div>
+
 					<Tabs defaultValue="ongoing" className="w-full">
 						<TabsList className="grid w-full grid-cols-1 sm:grid-cols-2">
 							<TabsTrigger
 								value="ongoing"
 								className="dark:data-[state=active]:bg-card"
 							>
-								{t("projectsCurr")} ({ongoingProjects.length})
+								{t("projects_current")} ({ongoingProjects.length})
 							</TabsTrigger>
 							<TabsTrigger
 								value="past"
 								className="dark:data-[state=active]:bg-card"
 							>
-								{t("projectsPast")} ({pastProjects.length})
+								{t("projects_past")} ({pastProjects.length})
 							</TabsTrigger>
 						</TabsList>
 						<TabsContent value="ongoing" className="mt-4">

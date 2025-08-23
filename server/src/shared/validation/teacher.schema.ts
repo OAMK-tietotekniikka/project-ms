@@ -6,7 +6,11 @@ export const TeacherSchema = z.object({
 		.min(4)
 		.max(127)
 		.transform((val) => val.toLowerCase()),
-	email: z.email().transform((val) => val.toLowerCase()),
+	email: z
+		.email()
+		.min(8)
+		.max(127)
+		.transform((val) => val.toLowerCase()),
 });
 
 export const TeacherNameSchema = z.object({

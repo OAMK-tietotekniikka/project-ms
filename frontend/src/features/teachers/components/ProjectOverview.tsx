@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { FixedSizeList as List } from "react-window";
+import { Virtuoso } from "react-virtuoso";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import {
@@ -10,19 +10,14 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/shared/components/ui/select";
-import { Card, CardContent } from "@/shared/components/ui/card";
-import { Badge } from "@/shared/components/ui/badge";
-import { Skeleton } from "@/shared/components/ui/skeleton";
 import {
 	FolderOpen,
-	Plus,
 	Search,
-	Filter,
-	Calendar,
-	Hash,
-	User,
 	Download,
 	BarChart3,
+	Minus,
+	Check,
+	ClockFading,
 } from "lucide-react";
 import { useGetAllProjects } from "@/features/projects/hooks/useProjects.hook";
 import Papa from "papaparse";
@@ -30,40 +25,49 @@ import { useNavigate } from "react-router-dom";
 import not_found from "@/assets/not_found_1.svg";
 import { projectService } from "@/core/api/services";
 import ProjectStatsDialog from "@/features/projects/components/ProjectStatsDialog";
+import { getStudyYear } from "@/shared/utils/GetStudyYear";
 
 interface Project {
 	project_id?: number;
 	project_name?: string;
 	teacher_name?: string;
 	project_status?: string;
+	student_names_cache?: string;
 }
-
-const getStatusVariant = (status: string) => {
-	switch (status?.toLowerCase()) {
-		case "active":
-			return "default";
-		case "completed":
-			return "secondary";
-		case "upcoming":
-			return "outline";
-		case "pending":
-			return "outline";
-		case "ongoing":
-			return "default";
-		default:
-			return "outline";
-	}
-};
 
 const Projects: React.FC = () => {
 	const { t } = useTranslation();
+
 	const [searchTerm, setSearchTerm] = useState("");
 	const [statusFilter, setStatusFilter] = useState("all");
 	const [isExporting, setIsExporting] = useState(false);
 	const [isStatsDialogOpen, setIsStatsDialogOpen] = useState(false);
+
+	const studyYear = getStudyYear(new Date());
+	const [selectedYear, setSelectedYear] = useState(studyYear);
+
 	const navigate = useNavigate();
 
-	const { data: projects, isLoading, error } = useGetAllProjects();
+	const { data: projects, isLoading, error } = useGetAllProjects(selectedYear);
+
+	const generateAcademicYears = () => {
+		const currentStudyYearStr = getStudyYear(new Date());
+		const startYearNum = Number(currentStudyYearStr.split("-")[0]);
+		const years = [];
+
+		for (let i = -2; i <= 2; i++) {
+			years.push(`${startYearNum + i}-${startYearNum + i + 1}`);
+		}
+
+		return years;
+	};
+
+	const academicYears = generateAcademicYears();
+	const icons = {
+		pending: Minus,
+		ongoing: ClockFading,
+		completed: Check,
+	};
 
 	const filteredProjects = useMemo(() => {
 		if (!projects) return [];
@@ -125,64 +129,48 @@ const Projects: React.FC = () => {
 	};
 
 	// Memoized click handler
-	const handleProjectClick = useCallback((proj: Project) => {
-		navigate(`/projects/${proj?.project_id}`, { state: { proj } });
-	}, []);
+	const handleProjectClick = useCallback(
+		(proj: Project) => {
+			navigate(`/projects/${proj?.project_id}`, { state: { proj } });
+		},
+		[navigate],
+	);
 
-	// Memoized ProjectItem component
 	const ProjectItem = useCallback(
-		({ index, style }: { index: number; style: React.CSSProperties }) => {
+		(index: number) => {
 			const project = filteredProjects[index];
-
+			const Icon = icons[project.project_status];
 			return (
-				<div style={style}>
-					<Card
-						className="hover:shadow-md hover:bg-accent transition-shadow duration-50 mb-2 cursor-pointer group"
-						onClick={() => handleProjectClick(project)}
-						role="button"
-						tabIndex={0}
-						onKeyDown={(e) => {
-							if (e.key === "Enter" || e.key === " ") {
-								e.preventDefault();
-								handleProjectClick(project);
-							}
-						}}
-					>
-						<CardContent className="p-4">
-							<div className="flex items-center justify-between">
-								<div className="flex items-center gap-4 flex-1 min-w-0">
-									<div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary/15 transition-colors duration-150 flex-shrink-0">
-										<FolderOpen className="w-5 h-5 text-primary" />
-									</div>
-									<div className="space-y-1 flex-1 min-w-0">
-										<p className="font-medium text-sm group-hover:text-primary transition-colors duration-150 truncate">
-											{project.project_name}
-										</p>
-										<div className="flex items-center gap-4 text-xs text-muted-foreground">
-											<div className="flex items-center gap-1 flex-shrink-0">
-												<Hash className="w-3 h-3" />
-												<span>{project.project_id}</span>
-											</div>
-											{project.teacher_name && (
-												<div className="flex items-center gap-1 min-w-0">
-													<User className="w-3 h-3 flex-shrink-0" />
-													<span className="truncate">
-														{project.teacher_name}
-													</span>
-												</div>
-											)}
-										</div>
-									</div>
-								</div>
-								<Badge
-									variant={getStatusVariant(project.project_status || "")}
-									className="text-xs flex-shrink-0 ml-2"
-								>
-									{t(project.project_status)}
-								</Badge>
-							</div>
-						</CardContent>
-					</Card>
+				<div
+					className="group hover:bg-accent/50 cursor-pointer border-b border-border/40 px-3 py-2"
+					onClick={() => handleProjectClick(project)}
+				>
+					{/* #ID Project Name (Teacher Name) Status */}
+					<div className="flex items-center justify-between gap-3 mb-1">
+						<div className="flex items-center gap-2 flex-1 min-w-0">
+							<span className="text-xs text-muted-foreground font-mono flex-shrink-0">
+								#{project.project_id}
+							</span>
+							<span className="font-medium text-sm truncate group-hover:text-primary">
+								{project.project_name}
+							</span>
+							{project.teacher_name && (
+								<span className="text-xs text-muted-foreground truncate">
+									({project.teacher_name})
+								</span>
+							)}
+						</div>
+						<span className="text-xs text-muted-foreground flex-shrink-0">
+							{t(project.project_status)}
+						</span>
+					</div>
+
+					{/* Students */}
+					{project.student_names_cache && (
+						<div className="text-xs text-muted-foreground pl-6 truncate">
+							{project.student_names_cache}
+						</div>
+					)}
 				</div>
 			);
 		},
@@ -194,7 +182,7 @@ const Projects: React.FC = () => {
 			<div className="max-w-4xl mx-auto p-6 min-h-500">
 				<div className="bg-card rounded-xl shadow-sm p-6">
 					<div className="text-center py-12 text-muted-foreground">
-						<FolderOpen className="h-12 w-12 /50 mx-auto mb-4 opacity-50" />
+						<FolderOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
 						<p className="font-medium">
 							{error ? t("error") : t("projects_noProjectsFound")}
 						</p>
@@ -209,7 +197,7 @@ const Projects: React.FC = () => {
 			{/* Header */}
 			<div className="bg-card rounded-xl shadow-sm p-6 mb-6">
 				<div className="flex items-center justify-between">
-					<p className="text-xl font-bold">{t("projectsMain")}</p>
+					<p className="text-xl font-bold">{t("projects")}</p>
 					<div className="flex gap-3">
 						<Button
 							onClick={() => setIsStatsDialogOpen(true)}
@@ -228,8 +216,10 @@ const Projects: React.FC = () => {
 							onOpenChange={setIsStatsDialogOpen}
 						/>
 						<Button
-							onClick={exportProjects}
-							disabled={isExporting || !projects?.length}
+							onClick={() => {
+								if (isExporting || !projects?.length || isLoading) return;
+								exportProjects();
+							}}
 							variant="outline"
 							className="gap-2 hover:cursor-pointer"
 						>
@@ -270,13 +260,25 @@ const Projects: React.FC = () => {
 							<SelectItem value="completed">{t("completed")}</SelectItem>
 						</SelectContent>
 					</Select>
+					<Select value={selectedYear} onValueChange={setSelectedYear}>
+						<SelectTrigger className="w-32">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{academicYears.map((year) => (
+								<SelectItem key={year} value={year}>
+									{year}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
 				</div>
 
 				{/* Results count */}
 				<div className="flex items-center justify-between mb-4">
 					<div className="text-sm text-muted-foreground">
 						{t("showing")} {filteredProjects.length} / {projects?.length || 0}{" "}
-						{t("projectsMain")}
+						{t("projects")}
 					</div>
 				</div>
 
@@ -291,17 +293,15 @@ const Projects: React.FC = () => {
 						</p>
 					</div>
 				) : (
-					<div className="h-[380px] w-full">
-						<List
-							height={380}
-							width={"100%"}
-							itemCount={filteredProjects.length}
-							itemSize={135}
-							className="p-2"
-							overscanCount={5}
-						>
-							{ProjectItem}
-						</List>
+					<div className="h-[60vh] w-full border rounded-lg overflow-hidden">
+						<Virtuoso
+							data={filteredProjects}
+							totalCount={filteredProjects.length}
+							itemContent={ProjectItem}
+							style={{ height: "100%" }}
+							overscan={10}
+							increaseViewportBy={200}
+						/>
 					</div>
 				)}
 			</div>

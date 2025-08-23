@@ -13,8 +13,6 @@ services:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD}
-      SERVICE_TAGS: development
-      SERVICE_NAME: project_ms_dev_db
     networks:
       - internalnet
     healthcheck:
@@ -48,18 +46,17 @@ services:
       redis:
         condition: service_started
     environment:
-      DB_HOST: mariadb
-      DB_PASSWORD: 'pwd@123'
-      DB_USER: admin
-      DB_NAME: project_ms
-      DB_PORT: 3306
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      DB_CONNECTION_LIMIT: 10
-      NODE_ENV: development
-      SERVER_PORT: 8000
-      SERVICE_TAGS: development
-      SERVICE_NAME: pm_server_devservice
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=${DB_PORT_DOCKER}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - DB_CONNECTION_LIMIT=${DB_CONNECTION_LIMIT}
+      - SERVER_PORT=${SERVER_PORT}
+      - NODE_ENV=${NODE_ENV}
+      - IS_DOCKER=true
     volumes:
       # Mount source code for hot reload
       - ./server:/app/server

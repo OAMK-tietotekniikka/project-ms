@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { projectService } from "@/core/api/services";
+import { useEffect } from "react";
 
 interface CreateProjectData {
 	project_name: string;
@@ -57,12 +58,24 @@ export const useGetProjectDetails = (projectId: number) => {
 	});
 };
 
-export const useGetAllProjects = () => {
-	return useQuery({
+export const useGetAllProjects = (studyYear: string) => {
+	const query = useQuery({
 		queryKey: ["projects", "list"],
-		queryFn: () => projectService.getAllProjects().then((res) => res.data.data),
+		queryFn: () =>
+			projectService
+				.getAllProjectsByStudyYear(studyYear)
+				.then((res) => res.data.data),
 		staleTime: 5 * 60 * 1000,
+		enabled: !!studyYear,
 	});
+
+	useEffect(() => {
+		if (studyYear) {
+			query.refetch();
+		}
+	}, [studyYear]);
+
+	return query;
 };
 
 export const useGetProjectStatistics = (open: boolean) => {

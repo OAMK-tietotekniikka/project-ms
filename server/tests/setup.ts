@@ -1,6 +1,2 @@
-import dotenv from "dotenv";
-import path from "path";
-
-dotenv.config({
-	path: path.resolve(__dirname, "../../.env"),
-});
+import { loadEnv } from "../src/config/env.ts";
+loadEnv();

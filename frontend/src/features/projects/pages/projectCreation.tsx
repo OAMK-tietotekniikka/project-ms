@@ -220,7 +220,7 @@ export const CreateProject: React.FC = () => {
 							</div>
 							<div>
 								<p className="text-xl sm:text-2xl font-semibold">
-									{t("createProj") || "Create New Project"}
+									{t("projects_createProject") || "Create New Project"}
 								</p>
 								<p className="text-sm text-muted-foreground">
 									{t("projects_createProject_steps", {
@@ -254,17 +254,17 @@ export const CreateProject: React.FC = () => {
 							{currentStep === 1 && (
 								<>
 									<div className="space-y-4">
-										<Label>{t("projName") || "Project Name"} *</Label>
+										<Label>{t("projectName") || "Project Name"} *</Label>
 										<Input
 											value={formData.project_name}
 											onChange={(e) =>
 												handleChange("project_name", e.target.value)
 											}
-											placeholder="Enter project name"
+											placeholder={t("projectName")}
 										/>
 									</div>
 									<div className="space-y-4">
-										<Label>{t("url") || "Project URL"} (Optional)</Label>
+										<Label>{t("url") || "Project URL"}</Label>
 										<Input
 											value={formData.project_url}
 											onChange={(e) =>
@@ -286,7 +286,7 @@ export const CreateProject: React.FC = () => {
 											onValueChange={handleCompanySelect}
 										>
 											<SelectTrigger>
-												<SelectValue placeholder="Select existing company" />
+												<SelectValue placeholder={t("selectCompany")} />
 											</SelectTrigger>
 											<SelectContent className="h-36">
 												{companies.map((company: any) => (
@@ -308,7 +308,7 @@ export const CreateProject: React.FC = () => {
 													company_id: null,
 												}))
 											}
-											placeholder="Or enter new company name"
+											placeholder={t("addNewCompany")}
 										/>
 									</div>
 									<div className="space-y-4">
@@ -344,13 +344,15 @@ export const CreateProject: React.FC = () => {
 							{currentStep === 3 && (
 								<>
 									<div className="space-y-4">
-										<Label>{t("projDesc") || "Project Description"} *</Label>
+										<Label>
+											{t("projectDescription") || "Project Description"} *
+										</Label>
 										<Textarea
 											value={formData.project_desc}
 											onChange={(e) =>
 												handleChange("project_desc", e.target.value)
 											}
-											placeholder="Describe your project goals and requirements..."
+											placeholder={t("projectDescription")}
 											rows={6}
 										/>
 									</div>

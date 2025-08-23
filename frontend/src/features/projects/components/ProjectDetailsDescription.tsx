@@ -12,7 +12,7 @@ const ProjectDescription: React.FC<ProjectDescriptionProps> = ({
 
 	return (
 		<div className="bg-card rounded-xl p-4">
-			<p className="font-medium mb-2">{t("projDesc")}</p>
+			<p className="font-medium mb-2">{t("projectDescription")}</p>
 			<p
 				className={`text-secondary-foreground ${description ? "" : "invisible"}`}
 			>

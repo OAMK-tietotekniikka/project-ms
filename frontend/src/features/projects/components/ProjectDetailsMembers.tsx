@@ -20,7 +20,7 @@ const ProjectMembers: React.FC<ProjectMembersProps> = ({
 			<div className="bg-card rounded-xl p-4">
 				<div className="flex items-center gap-2 mb-3">
 					<Users className="h-4 w-4" />
-					<span className="font-medium">{t("studInvolved")}</span>
+					<span className="font-medium">{t("students_Involved")}</span>
 				</div>
 				<p className="text-sm text-muted-foreground">Error loading members</p>
 			</div>
@@ -31,7 +31,7 @@ const ProjectMembers: React.FC<ProjectMembersProps> = ({
 		<div className="bg-card rounded-xl p-4">
 			<div className="flex items-center gap-2 mb-3">
 				<Users className="h-4 w-4" />
-				<span className="font-medium">{t("studInvolved")} </span>
+				<span className="font-medium">{t("students_Involved")} </span>
 
 				<span className="text-muted-foreground text-xs">
 					{Array.isArray(members) ? members.length : 0}/{max_members}

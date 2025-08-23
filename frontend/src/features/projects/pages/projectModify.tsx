@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Card, CardContent, CardHeader } from "@/shared/components/ui/card";
+import { Card, CardContent } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
 import { Label } from "@/shared/components/ui/label";
@@ -22,12 +22,6 @@ import {
 	PopoverTrigger,
 } from "@/shared/components/ui/popover";
 import {
-	Drawer,
-	DrawerContent,
-	DrawerTrigger,
-} from "@/shared/components/ui/drawer";
-import { Calendar } from "@/shared/components/ui/calendar";
-import {
 	Building2,
 	FileText,
 	Edit,
@@ -38,14 +32,15 @@ import {
 	Check,
 } from "lucide-react";
 import { type DateRange } from "react-day-picker";
-import { enUS, fi } from "react-day-picker/locale";
 
 import {
 	useGetProjectDetails,
 	useUpdateProject,
 } from "@/features/projects/hooks/useProjects.hook";
 import { useGetCompanies } from "@/features/companies/hooks/useCompanies.hook";
-import { TeacherAssignment } from "@/features/projects/components/TeacherAssignment"; // Assuming TeacherAssignment is in the same folder
+import { TeacherAssignment } from "@/features/projects/components/TeacherAssignment";
+// Import the new component
+import { ProjectDatePicker } from "@/features/projects/components/ProjectDatePicker";
 
 interface FormData {
 	project_name: string;
@@ -62,7 +57,7 @@ const EditProject: React.FC = () => {
 	const { state } = useLocation();
 	const projectId = state?.proj?.project_id;
 
-	const { data: freshProjData } = useGetProjectDetails(projectId); // , { enabled: !!projectId }
+	const { data: freshProjData } = useGetProjectDetails(projectId);
 	const project = freshProjData?.[0] || state?.proj;
 
 	const [formData, setFormData] = useState<FormData>({
@@ -149,7 +144,7 @@ const EditProject: React.FC = () => {
 	};
 
 	if (!project) {
-		return <div>Loading project details...</div>; // Or a spinner component
+		return <div>Loading project details...</div>;
 	}
 
 	const isValid =
@@ -164,12 +159,14 @@ const EditProject: React.FC = () => {
 	return (
 		<div className="max-w-4xl mx-auto p-6">
 			<Card className="mb-6">
-				<CardContent className="pt-6">
+				<CardContent>
 					<div className="flex items-center space-x-4">
 						<div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
 							<Edit className="w-6 h-6 text-primary-foreground" />
 						</div>
-						<p className="text-2xl font-semibold">{t("modifyData")}</p>
+						<p className="text-2xl font-semibold">
+							{t("projects_updateProject")}
+						</p>
 					</div>
 				</CardContent>
 			</Card>
@@ -187,10 +184,11 @@ const EditProject: React.FC = () => {
 			<Card>
 				<CardContent className="pt-6">
 					<form onSubmit={handleSubmit} className="space-y-6">
+						{/* Project Name, URL, and Company fields remain unchanged */}
 						<div className="space-y-2">
 							<Label className="flex items-center gap-2">
 								<FileText className="w-4 h-4" />
-								{t("projName")} *
+								{t("projectName")} *
 							</Label>
 							<Input
 								value={formData.project_name}
@@ -226,83 +224,60 @@ const EditProject: React.FC = () => {
 										aria-expanded={companyComboboxOpen}
 										className="w-full justify-between"
 									>
-										{selectedCompany ? selectedCompany.company_name : ""}
+										{selectedCompany?.company_name || t("selectCompany")}
 										<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
 									</Button>
 								</PopoverTrigger>
-								<PopoverContent className="w-full p-0 h-28" align="start">
+								<PopoverContent className="w-full p-0 h-auto" align="start">
 									<Command>
 										<CommandInput placeholder={t("searchCompany")} />
-										<CommandEmpty>{t("noCompanyFound")}</CommandEmpty>
+										<CommandEmpty>No company found.</CommandEmpty>
 										<CommandGroup>
-											{companies.map((company: any) => (
-												<CommandItem
-													key={company.company_id}
-													value={company.company_name}
-													onSelect={() => {
-														handleChange("company_id", company.company_id);
-														setCompanyComboboxOpen(false);
-													}}
-												>
-													<Check
-														className={cn(
-															"mr-2 h-4 w-4",
-															formData.company_id === company.company_id
-																? "opacity-100"
-																: "opacity-0",
-														)}
-													/>
-													{company.company_name}
-												</CommandItem>
-											))}
+											<CommandList>
+												{companies.map((company: any) => (
+													<CommandItem
+														key={company.company_id}
+														value={company.company_name}
+														onSelect={() => {
+															handleChange("company_id", company.company_id);
+															setCompanyComboboxOpen(false);
+														}}
+													>
+														<Check
+															className={cn(
+																"mr-2 h-4 w-4",
+																formData.company_id === company.company_id
+																	? "opacity-100"
+																	: "opacity-0",
+															)}
+														/>
+														{company.company_name}
+													</CommandItem>
+												))}
+											</CommandList>
 										</CommandGroup>
 									</Command>
 								</PopoverContent>
 							</Popover>
 						</div>
 
+						{/* CLEANER DATE PICKER IMPLEMENTATION */}
 						<div>
 							<Label className="flex items-center gap-2 mb-2 capitalize">
 								<CalendarDays className="w-4 h-4" />
 								{t("timeline")} *
 							</Label>
-							<Drawer direction="top">
-								<DrawerTrigger asChild>
-									<Button
-										id="date"
-										variant="outline"
-										className="w-full justify-start text-left font-normal"
-									>
-										{dateRange?.from ? (
-											dateRange.to ? (
-												<>
-													{dateRange.from.toLocaleDateString("fi-FI")} -{" "}
-													{dateRange.to.toLocaleDateString("fi-FI")}
-												</>
-											) : (
-												dateRange.from.toLocaleDateString("fi-FI")
-											)
-										) : (
-											<span>{t("Pick a date")}</span>
-										)}
-									</Button>
-								</DrawerTrigger>
-								<DrawerContent className="w-auto pb-6 flex justify-center items-center">
-									<Calendar
-										mode="range"
-										selected={dateRange}
-										onSelect={setDateRange}
-										numberOfMonths={2}
-										locale={fi}
-									/>
-								</DrawerContent>
-							</Drawer>
+							<ProjectDatePicker
+								dateRange={dateRange}
+								onDateChange={setDateRange}
+							/>
 						</div>
 
+						{/* Project Description and Buttons remain unchanged */}
 						<div className="space-y-2">
 							<Label className="flex items-center gap-2">
 								<FileText className="w-4 h-4" />
-								{t("projDesc")} *
+								{t("projectDescription")} *
 							</Label>
 							<Textarea
 								value={formData.project_desc}
@@ -314,7 +289,7 @@ const EditProject: React.FC = () => {
 
 						<div className="pt-4 border-t">
 							<p className="text-sm text-muted-foreground mb-4">
-								* {t("obligatory")}
+								{t("obligatory")}
 							</p>
 							<div className="flex gap-3">
 								<Button

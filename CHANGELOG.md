@@ -115,7 +115,7 @@ All notable changes to this project will be documented in this file.
 - Update openapi.yaml ([fd55879](OAMK-tietotekniikka/ProjectsMS/commit/fd558792ce424f60e650d7796aee1db1edc61fa2))
 - Update changelog ([1eeb1f4](OAMK-tietotekniikka/ProjectsMS/commit/1eeb1f4cb8aa6443995e0624480239cd1a7ac06b))
 
-## [2.0.0] - 30.06.2025
+## [0.2.0] - 30.06.2025
 
 ### Bug Fixes
 

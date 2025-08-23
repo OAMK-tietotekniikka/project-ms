@@ -232,6 +232,7 @@ const FavoriteCompaniesDialog = ({ open, onOpenChange }) => {
 								}}
 								totalCount={filteredCompanies.length}
 								itemContent={CompanyItem}
+								overscan={5}
 							/>
 						) : (
 							<EmptyState />

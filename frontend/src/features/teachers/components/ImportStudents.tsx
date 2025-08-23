@@ -4,12 +4,7 @@ import { FixedSizeList as List } from "react-window";
 
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
-import {
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle,
-} from "@/shared/components/ui/card";
+import { Card, CardContent } from "@/shared/components/ui/card";
 import {
 	Tabs,
 	TabsContent,
@@ -264,7 +259,7 @@ const ImportStudents: React.FC<ImportStudentsProps> = ({ handleClose }) => {
 							value="invalid"
 							className="flex items-center gap-2 dark:data-[state=active]:bg-card"
 						>
-							{t("students_importStudents_valid")}
+							{t("students_importStudents_invalid")}
 							{invalidRows.length > 0 && (
 								<Badge variant="secondary" className="ml-1">
 									{invalidRows.length}

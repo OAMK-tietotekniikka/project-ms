@@ -1,5 +1,5 @@
 import React from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
 	House,
@@ -9,6 +9,7 @@ import {
 	Users,
 	GraduationCap,
 	BookText,
+	Bug,
 } from "lucide-react";
 import { cn } from "@/shared/utils/utils";
 import { useRole } from "@/core/auth/useUserRole.hook";
@@ -17,13 +18,23 @@ import { useLogout } from "@/core/auth/useLogout.hook";
 const NavBar: React.FC = () => {
 	const { t, i18n } = useTranslation();
 	const { userRole } = useRole();
-	const navigate = useNavigate();
 	const { logout } = useLogout();
 	let role = userRole;
 
+	const getNextLanguage = (currentLang: string): string => {
+		if (currentLang === "fi") {
+			return "en";
+		} else if (currentLang === "en") {
+			return "sv";
+		} else {
+			return "fi"; // default to "fi" for any other case
+		}
+	};
+
 	const changeLanguage = () => {
 		const currentLang = i18n.language;
-		i18n.changeLanguage(currentLang === "en" ? "fi" : "en");
+		const nextLang = getNextLanguage(currentLang);
+		i18n.changeLanguage(nextLang);
 	};
 
 	const handleLogout = async () => {
@@ -39,11 +50,13 @@ const NavBar: React.FC = () => {
 		icon: Icon,
 		label,
 		onClick,
+		displayText,
 	}: {
 		to?: string;
-		icon: React.ElementType;
+		icon?: React.ElementType;
 		label: string;
 		onClick?: () => void;
+		displayText?: string;
 	}) => {
 		const baseClasses =
 			"flex items-center justify-center w-12 h-12 rounded-xl transition-all hover:bg-accent";
@@ -52,10 +65,17 @@ const NavBar: React.FC = () => {
 			return (
 				<button
 					onClick={onClick}
-					className={cn(baseClasses, "text-muted-foreground")}
+					className={cn(
+						baseClasses,
+						"text-muted-foreground font-medium text-sm",
+					)}
 					title={label}
 				>
-					<Icon className="h-5 w-5" />
+					{displayText ? (
+						<span>{displayText}</span>
+					) : (
+						<Icon className="h-5 w-5" />
+					)}
 				</button>
 			);
 		}
@@ -69,11 +89,16 @@ const NavBar: React.FC = () => {
 						isActive
 							? "bg-accent text-accent-foreground"
 							: "text-muted-foreground",
+						displayText ? "font-medium text-sm" : "",
 					)
 				}
 				title={label}
 			>
-				<Icon className="h-5 w-5" />
+				{displayText ? (
+					<span>{displayText}</span>
+				) : (
+					<Icon className="h-5 w-5" />
+				)}
 			</NavLink>
 		);
 	};
@@ -84,7 +109,7 @@ const NavBar: React.FC = () => {
 			{
 				to: role === "student" || role === "teacher" ? "/" : "/login",
 				icon: House,
-				label: t("dashb"),
+				label: t("dashboard"),
 			},
 		];
 
@@ -92,7 +117,7 @@ const NavBar: React.FC = () => {
 			items.push({
 				to: "/projects/create",
 				icon: FolderPlus,
-				label: t("createProj"),
+				label: t("projects_createProject"),
 			});
 		}
 
@@ -106,12 +131,12 @@ const NavBar: React.FC = () => {
 				{
 					to: "/students",
 					icon: Users,
-					label: t("studentsMain"),
+					label: t("students"),
 				},
 				{
 					to: "/projects",
 					icon: BookText,
-					label: t("companies"),
+					label: t("projects"),
 				},
 			);
 		}
@@ -149,17 +174,24 @@ const NavBar: React.FC = () => {
 
 				{/* Language Toggle */}
 				<NavItem
-					icon={Languages}
+					displayText={getNextLanguage(i18n.language).toUpperCase()}
 					label={`${t("language")} (${i18n.language.toUpperCase()})`}
 					onClick={changeLanguage}
 				/>
 
-				{/* Sign Out */}
 				<NavItem
-					icon={LogOut}
-					label={t("logout")}
-					onClick={handleLogout} // add logout
+					icon={Bug}
+					label="Report a bug"
+					onClick={() =>
+						window.open(
+							"https://github.com/OAMK-tietotekniikka/project-ms/issues",
+							"_blank",
+						)
+					}
 				/>
+
+				{/* Sign Out */}
+				<NavItem icon={LogOut} label={t("logout")} onClick={handleLogout} />
 			</div>
 		</nav>
 	);
