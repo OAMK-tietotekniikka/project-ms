@@ -220,7 +220,7 @@ export const CreateProject: React.FC = () => {
 							</div>
 							<div>
 								<p className="text-xl sm:text-2xl font-semibold">
-									{t("createProj") || "Create New Project"}
+									{t("projects_createProject") || "Create New Project"}
 								</p>
 								<p className="text-sm text-muted-foreground">
 									{t("projects_createProject_steps", {
