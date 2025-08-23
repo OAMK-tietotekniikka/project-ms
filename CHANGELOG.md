@@ -1,6 +1,15 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## 1.0.0 (2025-08-23)
+
+
+### Bug Fixes
+
+* build.yml syntax ([b47f87e](https://github.com/OAMK-tietotekniikka/project-ms/commit/b47f87e90715df11b0e7c49fe1fa50c7aa695a83))
+* recurring pnpm-lock fix ([7ffd606](https://github.com/OAMK-tietotekniikka/project-ms/commit/7ffd60604bea649c6306218ce3dd23eca06ed93f))
+* remove user group ([9bffa91](https://github.com/OAMK-tietotekniikka/project-ms/commit/9bffa91ee62debf28181b47493fd1e22ce808d31))
+
 ## [0.3.0] - 08.08.2025
 
 ### Features
