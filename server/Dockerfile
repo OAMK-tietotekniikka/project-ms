@@ -28,10 +28,6 @@ FROM node:24-slim AS production
 # Install pnpm
 RUN npm install -g pnpm
 
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodeuser -u 1001
-
 # Set the working directory
 WORKDIR /app
 
