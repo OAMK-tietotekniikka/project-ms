@@ -12,11 +12,9 @@ permissions:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: google-github-actions/release-please-action@v4
         with:
           release-type: node
           token: ${{ secrets.GITHUB_TOKEN }}
-          include-v-in-tag: true
-          draft: false
-          prerelease: false

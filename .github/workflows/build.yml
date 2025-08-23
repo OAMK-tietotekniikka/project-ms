@@ -1,4 +1,5 @@
 name: "Build and Publish images"
+
 on:
   push:
     branches: ["main"]
@@ -8,46 +9,81 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Login to Quay.io
         uses: docker/login-action@v3
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_ROBOT_TOKEN }}
-      - name: Get version from tag
-        if: startsWith(github.ref, 'refs/tags/v')
-        id: version
-        run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+
+      # 1. Generate tags and labels for the server image
+      - name: Docker meta for server
+        id: meta_server
+        uses: docker/metadata-action@v5
+        with:
+          images: quay.io/${{ secrets.QUAY_USERNAME }}/project-ms-server
+          tags: |
+            # Tag 'latest' for pushes to the main branch
+            type=raw,value=latest,enable={{is_default_branch}}
+            # Tag with the version number for git tags (e.g., v1.2.3 -> 1.2.3)
+            type=semver,pattern={{version}}
+            # Also tag 'latest' when a new git tag is pushed
+            type=raw,value=latest,enable={{is_default_branch == false}}
+
+      # 2. Build and push the server image using the generated tags
       - name: Build and push server
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./server/Dockerfile
           push: true
-          tags: |
-            ${{ github.ref == 'refs/heads/main' && format('quay.io/{0}/project-ms-server:latest', secrets.QUAY_USERNAME) || '' }}
-            ${{ startsWith(github.ref, 'refs/tags/v') && format('quay.io/{0}/project-ms-server:{1}', secrets.QUAY_USERNAME, steps.version.outputs.version) || '' }}
-            ${{ startsWith(github.ref, 'refs/tags/v') && format('quay.io/{0}/project-ms-server:latest', secrets.QUAY_USERNAME) || '' }}
+          tags: ${{ steps.meta_server.outputs.tags }}
+          labels: ${{ steps.meta_server.outputs.labels }}
+
+      # 3. Run Trivy scan only when a new version tag is pushed
       - name: Run Trivy on server image
-        uses: aquasecurity/trivy-action@0.32.0
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ github.ref == 'refs/heads/main' && format('quay.io/{0}/project-ms-server:latest', secrets.QUAY_USERNAME) || (startsWith(github.ref, 'refs/tags/v') && format('quay.io/{0}/project-ms-server:{1}', secrets.QUAY_USERNAME, steps.version.outputs.version)) }}
+          image-ref: 'quay.io/${{ secrets.QUAY_USERNAME }}/project-ms-server:${{ github.ref_name }}'
           format: 'table'
-        continue-on-error: true
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+
+
+      # 1. Generate tags and labels for the frontend image
+      - name: Docker meta for frontend
+        id: meta_frontend
+        uses: docker/metadata-action@v5
+        with:
+          images: quay.io/${{ secrets.QUAY_USERNAME }}/project-ms-frontend
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=raw,value=latest,enable={{is_default_branch == false}}
+
+      # 2. Build and push the frontend image using the generated tags
       - name: Build and push frontend
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./frontend/Dockerfile
           push: true
-          tags: |-
-            ${{ github.ref == 'refs/heads/main' && format('quay.io/{0}/project-ms-frontend:latest', secrets.QUAY_USERNAME) || '' }}
-            ${{ startsWith(github.ref, 'refs/tags/v') && format('quay.io/{0}/project-ms-frontend:{1}', secrets.QUAY_USERNAME, steps.version.outputs.version) || '' }}
-            ${{ startsWith(github.ref, 'refs/tags/v') && format('quay.io/{0}/project-ms-frontend:latest', secrets.QUAY_USERNAME) || '' }}
+          tags: ${{ steps.meta_frontend.outputs.tags }}
+          labels: ${{ steps.meta_frontend.outputs.labels }}
+
+      # 3. Run Trivy scan only when a new version tag is pushed
       - name: Run Trivy on frontend image
-        uses: aquasecurity/trivy-action@0.32.0
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ github.ref == 'refs/heads/main' && format('quay.io/{0}/project-ms-frontend:latest', secrets.QUAY_USERNAME) || (startsWith(github.ref, 'refs/tags/v') && format('quay.io/{0}/project-ms-frontend:{1}', secrets.QUAY_USERNAME, steps.version.outputs.version)) }}
+          image-ref: 'quay.io/${{ secrets.QUAY_USERNAME }}/project-ms-frontend:${{ github.ref_name }}'
           format: 'table'
-        continue-on-error: true
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
