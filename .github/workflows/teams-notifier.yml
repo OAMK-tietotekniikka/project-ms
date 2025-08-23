@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Send Teams notification
+        continue-on-error: true
         run: |
           # JSON payload
           cat << EOF > payload.json
