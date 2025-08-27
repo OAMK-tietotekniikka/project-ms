@@ -1,6 +1,7 @@
 import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
+import rootPkg from "../package.json";
 import { defineConfig, loadEnv } from "vite";
 
 // https://vitejs.dev/config/
@@ -40,7 +41,8 @@ export default defineConfig(({ mode }) => {
 		},
 
 		define: {
-			__APP_VERSION__: JSON.stringify(process.env.npm_package_version),
+			__APP_VERSION__: JSON.stringify(rootPkg.version),
+			__APP_BUGS__: JSON.stringify(rootPkg.bugs.url),
 		},
 	};
 });
