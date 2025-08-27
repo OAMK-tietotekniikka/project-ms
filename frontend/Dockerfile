@@ -12,6 +12,7 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY package.json ./
 COPY server/package.json ./server/
 COPY frontend/package.json ./frontend/
+COPY .env ./
 
 # Install ONLY frontend dep
 RUN pnpm install --filter=frontend --frozen-lockfile
