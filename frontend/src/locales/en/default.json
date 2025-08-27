@@ -88,11 +88,11 @@
   "projects_searchNotes": "Search notes...",
   "projects_noNotes": "No notes added yet",
   "projects_noNotesFound": "No notes found :(",
-  "projects_notesCategoryAll": "all",
-  "projects_notesCategoryText": "text",
-  "projects_notesCategoryLink": "link",
-  "projects_notesCategoryFeedback": "feedback",
-  "projects_notesCategoryMilestone": "milestone",
+  "projects_notesCategoryAll": "All",
+  "projects_notesCategoryText": "Text",
+  "projects_notesCategoryLink": "Link",
+  "projects_notesCategoryFeedback": "Feedback",
+  "projects_notesCategoryMilestone": "Milestone",
 
 
   "class": "class",

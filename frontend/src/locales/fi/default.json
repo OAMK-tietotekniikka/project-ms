@@ -88,11 +88,11 @@
   "projects_searchNotes": "Hae muistiinpanoja...",
   "projects_noNotes": "Ei muistiinpanoja vielä",
   "projects_noNotesFound": "Muistiinpanoja ei löytynyt :(",
-  "projects_notesCategoryAll": "kaikki",
-  "projects_notesCategoryText": "teksti",
-  "projects_notesCategoryLink": "linkki",
-  "projects_notesCategoryFeedback": "palaute",
-  "projects_notesCategoryMilestone": "etappi",
+  "projects_notesCategoryAll": "Kaikki",
+  "projects_notesCategoryText": "Teksti",
+  "projects_notesCategoryLink": "Linkki",
+  "projects_notesCategoryFeedback": "Palaute",
+  "projects_notesCategoryMilestone": "Etappi",
 
 
   "class": "luokka",
