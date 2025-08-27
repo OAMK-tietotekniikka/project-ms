@@ -28,6 +28,7 @@ import {
 	Book,
 	BookCheck,
 	Check,
+	GraduationCap,
 } from "lucide-react";
 import {
 	useGetAllTeachers,
@@ -298,12 +299,12 @@ const TeachersList = () => {
 							<CardContent className="p-4">
 								<div className="flex items-center gap-3 mb-3">
 									<div className="bg-primary/10 p-2 rounded-full">
-										<User className="h-4 w-4 text-primary" />
+										<GraduationCap className="h-4 w-4 text-primary" />
 									</div>
 									<div className="flex-1">
-										<h3 className="font-medium text-sm">
+										<p className="font-medium text-sm capitalize">
 											{teacher.teacher_name}
-										</h3>
+										</p>
 										<div className="flex items-center gap-1 text-xs text-muted-foreground">
 											<Mail className="h-3 w-3" />
 											<span>{teacher.email}</span>

@@ -309,7 +309,7 @@ const TeachersDashboard: React.FC = () => {
 					<div className="relative mb-4">
 						<Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 						<Input
-							placeholder={t("projects_search", {
+							placeholder={t("projects_searchProjects", {
 								defaultValue: "Search by project, company, or student...",
 							})}
 							value={searchTerm}

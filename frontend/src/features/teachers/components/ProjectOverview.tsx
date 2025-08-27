@@ -15,9 +15,9 @@ import {
 	Search,
 	Download,
 	BarChart3,
-	Minus,
 	Check,
-	ClockFading,
+	Podcast,
+	CircleDashed,
 } from "lucide-react";
 import { useGetAllProjects } from "@/features/projects/hooks/useProjects.hook";
 import Papa from "papaparse";
@@ -64,8 +64,8 @@ const Projects: React.FC = () => {
 
 	const academicYears = generateAcademicYears();
 	const icons = {
-		pending: Minus,
-		ongoing: ClockFading,
+		pending: CircleDashed,
+		ongoing: Podcast,
 		completed: Check,
 	};
 
@@ -161,7 +161,7 @@ const Projects: React.FC = () => {
 							)}
 						</div>
 						<span className="text-xs text-muted-foreground flex-shrink-0">
-							{t(project.project_status)}
+							<Icon className="h-4 w-4" />
 						</span>
 					</div>
 
