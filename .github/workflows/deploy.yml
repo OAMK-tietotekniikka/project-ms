@@ -1,9 +1,10 @@
 name: Deploy to OpenShift
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_run:
+    workflows: ["Build and Publish images"]
+    types:
+      - completed
 
 env:
   REGISTRY: quay.io/srntp
@@ -13,12 +14,15 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     name: Deploy to OpenShift
+    if: |
+      github.event.workflow_run.conclusion == 'success' && 
+      startsWith(github.event.workflow_run.head_branch, 'refs/tags/v')
 
     steps:
       - name: Get version from tag
         id: version
         run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
+          VERSION=$(echo "${{ github.event.workflow_run.head_branch }}" | sed 's|refs/tags/v||')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Deploying version: $VERSION"
 
@@ -73,7 +77,6 @@ jobs:
           echo "Waiting for rollouts..."
           oc rollout status deployment/server --timeout=300s
           oc rollout status deployment/frontend --timeout=300s
-          
           
           echo "Deployment successful!"
           
