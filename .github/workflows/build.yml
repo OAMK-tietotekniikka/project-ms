@@ -49,6 +49,7 @@ jobs:
           images: quay.io/${{ secrets.QUAY_ORG_NAME }}/project-ms-server  # Organization name without +
           tags: |
             type=raw,value=${{ steps.determine_tag.outputs.version }}
+            type=raw,value=latest
 
       # 2. Build and push the server image using the generated tags
       - name: Build and push server
@@ -79,6 +80,7 @@ jobs:
           images: quay.io/${{ secrets.QUAY_ORG_NAME }}/project-ms-frontend
           tags: |
             type=raw,value=${{ steps.determine_tag.outputs.version }}
+            type=raw,value=latest
 
       # 2. Build and push the frontend image using the generated tags
       - name: Build and push frontend

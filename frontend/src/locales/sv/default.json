@@ -88,11 +88,11 @@
   "projects_searchNotes": "Sök anteckningar...",
   "projects_noNotes": "Inga anteckningar tillagda ännu",
   "projects_noNotesFound": "Inga anteckningar hittades :(",
-  "projects_notesCategoryAll": "alla",
-  "projects_notesCategoryText": "text",
-  "projects_notesCategoryLink": "länk",
-  "projects_notesCategoryFeedback": "feedback",
-  "projects_notesCategoryMilestone": "milstolpe",
+  "projects_notesCategoryAll": "Alla",
+  "projects_notesCategoryText": "Text",
+  "projects_notesCategoryLink": "Länk",
+  "projects_notesCategoryFeedback": "Feedback",
+  "projects_notesCategoryMilestone": "Milstolpe",
 
 
   "class": "klass",

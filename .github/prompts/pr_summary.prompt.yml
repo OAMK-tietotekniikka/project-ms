@@ -1,0 +1,19 @@
+messages:
+  - role: user
+    content: |
+      Analyze this pull request and provide a clear, concise summary that anyone can understand.
+      
+      Title: "{{title}}"
+      Description: "{{description}}"
+      
+      Code Changes:
+      ```
+      {{diff}}
+      ```
+      
+      Please summarize:
+      - What this PR does (the main purpose)
+      - Key changes made in the code
+      - Any important details worth noting
+      
+      Keep it simple and focused. Use bullet points or short paragraphs as needed.

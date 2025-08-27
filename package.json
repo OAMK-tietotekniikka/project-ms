@@ -1,6 +1,6 @@
 {
 	"name": "projects-ms",
-	"version": "0.4.0",
+	"version": "0.4.1",
 	"description": "Project management tool",
 	"main": "index.js",
 	"repository": {
@@ -33,15 +33,13 @@
 			"biome format --write"
 		]
 	},
-	"homepage": "https://github.com/OAMK-tietotekniikka/ProjectsMS#readme",
+	"homepage": "https://github.com/OAMK-tietotekniikka/project-ms#readme",
 	"devDependencies": {
-		"@biomejs/biome": "^1.9.4",
+		"@biomejs/biome": "^2.0.6",
 		"@commitlint/cli": "^19.8.1",
 		"@commitlint/config-conventional": "^19.8.1",
+		"danger": "^13.0.4",
 		"husky": "^9.1.7",
 		"lint-staged": "^16.1.0"
-	},
-	"dependencies": {
-		"typedoc-material-theme": "^1.4.0"
 	}
 }

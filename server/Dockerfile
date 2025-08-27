@@ -11,6 +11,7 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY package.json ./
 COPY server/package.json ./server/
 COPY frontend/package.json ./frontend/
+COPY .env ./
 
 # Install ONLY server dep
 RUN pnpm install --filter=server --frozen-lockfile
@@ -36,6 +37,7 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY package.json ./
 COPY server/package.json ./server/
 COPY frontend/package.json ./frontend/
+COPY .env ./
 
 # Install only production dependencies for the server
 RUN pnpm install --filter=server --frozen-lockfile --prod --ignore-scripts

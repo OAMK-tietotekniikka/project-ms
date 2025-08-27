@@ -85,8 +85,21 @@ kind: Service
 metadata:
   name: server
 spec:
-  type: ClusterIP
   ports:
     - port: 8000
   selector:
     app: server
+
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: server
+spec:
+  to:
+    kind: Service
+    name: server
+  port:
+    targetPort: 8000
+  tls:
+    termination: edge

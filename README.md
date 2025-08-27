@@ -4,8 +4,10 @@
 **Project management tool for company projects**
 
 
-![GitHub Tag](https://img.shields.io/github/v/tag/OAMK-tietotekniikka/project-ms?color=%23488be6)
+![GitHub package.json version](https://img.shields.io/github/package-json/v/OAMK-tietotekniikka/project-ms?color=%23488be6)
 ![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/OAMK-tietotekniikka/project-ms?color=%23488be6)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/OAMK-tietotekniikka/project-ms/build.yml)
+
 
 </div>
 

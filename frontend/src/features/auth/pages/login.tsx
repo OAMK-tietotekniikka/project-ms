@@ -11,8 +11,6 @@ import { useTranslation } from "react-i18next";
 export const LoginPage = () => {
 	const { instance } = useMsal();
 
-	const bug_form: string =
-		"https://github.com/OAMK-tietotekniikka/project-ms/issues";
 	const version = __APP_VERSION__;
 	const { t, i18n } = useTranslation();
 
@@ -282,13 +280,15 @@ export const LoginPage = () => {
 						<a
 							href="https://oamk-tietotekniikka.github.io/docs/en/how-to/contribute/"
 							target="_blank"
+							rel="noopener noreferrer"
 							className="hover:underline"
 						>
 							{t("login_contribute")}
 						</a>
 						<a
-							href="https://oamk.fi/tietosuoja/"
+							href={__APP_BUGS__}
 							target="_blank"
+							rel="noopener noreferrer"
 							className="hover:underline"
 						>
 							{t("login_privacy")}
@@ -296,7 +296,12 @@ export const LoginPage = () => {
 					</div>
 					<p>© {new Date().getFullYear()} OAMK | Project MS</p>
 					<p className="text-sm">
-						<a href={bug_form} target="_blank" className="hover:underline">
+						<a
+							href={__APP_BUGS__}
+							target="_blank"
+							rel="noopener noreferrer"
+							className="hover:underline"
+						>
 							{t("login_reportBug")}
 						</a>
 					</p>

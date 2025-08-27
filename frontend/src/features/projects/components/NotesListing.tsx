@@ -69,6 +69,7 @@ const NoteItem = ({ index, style, data }) => {
 			<a
 				href={note.note_url}
 				target="_blank"
+				rel="noopener noreferrer"
 				className="text-primary text-sm break-words hover:underline"
 			>
 				{note.note_url}
@@ -144,9 +145,7 @@ const QuickAdd = ({ onAdd, isLoading }) => {
 						<SelectItem key={key} value={key}>
 							<div className="flex items-center gap-1">
 								<Icon className="h-3 w-3" />
-								<span className="capitalize">
-									{t(translation_keys[key], { defaultValue: key })}
-								</span>
+								<span>{t(translation_keys[key], { defaultValue: key })}</span>
 							</div>
 						</SelectItem>
 					))}
